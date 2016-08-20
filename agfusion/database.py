@@ -3,6 +3,7 @@ import sys
 import os
 import sqlite3
 
+from tqdm import tqdm
 from biomart import BiomartServer
 from agfusion import utils
 
@@ -10,27 +11,37 @@ def _chunker(seq, size):
     return (seq[pos:pos + size] for pos in xrange(0, len(seq), size))
 
 def _collect_results(result):
+
+    if result is None:
+        print 'Could not fetch some data for some reason...'
+        sys.exit()
+        
     results.extend(result)
 
-def _query_job(filters,attributes,ntries):
+def _query_job(index,filters,attributes,ntries,ensembl,return_dict):
+
+    data = []
 
     try:
+
         r=ensembl.search({
             'filters':filters,
-            'attribute':attributes
+            'attributes':attributes[0]
         })
-
-        data = []
 
         for line in r.iter_lines():
             data.append(line.decode('utf-8').split('\t'))
+
+        return_dict[index]=data
+
     except:
+        print 'Retrying...'
         if ntries==3:
             return None
         else:
-            _query_job(filters,attributes,ntries+1)
+            _query_job(index,filters,attributes,ntries+1,ensembl,return_dict)
 
-    return data
+    return
 
 class AGFusionSQlite3DB:
     """
@@ -54,26 +65,68 @@ class AGFusionSQlite3DB:
         self.conn = sqlite3.connect(self.database_name)
         self.c = self.conn.cursor()
 
-    def _fetch_gene_level_info(self,genes,p):
-        attributes = [
-            'ensembl_gene_id',
-            'entrezgene',
-            'hgnc_symbol'
-            'chromosome_name',
-            'chromosome_start',
-            'chromosome_end',
-            'strand'
-        ]
+        self._ensembl=None
+        self._biomart=None
 
-        batch_size=100
+    def _fetch(self,ids,filters,attrubutes,p,batch_size):
+        """
+        Abstract method for fetching data in batches from the biomart server.
+        The data is fetched in batches because the biomart python package does
+        not seem to like having to fetch data in too large of chunks
+        """
+
+        #setup multiprocessing
 
         pool = multiprocessing.Pool(p)
+        manager = multiprocessing.Manager()
+        return_dict = manager.dict()
 
-        for i in _chunker(genes,batch_size):
-            pool.apply_async(_query_job,args=({},[attributes],0,))
+        #chunk the data
 
-        pool.close()
-        pool.join()
+        chunks = [i for i in _chunker(ids,batch_size)]
+        sub_chunks = [i for i in _chunker(chunks,p)]
+
+        index=0
+
+        #fetch the data
+
+        for chunk in tqdm(sub_chunks):
+            jobs = []
+            for id_set in chunk:
+                p = multiprocessing.Process(target=_query_job,args=(index,{filters:id_set},[attributes],0,self._ensembl,return_dict,))
+                jobs.append(p)
+                p.start()
+                index+=1
+
+            for j in jobs:
+                j.join()
+
+        return return_dict
+
+
+    def _fetch_gene_level_info(self,genes,p):
+
+        print 'Fetching gene-level information...'
+
+        data = self._fetch(
+            ids=genes,
+            filters='ensembl_gene_id',
+            attrubutes=[
+                'ensembl_gene_id',
+                'entrezgene',
+                'hgnc_symbol',
+                'chromosome_name',
+                'start_position',
+                'end_position',
+                'strand'
+            ],
+            p=p,
+            batch_size=100
+        )
+
+        #process data
+
+        print 'Adding gene-level information to the database...'
 
     def _fetch_transcript_level_info(self):
         attributes [
@@ -94,20 +147,19 @@ class AGFusionSQlite3DB:
 
     def fetch_data(self,ensembl_server,ensembl_dataset,p):
 
-        s = BiomartServer(ensembl_server)
-        ensembl = s.datasets[ensembl_dataset]
+        self._biomart = BiomartServer(ensembl_server)
+        self._ensembl = self._biomart.datasets[ensembl_dataset]
 
         #get all the ensembl genes
 
-        r=ensembl.search({'attributes':['ensembl_gene_id']})
+        print 'Fetching all genes...'
+
+        r=self._ensembl.search({'attributes':['ensembl_gene_id']})
 
         genes=[]
 
         for line in r.iter_lines():
             genes.append(line.decode('utf-8'))
-
-        print len(genes)
-        print 'Fetching gene-level information...'
 
         self._fetch_gene_level_info(genes,p)
 

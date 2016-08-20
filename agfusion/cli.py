@@ -27,15 +27,16 @@ def build_database():
     parser.add_argument(
         '--ensembl_server',
         type=str,
-        required=True,
+        required=False,
         default='http://useast.ensembl.org/biomart',
-        help='Name of the database (default http://useast.ensembl.org/biomart)'
+        help='Name of the database (default: http://useast.ensembl.org/biomart)'
     )
     parser.add_argument(
         '--ensembl_dataset',
         type=str,
-        required=True,
-        help='The Ensembl dataset to query in Biomar (hsapiens_gene_ensembl or mmusculus_gene_ensembl)'
+        required=False,
+        default="hsapiens_gene_ensembl",
+        help='The Ensembl dataset to query in Biomar (hsapiens_gene_ensembl (default) or mmusculus_gene_ensembl)'
     )
     args = parser.parse_args()
 
