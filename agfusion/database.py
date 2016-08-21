@@ -48,9 +48,9 @@ def _query_job(index,filters,attributes,ntries,ensembl,return_dict):
         for line in r.iter_lines():
             line = line.decode('utf-8').split('\t')
             data.append(line)
-            if len(line)!=7:
-                print line
-                print 'too short'
+            #if len(line)!=7:
+                #print line
+                #print 'too short'
 
 
         return_dict[index]=data
@@ -94,6 +94,9 @@ class AGFusionSQlite3DB:
         }
 
         if not os.path.exists(self.name):
+
+            print 'Creating database and initiating tables...'
+
             self.conn = sqlite3.connect(self.name)
             self.c = self.conn.cursor()
             self.initiate_tables()
@@ -184,7 +187,7 @@ class AGFusionSQlite3DB:
         self.c.executemany('INSERT INTO ' + table + ' VALUES (?,?,?,?,?,?,?)', data_into_db)
         self.conn.commit()
 
-    def _fetch_transcript_level_info(self,genes,p,table):
+    def _fetch_transcript_level_info(self,genes,p):
 
         print 'Fetching transcript-level information...'
 
@@ -195,10 +198,14 @@ class AGFusionSQlite3DB:
                 'ensembl_gene_id',
                 'ensembl_transcript_id',
                 'ensembl_peptide_id',
+                'ensembl_exon_id',
                 'transcript_biotype',
                 'transcript_start',
                 'transcript_end',
-                'transcript_length'
+                'exon_chrom_start',
+                'exon_chrom_end',
+                'genomic_coding_start',
+                'genomic_coding_end'
             ],
             p=p,
             batch_size=100
@@ -208,26 +215,58 @@ class AGFusionSQlite3DB:
 
         print 'Adding transcript-level information to the database...'
 
+        #insert into transcipt table
+
+        #format the data correctly so it can be put into the database
+
+        data_into_db = []
+        for index, chunk in data.items():
+            for r in chunk:
+                temp = [
+                    str(r[0]),
+                    str(r[1]),
+                    str(r[2]),
+                    str(r[4]),
+                    -1 if r[5]==u'' else int(r[5]),
+                    -1 if r[6]==u'' else int(r[6]),
+                ]
+                if temp not in data_into_db:
+                    data_into_db.append(temp)
+
+        self.c.execute('DELETE FROM ' + self.reference + '_transcript')
+        self.conn.commit()
+
+        self.c.executemany(
+            'INSERT INTO ' + self.reference + '_transcript VALUES (?,?,?,?,?,?)',
+            data_into_db
+        )
+        self.conn.commit()
+
+        #insert into transcipt_annotation table
+
         #format the data correctly so it can be put into the database
 
         data_into_db = []
         for index, chunk in data.items():
             for r in chunk:
                 data_into_db.append([
-                    str(r[0]),
                     str(r[1]),
-                    str(r[2]),
                     str(r[3]),
-                    int(r[4]),
-                    int(r[5]),
-                    int(r[6]),
+                    -1 if r[7]==u'' else int(r[7]),
+                    -1 if r[8]==u'' else int(r[8]),
+                    -1 if r[9]==u'' else int(r[9]),
+                    -1 if r[10]==u'' else int(r[10]),
                 ])
 
-        self.c.execute('DELETE FROM ' + table)
+        self.c.execute('DELETE FROM ' + self.reference + '_annotation_transcript')
         self.conn.commit()
 
-        self.c.executemany('INSERT INTO ' + table + ' VALUES (?,?,?,?,?,?,?)', data_into_db)
+        self.c.executemany(
+            'INSERT INTO ' + self.reference + '_annotation_transcript VALUES (?,?,?,?,?,?)',
+            data_into_db
+        )
         self.conn.commit()
+
 
     def _fetch_protein_level_info(self,genes,p,table):
         print 'Fetching protein-level information...'
@@ -288,16 +327,18 @@ class AGFusionSQlite3DB:
 
         print 'Fetching all genes...'
 
-        r=self._ensembl.search({'attributes':['ensembl_gene_id']})
+        #r=self._ensembl.search({'attributes':['ensembl_gene_id']})
 
-        genes=[]
+        #genes=[]
 
-        for line in r.iter_lines():
-            genes.append(line.decode('utf-8'))
+        #for line in r.iter_lines():
+        #    genes.append(line.decode('utf-8'))
 
+        self._fetch_gene_level_info(["ENSG00000066468","ENSG00000197959"],p,self.reference)
         #self._fetch_gene_level_info(genes[0:1000],p,self.reference)
 
-        self._fetch_transcript_level_info(genes[0:1000],p,self.reference + '_transcript')
+        self._fetch_transcript_level_info(["ENSG00000066468","ENSG00000197959"],p)
+        #self._fetch_transcript_level_info(genes,p)
 
         #get all transcript ids
 
@@ -315,49 +356,24 @@ class AGFusionSQlite3DB:
     def initiate_tables(self):
 
         self.c.execute(
-            "CREATE TABLE GRCh38 (" + \
-            "ensembl_gene_id text," + \
-            "entrez_gene text," + \
-            "gene_symbol text," + \
-            "chr text," + \
-            "strand integer," + \
-            "genomic_start integer," + \
-            "genomic_end integer" + \
-            ")"
+            "CREATE TABLE GRCh38 " + utils.GENE_SCHEMA
         )
         self.c.execute(
-            "CREATE TABLE GRCm38 (" + \
-            "ensembl_gene_id text," + \
-            "entrez_gene text," + \
-            "gene_symbol text," + \
-            "chr text," + \
-            "strand integer," + \
-            "genomic_start integer," + \
-            "genomic_end integer" + \
-            ")"
+            "CREATE TABLE GRCm38 " + utils.GENE_SCHEMA
         )
 
         self.c.execute(
-            "CREATE TABLE GRCh38_transcript (" + \
-            "ensembl_gene_id text," + \
-            "ensembl_transcript_id text," + \
-            "ensembl_protein_id text," + \
-            "transcript_biotype text," + \
-            "transcript_genomic_start integer," + \
-            "transcript_genomic_end integer," + \
-            "transcript_length integer" + \
-            ")"
+            "CREATE TABLE GRCh38_transcript " + utils.TRANSCRIPT_SCHEMA
         )
         self.c.execute(
-            "CREATE TABLE GRCm38_transcript (" + \
-            "ensembl_gene_id text," + \
-            "ensembl_transcript_id text," + \
-            "ensembl_protein_id text," + \
-            "transcript_biotype text," + \
-            "transcript_genomic_start integer," + \
-            "transcript_genomic_end integer," + \
-            "transcript_length integer" + \
-            ")"
+            "CREATE TABLE GRCm38_transcript " + utils.TRANSCRIPT_SCHEMA
+        )
+
+        self.c.execute(
+            "CREATE TABLE GRCh38_annotation_transcript " + utils.TRANSCRIPT_ANNOTATION_SCHEMA
+        )
+        self.c.execute(
+            "CREATE TABLE GRCm38_annotation_transcript " + utils.TRANSCRIPT_ANNOTATION_SCHEMA
         )
 
         for i in utils.PROTEIN_DOMAIN:
