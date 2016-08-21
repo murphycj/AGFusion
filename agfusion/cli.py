@@ -32,16 +32,16 @@ def build_database():
         help='Name of the database (default: http://useast.ensembl.org/biomart)'
     )
     parser.add_argument(
-        '--ensembl_dataset',
+        '--ref',
         type=str,
         required=False,
-        default="hsapiens_gene_ensembl",
-        help='The Ensembl dataset to query in Biomar (hsapiens_gene_ensembl (default) or mmusculus_gene_ensembl)'
+        default="GRCh38",
+        help='The reference genome to quiery: GRCh38 (default), GRCh37, or GRCm38'
     )
     args = parser.parse_args()
 
-    db = database.AGFusionSQlite3DB(args.name)
-    db.fetch_data(args.ensembl_server,args.ensembl_dataset,args.p)
+    db = database.AGFusionSQlite3DB(args.name,args.ref)
+    db.fetch_data(args.ensembl_server,args.p)
 
 def main():
 

@@ -2,20 +2,36 @@ import multiprocessing
 import sys
 import os
 import sqlite3
+import requests
 
 from tqdm import tqdm
 from biomart import BiomartServer
 from agfusion import utils
 
-def _chunker(seq, size):
-    return (seq[pos:pos + size] for pos in xrange(0, len(seq), size))
+def split_into_n_lists(seq, n):
+  avg = len(seq) / float(n)
+  out = []
+  last = 0.0
+
+  while last < len(seq):
+    out.append(seq[int(last):int(last + avg)])
+    last += avg
+
+  return out
+
+def _chunker(seq, n):
+    """
+    From a list return chunks of size n
+    """
+
+    return (seq[pos:pos + n] for pos in xrange(0, len(seq), n))
 
 def _collect_results(result):
 
     if result is None:
         print 'Could not fetch some data for some reason...'
         sys.exit()
-        
+
     results.extend(result)
 
 def _query_job(index,filters,attributes,ntries,ensembl,return_dict):
@@ -30,16 +46,34 @@ def _query_job(index,filters,attributes,ntries,ensembl,return_dict):
         })
 
         for line in r.iter_lines():
-            data.append(line.decode('utf-8').split('\t'))
+            line = line.decode('utf-8').split('\t')
+            data.append(line)
+            if len(line)!=7:
+                print line
+                print 'too short'
+
 
         return_dict[index]=data
 
-    except:
-        print 'Retrying...'
+    except requests.HTTPError:
         if ntries==3:
-            return None
+            print 'Max number of retries on this chunk!'
+            raise
         else:
-            _query_job(index,filters,attributes,ntries+1,ensembl,return_dict)
+            print 'Chunk too large, splitting into two chunk and retrying...'
+            for f in split_into_n_lists(filters[filters.keys()[0]],2):
+                filter_sub = {filters.keys()[0]:f}
+                _query_job(
+                    index,
+                    filter_sub,
+                    attributes,
+                    ntries+1,
+                    ensembl,
+                    return_dict
+                )
+    except:
+        print "Unexpected error:", sys.exc_info()[0]
+        raise
 
     return
 
@@ -49,26 +83,28 @@ class AGFusionSQlite3DB:
     database
     """
 
-    def __init__(self,database_name):
+    def __init__(self,name,reference):
 
-        if not os.path.exists(database_name):
-            print 'Database ' + database_name + ' does not exist!'
-            sys.exit()
-
-        self.database_name=database_name
+        self.name=name
+        self.reference=reference
         self.datasets = {
             'GRCh38':'hsapiens_gene_ensembl',
             'GRCh37':'hsapiens_gene_ensembl',
             'GRCm38':'mmusculus_gene_ensembl'
         }
 
-        self.conn = sqlite3.connect(self.database_name)
-        self.c = self.conn.cursor()
+        if not os.path.exists(self.name):
+            self.conn = sqlite3.connect(self.name)
+            self.c = self.conn.cursor()
+            self.initiate_tables()
+        else:
+            self.conn = sqlite3.connect(self.name)
+            self.c = self.conn.cursor()
 
         self._ensembl=None
         self._biomart=None
 
-    def _fetch(self,ids,filters,attrubutes,p,batch_size):
+    def _fetch(self,ids,filters,attributes,p,batch_size):
         """
         Abstract method for fetching data in batches from the biomart server.
         The data is fetched in batches because the biomart python package does
@@ -103,22 +139,21 @@ class AGFusionSQlite3DB:
 
         return return_dict
 
-
-    def _fetch_gene_level_info(self,genes,p):
+    def _fetch_gene_level_info(self,genes,p,table):
 
         print 'Fetching gene-level information...'
 
         data = self._fetch(
             ids=genes,
             filters='ensembl_gene_id',
-            attrubutes=[
+            attributes=[
                 'ensembl_gene_id',
                 'entrezgene',
                 'hgnc_symbol',
                 'chromosome_name',
+                'strand',
                 'start_position',
-                'end_position',
-                'strand'
+                'end_position'
             ],
             p=p,
             batch_size=100
@@ -128,15 +163,114 @@ class AGFusionSQlite3DB:
 
         print 'Adding gene-level information to the database...'
 
-    def _fetch_transcript_level_info(self):
-        attributes [
-            'ensembl_gene_id',
-            'ensembl_transcript_id',
-            'ensembl_peptide_id',
-        ]
+        #format the data correctly so it can be put into the database
 
-    def _fetch_protein_level_info(self):
-        pass
+        data_into_db = []
+        for index, chunk in data.items():
+            for r in chunk:
+                data_into_db.append([
+                    str(r[0]),
+                    str(r[1]),
+                    str(r[2]),
+                    str(r[3]),
+                    int(r[4]),
+                    int(r[5]),
+                    int(r[6]),
+                ])
+
+        self.c.execute('DELETE FROM ' + table)
+        self.conn.commit()
+
+        self.c.executemany('INSERT INTO ' + table + ' VALUES (?,?,?,?,?,?,?)', data_into_db)
+        self.conn.commit()
+
+    def _fetch_transcript_level_info(self,genes,p,table):
+
+        print 'Fetching transcript-level information...'
+
+        data = self._fetch(
+            ids=genes,
+            filters='ensembl_gene_id',
+            attributes=[
+                'ensembl_gene_id',
+                'ensembl_transcript_id',
+                'ensembl_peptide_id',
+                'transcript_biotype',
+                'transcript_start',
+                'transcript_end',
+                'transcript_length'
+            ],
+            p=p,
+            batch_size=100
+        )
+
+        #process data
+
+        print 'Adding transcript-level information to the database...'
+
+        #format the data correctly so it can be put into the database
+
+        data_into_db = []
+        for index, chunk in data.items():
+            for r in chunk:
+                data_into_db.append([
+                    str(r[0]),
+                    str(r[1]),
+                    str(r[2]),
+                    str(r[3]),
+                    int(r[4]),
+                    int(r[5]),
+                    int(r[6]),
+                ])
+
+        self.c.execute('DELETE FROM ' + table)
+        self.conn.commit()
+
+        self.c.executemany('INSERT INTO ' + table + ' VALUES (?,?,?,?,?,?,?)', data_into_db)
+        self.conn.commit()
+
+    def _fetch_protein_level_info(self,genes,p,table):
+        print 'Fetching protein-level information...'
+
+        data = self._fetch(
+            ids=genes,
+            filters='ensembl_transcript_id',
+            attributes=[
+                'ensembl_transcript_id',
+                'ensembl_peptide_id',
+                'transcript_biotype',
+                'transcript_start',
+                'transcript_end',
+                'transcript_length'
+            ],
+            p=p,
+            batch_size=100
+        )
+
+        #process data
+
+        print 'Adding protein-level information to the database...'
+
+        #format the data correctly so it can be put into the database
+
+        data_into_db = []
+        for index, chunk in data.items():
+            for r in chunk:
+                data_into_db.append([
+                    str(r[0]),
+                    str(r[1]),
+                    str(r[2]),
+                    str(r[3]),
+                    int(r[4]),
+                    int(r[5]),
+                    int(r[6]),
+                ])
+
+        self.c.execute('DELETE FROM ' + table)
+        self.conn.commit()
+
+        self.c.executemany('INSERT INTO ' + table + ' VALUES (?,?,?,?,?,?,?)', data_into_db)
+        self.conn.commit()
 
     def close(self):
         """
@@ -145,10 +279,10 @@ class AGFusionSQlite3DB:
 
         self.conn.close()
 
-    def fetch_data(self,ensembl_server,ensembl_dataset,p):
+    def fetch_data(self,ensembl_server,p):
 
         self._biomart = BiomartServer(ensembl_server)
-        self._ensembl = self._biomart.datasets[ensembl_dataset]
+        self._ensembl = self._biomart.datasets[self.datasets[self.reference]]
 
         #get all the ensembl genes
 
@@ -161,13 +295,26 @@ class AGFusionSQlite3DB:
         for line in r.iter_lines():
             genes.append(line.decode('utf-8'))
 
-        self._fetch_gene_level_info(genes,p)
+        #self._fetch_gene_level_info(genes[0:1000],p,self.reference)
 
+        self._fetch_transcript_level_info(genes[0:1000],p,self.reference + '_transcript')
 
+        #get all transcript ids
+
+        self.c.execute(
+            "SELECT ensembl_transcript_id FROM " + \
+            self.reference + '_transcript'
+        )
+
+        #self._fetch_protein_level_info(
+        #    [str(i[0]) for i in self.c.fetchall()][0:1000],
+        #    p,
+        #    self.reference
+        #)
 
     def initiate_tables(self):
 
-        c.execute(
+        self.c.execute(
             "CREATE TABLE GRCh38 (" + \
             "ensembl_gene_id text," + \
             "entrez_gene text," + \
@@ -178,7 +325,7 @@ class AGFusionSQlite3DB:
             "genomic_end integer" + \
             ")"
         )
-        c.execute(
+        self.c.execute(
             "CREATE TABLE GRCm38 (" + \
             "ensembl_gene_id text," + \
             "entrez_gene text," + \
@@ -190,31 +337,31 @@ class AGFusionSQlite3DB:
             ")"
         )
 
-        c.execute(
-            "CREATE TABLE GRCh38_gene (" + \
+        self.c.execute(
+            "CREATE TABLE GRCh38_transcript (" + \
             "ensembl_gene_id text," + \
             "ensembl_transcript_id text," + \
             "ensembl_protein_id text," + \
-            "biotype text," + \
+            "transcript_biotype text," + \
             "transcript_genomic_start integer," + \
             "transcript_genomic_end integer," + \
-            "length integer" + \
+            "transcript_length integer" + \
             ")"
         )
-        c.execute(
-            "CREATE TABLE GRCm38_gene (" + \
+        self.c.execute(
+            "CREATE TABLE GRCm38_transcript (" + \
             "ensembl_gene_id text," + \
             "ensembl_transcript_id text," + \
             "ensembl_protein_id text," + \
-            "biotype text," + \
+            "transcript_biotype text," + \
             "transcript_genomic_start integer," + \
             "transcript_genomic_end integer," + \
-            "length integer" + \
+            "transcript_length integer" + \
             ")"
         )
 
-        for i in agfusion.utils.PROTEIN_DOMAIN:
-            c.execute(
+        for i in utils.PROTEIN_DOMAIN:
+            self.c.execute(
                 "CREATE TABLE " + i[0] +" (" + \
                 "ensembl_transcript_id text," +
                 i[0] + " text," + \
