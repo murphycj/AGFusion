@@ -13,10 +13,10 @@ def manage_db():
         'exists, then species-specific portion of the database will be updated.'
     )
     parser.add_argument(
-        '--database_name',
+        '--database_dir',
         type=str,
         required=True,
-        help='Path to the database (default: updates the current database if it already exists)'
+        help='Path to the database director (default: updates the current database if it already exists)'
     )
     parser.add_argument(
         '--ensembl_server',
@@ -39,13 +39,6 @@ def manage_db():
         help='The reference genome to add: GRCh38 (default), GRCh37, or GRCm38'
     )
     parser.add_argument(
-        '--reference_dir',
-        type=str,
-        required=False,
-        default="GRCh38",
-        help='The directory containing the reference fasta and gtf files'
-    )
-    parser.add_argument(
         '--p',
         type=int,
         default=1,
@@ -53,9 +46,9 @@ def manage_db():
     )
     args = parser.parse_args()
 
-    db = database.AGFusionDBBManager(args.database_name)
-    db.add_fasta_gtf(args.reference,args.reference_dir)
-    db.fetch_data(args.ensembl_server,args.ensembl_dataset,args.reference_dir,args.p)
+    db = database.AGFusionDBBManager(args.database_dir,args.reference)
+    db.add_fasta_gtf()
+    db.fetch_data(args.ensembl_server,args.ensembl_dataset,args.p)
 
 def main():
 

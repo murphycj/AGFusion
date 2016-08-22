@@ -78,7 +78,7 @@ def _query_job(index,filters,attributes,ntries,ensembl,return_dict):
 
     return
 
-class AGFusionDB:
+class AGFusionDB(object):
     """
     Class to handle methods around interacting with the AGFusion SQLite3
     database
@@ -87,24 +87,42 @@ class AGFusionDB:
     reference_name
     """
 
-    def __init__(self,database_name):
+    def __init__(self,database_dir):
 
-        self.database_name=database_name
+        self.database_dir=database_dir
         self.fastas = {}
 
-        self.conn = sqlite3.connect(self.database_name)
+        assert os.path.exists(os.path.abspath(os.path.join(self.database_dir,'agfusion.db'))), "database does not exist!"
+
+        self.conn = sqlite3.connect(
+            os.path.abspath(
+                os.path.join(self.database_dir,'agfusion.db')
+                )
+            )
         self.c = self.conn.cursor()
         self.conn.commit()
 
         #check that the files that are referenced in the DB are where
         #they are supposed to be
 
-        self.c.execute('SELECT * FROM FastaGtf')
-        files = self.c.fetchall()
-        for ref in files:
-            for f in ref:
-                assert os.path.exists(f), "The file %s cannot be found!" % f
+        if self._check_table("FastaGtf"):
+            self.c.execute('SELECT * FROM FastaGtf')
+            files = self.c.fetchall()
+            for ref in files:
+                for f in ref:
+                    assert os.path.exists(f), "The file %s cannot be found!" % f
 
+    def _check_table(self,table):
+        """
+        Check if table exists
+        """
+
+        self.c.execute("SELECT * FROM sqlite_master WHERE name = \'" + table + "\' and type='table';")
+
+        if len(self.c.fetchall())==0:
+            return False
+        else:
+            return True
 
     def close(self):
         """
@@ -121,27 +139,59 @@ class AGFusionDBBManager(AGFusionDB):
     reference
     """
 
-    def __init__(self,database_name):
+    def __init__(self,database_dir,reference):
 
-        if not os.path.exists(self.database_name):
+        if not os.path.exists(os.path.join(database_dir,'agfusion.db')):
             print 'Creating database...'
+            fout = open(os.path.abspath(os.path.join(database_dir,'agfusion.db')),'a')
+            fout.close()
 
-        super(AGFusionDB,self).__init__(database_name)
+        super(AGFusionDBBManager,self).__init__(database_dir)
 
         self._ensembl=None
         self._biomart=None
+        self.reference=reference
 
-    def _check_table(self,table):
-        """
-        Check if table exists
-        """
+        self._check_for_tables()
 
-        self.c.execute("SELECT * FROM sqlite_master WHERE name = \'" + table + "\' and type='table';")
+    def _check_for_tables(self):
 
-        if len(db.c.fetchall())==0:
-            return False
-        else:
-            return True
+        if not self._check_table("FastaGtf"):
+            self.c.execute(
+                "CREATE TABLE FastaGtf " + utils.FASTA_GTF_SCHEMA
+            )
+            self.conn.commit()
+
+        if not self._check_table(self.reference):
+            self.c.execute(
+                "CREATE TABLE " + self.reference + " " + utils.GENE_SCHEMA
+            )
+            self.conn.commit()
+
+        if not self._check_table(self.reference + '_transcript'):
+            self.c.execute(
+                "CREATE TABLE " + self.reference + "_transcript " + utils.TRANSCRIPT_SCHEMA
+            )
+            self.conn.commit()
+
+        if not self._check_table(self.reference + '_annotation_transcript'):
+            self.c.execute(
+                "CREATE TABLE " + self.reference + "_annotation_transcript " + utils.TRANSCRIPT_ANNOTATION_SCHEMA
+            )
+            self.conn.commit()
+
+
+        for i in utils.PROTEIN_DOMAIN:
+            if not self._check_table(i[0]):
+                self.c.execute(
+                    "CREATE TABLE " + i[0] +" (" + \
+                    "ensembl_transcript_id text," +
+                    i[0] + " text," + \
+                    i[1] + " text," + \
+                    i[2] + " text" + \
+                    ")"
+                )
+                self.conn.commit()
 
     def _fetch(self,ids,filters,attributes,p,batch_size):
         """
@@ -347,9 +397,7 @@ class AGFusionDBBManager(AGFusionDB):
         self.c.executemany('INSERT INTO ' + table + ' VALUES (?,?,?,?,?,?,?)', data_into_db)
         self.conn.commit()
 
-    def fetch_data(self,ensembl_server,ensembl_dataset,reference,reference_dir,p,reference):
-
-        self._check_for_tables(reference,reference_dir)
+    def fetch_data(self,ensembl_server,ensembl_dataset,p):
 
         self._biomart = BiomartServer(ensembl_server)
         self._ensembl = self._biomart.datasets[ensembl_dataset]
@@ -375,7 +423,7 @@ class AGFusionDBBManager(AGFusionDB):
 
         self.c.execute(
             "SELECT ensembl_transcript_id FROM " + \
-            reference + '_transcript'
+            self.reference + '_transcript'
         )
 
         #self._fetch_protein_level_info(
@@ -384,55 +432,23 @@ class AGFusionDBBManager(AGFusionDB):
         #    self.reference
         #)
 
-    def add_fasta_gtf(self,reference,reference_dir):
+    def add_fasta_gtf(self):
         """
         Locate the fasta and gtf files and add the path to them to the database
         """
 
-        file_types = ['primary_assembly.fa','cdna.all.fa','cds.all.fa','pep.all.fa','gtf']
-        files = []
+        file_types = ['.dna.primary_assembly.fa','.cdna.all.fa','.cds.all.fa','.pep.all.fa','.gtf']
+        files = [self.reference]
         for f in file_types:
-            r = glob.glob(os.path.join(reference_dir,reference + '*' * f))
 
-            assert len(r)==1, "No files or too many reference files were found %s" % r
+            r = os.path.abspath(os.path.join(self.database_dir,self.reference,self.reference + f))
 
-            files += r
+            assert os.path.exists(r), "No files or too many reference files were found %s" % r
 
-        self.c.executemany(
-            "INSERT INTO FastaGtf VALUES (?,?,?,?,?)",
+            files.append(r)
+
+        self.c.execute(
+            "INSERT INTO FastaGtf VALUES (?,?,?,?,?,?)",
             files
         )
         self.conn.commit()
-
-    def chack_tables(self,reference,reference_dir):
-
-        if not self._check_table(reference_name):
-            self.c.execute(
-                "CREATE TABLE " + reference_name + " " + utils.GENE_SCHEMA
-            )
-            self.conn.commit()
-
-        if not self._check_table(reference_name + '_transcript'):
-            self.c.execute(
-                "CREATE TABLE " + reference_name + "_transcript " + utils.TRANSCRIPT_SCHEMA
-            )
-            self.conn.commit()
-
-        if not self._check_table(reference_name + '_annotation_transcript'):
-            self.c.execute(
-                "CREATE TABLE " + reference_name + "_annotation_transcript " + utils.TRANSCRIPT_ANNOTATION_SCHEMA
-            )
-            self.conn.commit()
-
-
-        for i in utils.PROTEIN_DOMAIN:
-            if not self._check_table(i[0]):
-                self.c.execute(
-                    "CREATE TABLE " + i[0] +" (" + \
-                    "ensembl_transcript_id text," +
-                    i[0] + " text," + \
-                    i[1] + " text," + \
-                    i[2] + " text" + \
-                    ")"
-                )
-                self.conn.commit()
