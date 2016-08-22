@@ -5,24 +5,18 @@ import argparse
 
 from agfusion import database, model
 
-def build_database():
+def manage_db():
 
     parser = argparse.ArgumentParser(
-        description='Build or update the SQLite3 database for human and mouse ' + \
+        description='Build or update the SQLite3 database for a reference ' + \
         'genomes by querying Biomart. If the database given by --name already ' + \
         'exists, then species-specific portion of the database will be updated.'
     )
     parser.add_argument(
-        '--name',
+        '--database_name',
         type=str,
         required=True,
-        help='Name of the database (default: updates the current database if it already exists)'
-    )
-    parser.add_argument(
-        '--p',
-        type=int,
-        default=1,
-        help='Number of processers to use to fetch data from Biomart (default 1).'
+        help='Path to the database (default: updates the current database if it already exists)'
     )
     parser.add_argument(
         '--ensembl_server',
@@ -32,16 +26,36 @@ def build_database():
         help='Name of the database (default: http://useast.ensembl.org/biomart)'
     )
     parser.add_argument(
-        '--ref',
+        '--ensembl_dataset',
+        type=str,
+        required=True,
+        help='The reference ensembl dataset to query biomart (e.g. hsapiens_gene_ensembl)'
+    )
+    parser.add_argument(
+        '--reference',
         type=str,
         required=False,
         default="GRCh38",
-        help='The reference genome to quiery: GRCh38 (default), GRCh37, or GRCm38'
+        help='The reference genome to add: GRCh38 (default), GRCh37, or GRCm38'
+    )
+    parser.add_argument(
+        '--reference_dir',
+        type=str,
+        required=False,
+        default="GRCh38",
+        help='The directory containing the reference fasta and gtf files'
+    )
+    parser.add_argument(
+        '--p',
+        type=int,
+        default=1,
+        help='Number of processers to use to fetch data from Biomart (default 1).'
     )
     args = parser.parse_args()
 
-    db = database.AGFusionSQlite3DB(args.name,args.ref)
-    db.fetch_data(args.ensembl_server,args.p)
+    db = database.AGFusionDBBManager(args.database_name)
+    db.add_fasta_gtf(args.reference,args.reference_dir)
+    db.fetch_data(args.ensembl_server,args.ensembl_dataset,args.reference_dir,args.p)
 
 def main():
 

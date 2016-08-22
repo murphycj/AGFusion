@@ -3,6 +3,7 @@ import sys
 import os
 import sqlite3
 import requests
+import glob
 
 from tqdm import tqdm
 from biomart import BiomartServer
@@ -77,35 +78,70 @@ def _query_job(index,filters,attributes,ntries,ensembl,return_dict):
 
     return
 
-class AGFusionSQlite3DB:
+class AGFusionDB:
     """
     Class to handle methods around interacting with the AGFusion SQLite3
     database
+
+    name: name of the database
+    reference_name
     """
 
-    def __init__(self,name,reference):
+    def __init__(self,database_name):
 
-        self.name=name
-        self.reference=reference
-        self.datasets = {
-            'GRCh38':'hsapiens_gene_ensembl',
-            'GRCh37':'hsapiens_gene_ensembl',
-            'GRCm38':'mmusculus_gene_ensembl'
-        }
+        self.database_name=database_name
+        self.fastas = {}
 
-        if not os.path.exists(self.name):
+        self.conn = sqlite3.connect(self.database_name)
+        self.c = self.conn.cursor()
+        self.conn.commit()
 
-            print 'Creating database and initiating tables...'
+        #check that the files that are referenced in the DB are where
+        #they are supposed to be
 
-            self.conn = sqlite3.connect(self.name)
-            self.c = self.conn.cursor()
-            self.initiate_tables()
-        else:
-            self.conn = sqlite3.connect(self.name)
-            self.c = self.conn.cursor()
+        self.c.execute('SELECT * FROM FastaGtf')
+        files = self.c.fetchall()
+        for ref in files:
+            for f in ref:
+                assert os.path.exists(f), "The file %s cannot be found!" % f
+
+
+    def close(self):
+        """
+        Close the connection to the database
+        """
+
+        self.conn.close()
+
+class AGFusionDBBManager(AGFusionDB):
+    """
+    Class to handle methods managing the SQLite3 database
+
+    name: name of the database
+    reference
+    """
+
+    def __init__(self,database_name):
+
+        if not os.path.exists(self.database_name):
+            print 'Creating database...'
+
+        super(AGFusionDB,self).__init__(database_name)
 
         self._ensembl=None
         self._biomart=None
+
+    def _check_table(self,table):
+        """
+        Check if table exists
+        """
+
+        self.c.execute("SELECT * FROM sqlite_master WHERE name = \'" + table + "\' and type='table';")
+
+        if len(db.c.fetchall())==0:
+            return False
+        else:
+            return True
 
     def _fetch(self,ids,filters,attributes,p,batch_size):
         """
@@ -311,21 +347,16 @@ class AGFusionSQlite3DB:
         self.c.executemany('INSERT INTO ' + table + ' VALUES (?,?,?,?,?,?,?)', data_into_db)
         self.conn.commit()
 
-    def close(self):
-        """
-        Close the connection to the database
-        """
+    def fetch_data(self,ensembl_server,ensembl_dataset,reference,reference_dir,p,reference):
 
-        self.conn.close()
-
-    def fetch_data(self,ensembl_server,p):
+        self._check_for_tables(reference,reference_dir)
 
         self._biomart = BiomartServer(ensembl_server)
-        self._ensembl = self._biomart.datasets[self.datasets[self.reference]]
+        self._ensembl = self._biomart.datasets[ensembl_dataset]
 
         #get all the ensembl genes
 
-        print 'Fetching all genes...'
+        #print 'Fetching all genes...'
 
         #r=self._ensembl.search({'attributes':['ensembl_gene_id']})
 
@@ -334,17 +365,17 @@ class AGFusionSQlite3DB:
         #for line in r.iter_lines():
         #    genes.append(line.decode('utf-8'))
 
-        self._fetch_gene_level_info(["ENSG00000066468","ENSG00000197959"],p,self.reference)
+        #self._fetch_gene_level_info(["ENSG00000066468","ENSG00000197959"],p,reference)
         #self._fetch_gene_level_info(genes[0:1000],p,self.reference)
 
-        self._fetch_transcript_level_info(["ENSG00000066468","ENSG00000197959"],p)
+        #self._fetch_transcript_level_info(["ENSG00000066468","ENSG00000197959"],p)
         #self._fetch_transcript_level_info(genes,p)
 
         #get all transcript ids
 
         self.c.execute(
             "SELECT ensembl_transcript_id FROM " + \
-            self.reference + '_transcript'
+            reference + '_transcript'
         )
 
         #self._fetch_protein_level_info(
@@ -353,37 +384,55 @@ class AGFusionSQlite3DB:
         #    self.reference
         #)
 
-    def initiate_tables(self):
+    def add_fasta_gtf(self,reference,reference_dir):
+        """
+        Locate the fasta and gtf files and add the path to them to the database
+        """
 
-        self.c.execute(
-            "CREATE TABLE GRCh38 " + utils.GENE_SCHEMA
-        )
-        self.c.execute(
-            "CREATE TABLE GRCm38 " + utils.GENE_SCHEMA
-        )
+        file_types = ['primary_assembly.fa','cdna.all.fa','cds.all.fa','pep.all.fa','gtf']
+        files = []
+        for f in file_types:
+            r = glob.glob(os.path.join(reference_dir,reference + '*' * f))
 
-        self.c.execute(
-            "CREATE TABLE GRCh38_transcript " + utils.TRANSCRIPT_SCHEMA
-        )
-        self.c.execute(
-            "CREATE TABLE GRCm38_transcript " + utils.TRANSCRIPT_SCHEMA
-        )
+            assert len(r)==1, "No files or too many reference files were found %s" % r
 
-        self.c.execute(
-            "CREATE TABLE GRCh38_annotation_transcript " + utils.TRANSCRIPT_ANNOTATION_SCHEMA
+            files += r
+
+        self.c.executemany(
+            "INSERT INTO FastaGtf VALUES (?,?,?,?,?)",
+            files
         )
-        self.c.execute(
-            "CREATE TABLE GRCm38_annotation_transcript " + utils.TRANSCRIPT_ANNOTATION_SCHEMA
-        )
+        self.conn.commit()
+
+    def chack_tables(self,reference,reference_dir):
+
+        if not self._check_table(reference_name):
+            self.c.execute(
+                "CREATE TABLE " + reference_name + " " + utils.GENE_SCHEMA
+            )
+            self.conn.commit()
+
+        if not self._check_table(reference_name + '_transcript'):
+            self.c.execute(
+                "CREATE TABLE " + reference_name + "_transcript " + utils.TRANSCRIPT_SCHEMA
+            )
+            self.conn.commit()
+
+        if not self._check_table(reference_name + '_annotation_transcript'):
+            self.c.execute(
+                "CREATE TABLE " + reference_name + "_annotation_transcript " + utils.TRANSCRIPT_ANNOTATION_SCHEMA
+            )
+            self.conn.commit()
+
 
         for i in utils.PROTEIN_DOMAIN:
-            self.c.execute(
-                "CREATE TABLE " + i[0] +" (" + \
-                "ensembl_transcript_id text," +
-                i[0] + " text," + \
-                i[1] + " text," + \
-                i[2] + " text" + \
-                ")"
-            )
-
-        self.conn.commit()
+            if not self._check_table(i[0]):
+                self.c.execute(
+                    "CREATE TABLE " + i[0] +" (" + \
+                    "ensembl_transcript_id text," +
+                    i[0] + " text," + \
+                    i[1] + " text," + \
+                    i[2] + " text" + \
+                    ")"
+                )
+                self.conn.commit()

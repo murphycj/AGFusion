@@ -15,6 +15,21 @@ PROTEIN_DOMAIN = [
     ['ncoils','ncoils_start','ncoils_end']
 ]
 
+TABLES = [
+    '',
+    '_transcript',
+    '_annotation_transcript'
+]
+
+FASTA_GTF_SCHEMA = "(" + \
+    "name text," + \
+    "reference text," + \
+    "cdna text," + \
+    "cds text," + \
+    "pep text," + \
+    "gtf text" + \
+    ")"
+
 GENE_SCHEMA_COLUMNS = [
     'ensembl_gene_id',
     'entrez_gene',

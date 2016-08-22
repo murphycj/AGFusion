@@ -1,6 +1,7 @@
 from agfusion import utils, exceptions
 import pandas
 from PIL import *
+import pyfaidx
 
 class Model(object):
     def __new__(cls, *args, **kwargs):

@@ -1,6 +1,7 @@
 import agfusion
 
-db = agfusion.AGFusionSQlite3DB('../bin/test.db','GRCh38')
+db = agfusion.AGFusionDB('../data/test.db','GRCh38')
+db.validate_databse('GRCh38')
 #db.c.execute("SELECT * FROM GRCh38_transcript WHERE ensembl_gene_id==\"ENSG00000066468\"")
 #t=db.c.fetchall()
 
