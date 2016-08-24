@@ -1,7 +1,7 @@
 import agfusion
 import pyensembl
 
-data = pyensembl.EnsemblRelease(79)
+data = pyensembl.EnsemblRelease(84,'human')
 
 #db = agfusion.AGFusionDB('../../data/agfusion.db')
 
@@ -21,7 +21,7 @@ dnm3 = agfusion.Gene(
 )
 #dnm3.predict_effect()
 
-fusion = model.Fusion(fgfr2,dnm3)
-fusion.save_transcript_sequences('fgfr2-dnm3/transcript_sequences.fa')
-fusion.save_transcript_sequences('fgfr2-dnm3/protein_sequences.fa')
-fusion.save_image('fgfr2-dnm3')
+fusion = agfusion.model.Fusion(fgfr2,dnm3)
+fusion.save_transcript_cdna('fgfr2-dnm3/transcript.cdna.fa')
+fusion.save_transcript_cds('fgfr2-dnm3/transcript.cds.fa')
+#fusion.save_image('fgfr2-dnm3')
