@@ -4,6 +4,7 @@ import sys
 import argparse
 
 from agfusion import database, model
+import pyensembl
 
 def manage_db():
 
@@ -32,11 +33,16 @@ def manage_db():
         help='The reference ensembl dataset to query biomart (e.g. hsapiens_gene_ensembl)'
     )
     parser.add_argument(
-        '--reference',
+        '--species',
         type=str,
-        required=False,
-        default="GRCh38",
-        help='The reference genome to add: GRCh38 (default), GRCh37, or GRCm38'
+        required=True,
+        help='Reference genome (GRCh38, GRCh37, or GRCm38)'
+    )
+    parser.add_argument(
+        '--release',
+        type=str,
+        required=True,
+        help='Ensembl release'
     )
     parser.add_argument(
         '--p',
@@ -46,9 +52,10 @@ def manage_db():
     )
     args = parser.parse_args()
 
-    db = database.AGFusionDBBManager(args.database_dir,args.reference)
-    db.add_fasta_gtf()
-    db.fetch_data(args.ensembl_server,args.ensembl_dataset,args.p)
+    data = pyensembl.EnsemblRelease(args.release,args.species)
+
+    db = database.AGFusionDBBManager(args.database_dir)
+    db.fetch_data(args.ensembl_server,args.ensembl_dataset,args.p,data.transcript_ids())
 
 def main():
 
@@ -67,15 +74,21 @@ def main():
     )
     parser.add_argument(
         '--junction5prime',
-        type=str,
+        type=int,
         required=True,
         help='Genomic location of predicted fuins for the 5\' gene partner'
     )
     parser.add_argument(
         '--junction3prime',
-        type=str,
+        type=int,
         required=True,
         help='Genomic location of predicted fuins for the 3\' gene partner'
+    )
+    parser.add_argument(
+        '--out',
+        type=str,
+        required=True,
+        help='Directory to save results'
     )
     parser.add_argument(
         '--db',
@@ -84,10 +97,16 @@ def main():
         help='The SQLite3 database.'
     )
     parser.add_argument(
-        '--ref',
+        '--species',
         type=str,
         required=True,
         help='Reference genome (GRCh38, GRCh37, or GRCm38)'
+    )
+    parser.add_argument(
+        '--release',
+        type=str,
+        required=True,
+        help='Ensembl release'
     )
     parser.add_argument(
         '--type',
@@ -112,16 +131,30 @@ def main():
 
     args = parser.parse_args()
 
-    db = database.AGFusionSQlite3DB(args.db)
+    if not os.path.exists(args.out):
+        os.mkdir(args.out)
 
-    gene5prime = model.Gene(args.gene5prime,args.junction5prime,db)
+    #db = database.AGFusionSQlite3DB(args.db)
+    data = pyensembl.EnsemblRelease(args.release,args.species)
 
-    gene3prime = model.Gene(args.gene3prime,args.junction3prime,db)
+    gene5prime = model.Gene(
+        gene=data.gene_by_id(args.gene5prime),
+        junction=args.junction5prime,
+        db=None
+    )
+
+    gene3prime = model.Gene(
+        gene=data.gene_by_id(args.gene3prime),
+        junction=args.junction3prime,
+        db=None
+    )
 
     fusion = model.Fusion(gene5prime,gene3prime)
 
-    fusion.save_image()
+    fusion.save_transcript_sequences(args.out + '/transcript_sequences.fa')
+    #fusion.save_transcript_sequences(args.out + '/protein_sequences.fa')
+    #fusion.save_image(args.out)
 
     if args.WT:
-        gene5prime.save_image()
-        gene3prime.save_image()
+        gene5prime.save_image(args.out)
+        gene3prime.save_image(args.out)

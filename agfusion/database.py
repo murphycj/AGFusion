@@ -49,10 +49,6 @@ def _query_job(index,filters,attributes,ntries,ensembl,return_dict):
         for line in r.iter_lines():
             line = line.decode('utf-8').split('\t')
             data.append(line)
-            #if len(line)!=7:
-                #print line
-                #print 'too short'
-
 
         return_dict[index]=data
 
@@ -102,16 +98,6 @@ class AGFusionDB(object):
         self.c = self.conn.cursor()
         self.conn.commit()
 
-        #check that the files that are referenced in the DB are where
-        #they are supposed to be
-
-        if self._check_table("FastaGtf"):
-            self.c.execute('SELECT * FROM FastaGtf')
-            files = self.c.fetchall()
-            for ref in files:
-                for f in ref:
-                    assert os.path.exists(f), "The file %s cannot be found!" % f
-
     def _check_table(self,table):
         """
         Check if table exists
@@ -139,7 +125,7 @@ class AGFusionDBBManager(AGFusionDB):
     reference
     """
 
-    def __init__(self,database_dir,reference):
+    def __init__(self,database_dir):
 
         if not os.path.exists(os.path.join(database_dir,'agfusion.db')):
             print 'Creating database...'
@@ -150,36 +136,11 @@ class AGFusionDBBManager(AGFusionDB):
 
         self._ensembl=None
         self._biomart=None
-        self.reference=reference
+        #self.reference=reference
 
         self._check_for_tables()
 
     def _check_for_tables(self):
-
-        if not self._check_table("FastaGtf"):
-            self.c.execute(
-                "CREATE TABLE FastaGtf " + utils.FASTA_GTF_SCHEMA
-            )
-            self.conn.commit()
-
-        if not self._check_table(self.reference):
-            self.c.execute(
-                "CREATE TABLE " + self.reference + " " + utils.GENE_SCHEMA
-            )
-            self.conn.commit()
-
-        if not self._check_table(self.reference + '_transcript'):
-            self.c.execute(
-                "CREATE TABLE " + self.reference + "_transcript " + utils.TRANSCRIPT_SCHEMA
-            )
-            self.conn.commit()
-
-        if not self._check_table(self.reference + '_annotation_transcript'):
-            self.c.execute(
-                "CREATE TABLE " + self.reference + "_annotation_transcript " + utils.TRANSCRIPT_ANNOTATION_SCHEMA
-            )
-            self.conn.commit()
-
 
         for i in utils.PROTEIN_DOMAIN:
             if not self._check_table(i[0]):
@@ -228,20 +189,13 @@ class AGFusionDBBManager(AGFusionDB):
 
         return return_dict
 
-    def _fetch_protein_level_info(self,genes,p,table):
+    def _fetch_protein_level_info(self,genes,p,columns,table):
         print 'Fetching protein-level information...'
 
         data = self._fetch(
             ids=genes,
             filters='ensembl_transcript_id',
-            attributes=[
-                'ensembl_transcript_id',
-                'ensembl_peptide_id',
-                'transcript_biotype',
-                'transcript_start',
-                'transcript_end',
-                'transcript_length'
-            ],
+            attributes=['ensembl_transcript_id'] + columns,
             p=p,
             batch_size=100
         )
@@ -259,129 +213,23 @@ class AGFusionDBBManager(AGFusionDB):
                     str(r[0]),
                     str(r[1]),
                     str(r[2]),
-                    str(r[3]),
-                    int(r[4]),
-                    int(r[5]),
-                    int(r[6]),
+                    str(r[3])
                 ])
 
         self.c.execute('DELETE FROM ' + table)
         self.conn.commit()
 
-        self.c.executemany('INSERT INTO ' + table + ' VALUES (?,?,?,?,?,?,?)', data_into_db)
+        self.c.executemany('INSERT INTO ' + table + ' VALUES (?,?,?,?)', data_into_db)
         self.conn.commit()
 
-    def fetch_data(self,ensembl_server,ensembl_dataset,p):
+    def fetch_data(self,ensembl_server,ensembl_dataset,p,transcripts):
 
         self._biomart = BiomartServer(ensembl_server)
         self._ensembl = self._biomart.datasets[ensembl_dataset]
 
-        #get all the ensembl genes
-
-        #print 'Fetching all genes...'
-
-        #r=self._ensembl.search({'attributes':['ensembl_gene_id']})
-
-        #genes=[]
-
-        #for line in r.iter_lines():
-        #    genes.append(line.decode('utf-8'))
-
-        #self._fetch_gene_level_info(["ENSG00000066468","ENSG00000197959"],p,reference)
-        #self._fetch_gene_level_info(genes[0:1000],p,self.reference)
-
-        #self._fetch_transcript_level_info(["ENSG00000066468","ENSG00000197959"],p)
-        #self._fetch_transcript_level_info(genes,p)
-
-        #get all transcript ids
-
-        self.c.execute(
-            "SELECT ensembl_transcript_id FROM " + \
-            self.reference + '_transcript'
+        self._fetch_protein_level_info(
+            transcripts,
+            p,
+            utils.PFAM_DOMAIN,
+            'pfam'
         )
-
-        #self._fetch_protein_level_info(
-        #    [str(i[0]) for i in self.c.fetchall()][0:1000],
-        #    p,
-        #    self.reference
-        #)
-
-    def _parse_gtf(self):
-        """
-        add the GTF file to the SQLite3 database
-        """
-
-        gtf_file = os.path.join(self.database_dir,self.reference,self.reference + '.gtf')
-
-        fin = open(gtf_file,'r')
-
-        data = {'transcript':{},'exons':{}}
-        reverse_strand = False
-
-        for line in fin.readlines():
-
-            #skip the header lines
-
-            if len(re.findall('^#!',line))==0:
-
-                #only get the lines corresponding to the transcript of interest
-
-                if len(re.findall(args.transcript,line))!=0:
-                    line = line.rstrip().split('\t')
-
-                    if line[2]=='transcript':  # get the transcript info
-                        data['transcript'] = {'start': int(line[3]), 'end': int(line[4])}
-
-                        #is it on the reverse strand?
-
-                        if line[6]=='-':
-                            reverse_strand = True
-
-                    elif line[2]=='exon': #exon info
-                        num = re.findall(r'exon_number "\d{1,2}"',line[8])
-                        assert len(num)!=0, 'no exon number found for exon'
-                        num = int(num[0].split('"')[1])
-
-                        data['exons'][num] = {'start':int(line[3]),'end':int(line[4]),'CDS':None}
-
-                    elif line[2]=='CDS': #CDS info
-                        num = re.findall(r'exon_number "\d{1,2}"',line[8])
-
-                        assert len(num)!=0, 'no exon number found for CDS'
-                        num = int(num[0].split('"')[1])
-                        if num not in data['exons']:
-                            import pdb; pdb.set_trace()
-
-                        assert num in data['exons'], 'exon number for CDS not in data'
-
-                        data['exons'][num]['CDS'] = {'start':int(line[3]),'end':int(line[4])}
-
-                        assert data['exons'][num]['CDS']['start'] >= data['exons'][num]['start'], 'CDS starts before exon'
-                        assert data['exons'][num]['CDS']['end'] <= data['exons'][num]['end'], 'CDS starts before exon'
-        fin.close()
-
-    def add_fasta_gtf(self):
-        """
-        Locate the fasta and gtf files and add the path to them to the database
-        """
-
-        file_types = ['.dna.primary_assembly.fa','.cdna.all.fa','.cds.all.fa','.pep.all.fa','.gtf']
-        files = [self.reference]
-        for f in file_types:
-
-            r = os.path.abspath(os.path.join(self.database_dir,self.reference,self.reference + f))
-
-            assert os.path.exists(r), "No files or too many reference files were found %s" % r
-
-            if os.path.splitext(r)[1]=='.fa':
-                assert os.path.exists(r + '.fai'), "No .fai found for %s" % r
-
-            files.append(r)
-
-        self.c.execute(
-            "INSERT INTO FastaGtf VALUES (?,?,?,?,?,?)",
-            files
-        )
-        self.conn.commit()
-
-        self.add_fasta_gtf()
