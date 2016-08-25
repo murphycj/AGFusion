@@ -14,10 +14,10 @@ def manage_db():
         'exists, then species-specific portion of the database will be updated.'
     )
     parser.add_argument(
-        '--database_dir',
+        '--database',
         type=str,
         required=True,
-        help='Path to the database director (default: updates the current database if it already exists)'
+        help='Path to the database (default: updates the current database if it already exists)'
     )
     parser.add_argument(
         '--ensembl_server',
@@ -54,7 +54,7 @@ def manage_db():
 
     data = pyensembl.EnsemblRelease(args.release,args.species)
 
-    db = database.AGFusionDBBManager(args.database_dir)
+    db = database.AGFusionDBBManager(args.database)
     db.fetch_data(args.ensembl_server,args.ensembl_dataset,args.p,data.transcript_ids())
 
 def main():

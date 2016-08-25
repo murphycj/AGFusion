@@ -83,17 +83,15 @@ class AGFusionDB(object):
     reference_name
     """
 
-    def __init__(self,database_dir):
+    def __init__(self,database):
 
-        self.database_dir=database_dir
+        self.database=os.path.abspath(database)
         self.fastas = {}
 
-        assert os.path.exists(os.path.abspath(os.path.join(self.database_dir,'agfusion.db'))), "database does not exist!"
+        assert os.path.exists(self.database), "database does not exist!"
 
         self.conn = sqlite3.connect(
-            os.path.abspath(
-                os.path.join(self.database_dir,'agfusion.db')
-                )
+            self.database
             )
         self.c = self.conn.cursor()
         self.conn.commit()
@@ -125,14 +123,14 @@ class AGFusionDBBManager(AGFusionDB):
     reference
     """
 
-    def __init__(self,database_dir):
+    def __init__(self,database):
 
-        if not os.path.exists(os.path.join(database_dir,'agfusion.db')):
+        if not os.path.exists(database):
             print 'Creating database...'
-            fout = open(os.path.abspath(os.path.join(database_dir,'agfusion.db')),'a')
+            fout = open(os.path.abspath(database),'a')
             fout.close()
 
-        super(AGFusionDBBManager,self).__init__(database_dir)
+        super(AGFusionDBBManager,self).__init__(database)
 
         self._ensembl=None
         self._biomart=None
