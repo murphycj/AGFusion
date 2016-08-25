@@ -24,4 +24,5 @@ dnm3 = agfusion.Gene(
 fusion = agfusion.model.Fusion(fgfr2,dnm3)
 fusion.save_transcript_cdna('fgfr2-dnm3/transcript.cdna.fa')
 fusion.save_transcript_cds('fgfr2-dnm3/transcript.cds.fa')
+fusion.save_proteins('fgfr2-dnm3/protein.fa')
 #fusion.save_image('fgfr2-dnm3')
