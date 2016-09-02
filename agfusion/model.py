@@ -13,6 +13,8 @@ class Model(object):
             raise TypeError("Model shoud not be instantiated")
         return object.__new__(cls, *args, **kwargs)
 
+        self.is_fusion = False
+
         self.domains={
             i:{''} for i,j,k in utils.PROTEIN_DOMAIN
         }
@@ -29,8 +31,80 @@ class Model(object):
             }
         }
 
-    def save_image(self,file_prefix):
-        pass
+    def save_image(self,file_prefix,length_normalize=None,dpi=90,file_type='png',fontsize=12):
+
+        import matplotlib.pyplot as plt
+        import matplotlib.patches as patches
+
+        assert file_type in ['png','pdf','jpeg'], 'provided wrong file type'
+
+        for name, transcript in self.transcripts.items():
+
+            if not transcript.has_coding_potential:
+                continue
+
+            fig = plt.figure(figsize=(20,5))
+            ax = fig.add_subplot(111)
+
+            #main protein body
+
+            ax.add_patch(
+                patches.Rectangle(
+                    (0.05, 0.45),
+                    0.9,
+                    0.1,
+                    fill=False
+                )
+            )
+            ax.text(
+                0.5,
+                0.9,
+                name,
+                horizontalalignment='center',
+                fontsize=fontsize
+            )
+
+            #plot domains
+
+            for domain in transcript.domains['pfam']:
+
+                if length_normalize is None:
+                    length_normalize = transcript.protein_length
+
+                offset=0.05
+
+                domain_name = domain[1]
+                domain_start = (int(domain[2])/float(length_normalize))*0.9 + offset
+                domain_end = (int(domain[3])/float(length_normalize))*0.9 + offset
+                domain_center = (domain_end-domain_start)/2. + domain_start
+
+                ax.add_patch(
+                    patches.Rectangle(
+                        (
+                            domain_start,
+                            0.45
+                        ),
+                        domain_end-domain_start,
+                        0.1
+                    )
+                )
+                ax.text(
+                    domain_center,
+                    0.4,
+                    domain_name,
+                    horizontalalignment='center',
+                    fontsize=fontsize
+                )
+
+            ax.axis('off')
+            filename = file_prefix + '.' + name + '.' + file_type
+            fig.savefig(
+                filename,
+                dpi=dpi,
+                bbox_inches='tight'
+            )
+            plt.close(fig)
+
 
     def save_transcript_cdna(self,out_file):
 
@@ -113,6 +187,7 @@ class Fusion(Model):
         self.gene3prime=gene3prime
         self.name = self.gene5prime.gene.name + '-' + self.gene3prime.gene.name
         self.db=db
+        self.is_fusion = True
 
         self.transcripts = {}
 
@@ -164,6 +239,7 @@ class FusionTranscript():
         self.cds=None
         self.cdna=None
         self.protein=None
+        self.protein_length=None
         self.molecular_weight=None
         self.domains={
             i:[] for i,j,k in utils.PROTEIN_DOMAIN
@@ -274,12 +350,13 @@ class FusionTranscript():
         protein_seq = protein_seq[0:protein_seq.find('*')]
 
         self.molecular_weight = SeqUtils.molecular_weight(protein_seq)/1000.
+        self.protein_length = len(protein_seq)
 
         self.protein = SeqRecord.SeqRecord(
             protein_seq,
             id=self.protein_names,
             name=self.protein_names,
-            description="length=" + str(len(protein_seq)) + \
+            description="length=" + str(self.protein_length) + \
                 ", kD: " + str(self.molecular_weight) + \
                 ", transcripts: " + str(self.name) + ', ' + \
                 ", genes: " + str(self.gene_names)
