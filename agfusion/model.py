@@ -182,7 +182,7 @@ class Fusion(Model):
     Generates the information needed for the gene fusion
     """
 
-    def __init__(self,gene5prime=None,gene3prime=None,db=None):
+    def __init__(self,gene5prime=None,gene3prime=None,db=None,transcripts_5prime=None,transcripts_3prime=None):
         self.gene5prime=gene5prime
         self.gene3prime=gene3prime
         self.name = self.gene5prime.gene.name + '-' + self.gene3prime.gene.name
@@ -196,6 +196,11 @@ class Fusion(Model):
                         self.gene3prime.gene.transcripts)):
             transcript1 = combo[0]
             transcript2 = combo[1]
+
+            if transcripts_5prime is not None and transcript1.id not in transcripts_5prime:
+                continue
+            if transcripts_3prime is not None and transcript2.id not in transcripts_3prime:
+                continue
 
             #skip if the junction is outside the range of either transcript
 
@@ -213,7 +218,6 @@ class Fusion(Model):
                 gene3prime,
                 db=db
             )
-
 
 class FusionTranscript():
     """
@@ -387,52 +391,41 @@ class FusionTranscript():
         if self.transcript1.strand=="+":
             for cds in self.transcript1.coding_sequence_position_ranges:
                 if self.gene5prime.junction >= cds[1]:
-                    self.transcript_cds_junction_5prime += (cds[1] - cds[0])
+                    self.transcript_cds_junction_5prime += (cds[1] - cds[0] + 1)
                 elif self.gene5prime.junction <= cds[0]:
                     break
                 else:
-                    self.transcript_cds_junction_5prime += (self.gene5prime.junction - cds[0])
+                    self.transcript_cds_junction_5prime += (self.gene5prime.junction - cds[0] + 1)
                     break
         else:
             for cds in self.transcript1.coding_sequence_position_ranges:
-                if self.transcript1.id=='ENST00000369060':
-                    print 'boo'
                 if self.gene5prime.junction <= cds[0]:
-                    self.transcript_cds_junction_5prime += (cds[1] - cds[0])
-                    #if self.transcript1.id=='ENST00000369060':
-                    #    print cds
+                    self.transcript_cds_junction_5prime += (cds[1] - cds[0] + 1)
                 elif self.gene5prime.junction >= cds[1]:
                     break
                 else:
-                    #if self.transcript1.id=='ENST00000369060':
-                        #print cds
-                    self.transcript_cds_junction_5prime += (cds[1] - self.gene5prime.junction)
+                    self.transcript_cds_junction_5prime += (cds[1] - self.gene5prime.junction + 1)
 
-        if self.transcript1.id=='ENST00000369060':
-            print self.transcript_cds_junction_5prime
-            print self.transcript1.coding_sequence_position_ranges
-        if self.transcript_cds_junction_5prime==3394:
-            import pdb; pdb.set_trace()
         self.cds_5prime = self.transcript1.coding_sequence[0:self.transcript_cds_junction_5prime]
 
         if self.transcript2.strand=="+":
             for cds in self.transcript2.coding_sequence_position_ranges:
                 if self.gene3prime.junction >= cds[1]:
-                    self.transcript_cds_junction_3prime += (cds[1] - cds[0])
+                    self.transcript_cds_junction_3prime += (cds[1] - cds[0] + 1)
                 elif self.gene3prime.junction <= cds[0]:
                     break
                 else:
-                    self.transcript_cds_junction_3prime += (self.gene3prime.junction - cds[0])
+                    self.transcript_cds_junction_3prime += (self.gene3prime.junction - cds[0] + 1)
         else:
             for cds in transcript2.coding_sequence_position_ranges:
                 if self.gene3prime.junction <= cds[0]:
-                    self.transcript_cds_junction_3prime += (cds[1] - cds[0])
+                    self.transcript_cds_junction_3prime += (cds[1] - cds[0] + 1)
                 elif self.gene3prime.junction >= cds[1]:
                     break
                 else:
-                    self.transcript_cds_junction_3prime += (cds[1] - self.gene3prime.junction)
+                    self.transcript_cds_junction_3prime += (cds[1] - self.gene3prime.junction + 1)
 
-        self.cds_3prime = self.transcript1.coding_sequence[self.transcript_cds_junction_3prime::]
+        self.cds_3prime = self.transcript2.coding_sequence[self.transcript_cds_junction_3prime::]
 
         self.cds = SeqRecord.SeqRecord(
             Seq.Seq(self.cds_5prime + self.cds_3prime,generic_dna),
@@ -458,7 +451,7 @@ class FusionTranscript():
         if self.transcript1.strand=="+":
             for exon in self.transcript1.exons:
                 if self.gene5prime.junction >= exon.end:
-                    self.transcript_cdna_junction_5prime += exon.end - exon.start
+                    self.transcript_cdna_junction_5prime += (exon.end - exon.start + 1)
                 elif self.gene5prime.junction <= exon.start:
                     break
                 else:
@@ -467,32 +460,32 @@ class FusionTranscript():
         else:
             for exon in self.transcript1.exons:
                 if self.gene5prime.junction <= exon.start:
-                    self.transcript_cdna_junction_5prime += exon.end - exon.start
+                    self.transcript_cdna_junction_5prime += (exon.end - exon.start + 1)
                 elif self.gene5prime.junction >= exon.end:
                     break
                 else:
-                    self.transcript_cdna_junction_5prime += exon.end - self.gene5prime.junction
+                    self.transcript_cdna_junction_5prime += (exon.end - self.gene5prime.junction + 1)
 
         transcript_seq += self.transcript1.sequence[0:self.transcript_cdna_junction_5prime]
 
         if self.transcript2.strand=="+":
             for exon in self.transcript2.exons:
                 if self.gene3prime.junction >= exon.end:
-                    self.transcript_cdna_junction_3prime += exon.end - exon.start
+                    self.transcript_cdna_junction_3prime += (exon.end - exon.start + 1)
                 elif self.gene3prime.junction <= exon.start:
                     break
                 else:
-                    self.transcript_cdna_junction_3prime += self.gene3prime.junction - exon.start
+                    self.transcript_cdna_junction_3prime += (self.gene3prime.junction - exon.start + 1)
         else:
             for exon in self.transcript2.exons:
                 if self.gene3prime.junction <= exon.start:
-                    self.transcript_cdna_junction_3prime += exon.end - exon.start
+                    self.transcript_cdna_junction_3prime += (exon.end - exon.start + 1)
                 elif self.gene3prime.junction >= exon.end:
                     break
                 else:
-                    self.transcript_cdna_junction_3prime += exon.end - self.gene3prime.junction
+                    self.transcript_cdna_junction_3prime += (exon.end - self.gene3prime.junction + 1)
 
-        transcript_seq += self.transcript1.sequence[self.transcript_cdna_junction_3prime::]
+        transcript_seq += self.transcript2.sequence[self.transcript_cdna_junction_3prime::]
 
         self.cdna = SeqRecord.SeqRecord(
             Seq.Seq(transcript_seq,generic_dna),
