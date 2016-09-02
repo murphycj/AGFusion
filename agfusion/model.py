@@ -214,8 +214,6 @@ class Fusion(Model):
                 db=db
             )
 
-            self.transcripts[name].predict_effect()
-
 
 class FusionTranscript():
     """
@@ -316,6 +314,9 @@ class FusionTranscript():
         domains = map(lambda x: list(x),self.db.c.fetchall())
         for d in domains:
             d[0]=self.name
+            d[1] = str(d[1])
+            d[2] = int(d[2])
+            d[3] = int(d[3])
 
             if str(d[1])=='':
                 continue
@@ -323,10 +324,16 @@ class FusionTranscript():
             if self.transcript_protein_junction_3prime > int(d[3]):
                 continue
             elif self.transcript_protein_junction_5prime <= int(d[2]):
+                d[2]=(d[2]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
+                d[3]=(d[3]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
                 fusion_domains.append(d)
             else:
-                d[2] = self.transcript_protein_junction_5prime
+                d[2]=(d[2]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
+                d[3]=(d[3]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
                 fusion_domains.append(d)
+
+            if d[3]<d[2]:
+                import pdb; pdb.set_trace()
 
 
         self.domains['pfam'] = fusion_domains
@@ -335,6 +342,9 @@ class FusionTranscript():
         """
         Predict the potential protain amino acid sequence
         """
+
+        self.transcript_protein_junction_5prime = 0
+        self.transcript_protein_junction_3prime = 0
 
         self.protein_names = self.transcript1.protein_id + '-' + self.transcript2.protein_id
 
@@ -369,47 +379,58 @@ class FusionTranscript():
         Predict the potential nucleotide sequence
         """
 
-
-        transcript_junction_5prime=0
+        self.transcript_cds_junction_5prime = 0
+        self.transcript_cds_junction_3prime = 0
 
         #5prime transcript
 
         if self.transcript1.strand=="+":
             for cds in self.transcript1.coding_sequence_position_ranges:
                 if self.gene5prime.junction >= cds[1]:
-                    self.transcript_cds_junction_5prime += cds[1] - cds[0]
+                    self.transcript_cds_junction_5prime += (cds[1] - cds[0])
                 elif self.gene5prime.junction <= cds[0]:
                     break
                 else:
-                    self.transcript_cds_junction_5prime+=self.gene5prime.junction-cds[0]
+                    self.transcript_cds_junction_5prime += (self.gene5prime.junction - cds[0])
                     break
         else:
             for cds in self.transcript1.coding_sequence_position_ranges:
+                if self.transcript1.id=='ENST00000369060':
+                    print 'boo'
                 if self.gene5prime.junction <= cds[0]:
-                    self.transcript_cds_junction_5prime += cds[1] - cds[0]
+                    self.transcript_cds_junction_5prime += (cds[1] - cds[0])
+                    #if self.transcript1.id=='ENST00000369060':
+                    #    print cds
                 elif self.gene5prime.junction >= cds[1]:
                     break
                 else:
-                    self.transcript_cds_junction_5prime += cds[1] - self.gene5prime.junction
+                    #if self.transcript1.id=='ENST00000369060':
+                        #print cds
+                    self.transcript_cds_junction_5prime += (cds[1] - self.gene5prime.junction)
 
+        if self.transcript1.id=='ENST00000369060':
+            print self.transcript_cds_junction_5prime
+            print self.transcript1.coding_sequence_position_ranges
+        if self.transcript_cds_junction_5prime==3394:
+            import pdb; pdb.set_trace()
         self.cds_5prime = self.transcript1.coding_sequence[0:self.transcript_cds_junction_5prime]
 
         if self.transcript2.strand=="+":
             for cds in self.transcript2.coding_sequence_position_ranges:
                 if self.gene3prime.junction >= cds[1]:
-                    self.transcript_cds_junction_3prime += cds[1] - cds[0]
+                    self.transcript_cds_junction_3prime += (cds[1] - cds[0])
                 elif self.gene3prime.junction <= cds[0]:
                     break
                 else:
-                    self.transcript_cds_junction_3prime += self.gene3prime.junction - cds[0]
+                    self.transcript_cds_junction_3prime += (self.gene3prime.junction - cds[0])
         else:
             for cds in transcript2.coding_sequence_position_ranges:
                 if self.gene3prime.junction <= cds[0]:
-                    self.transcript_cds_junction_3prime += cds[1] - cds[0]
+                    self.transcript_cds_junction_3prime += (cds[1] - cds[0])
                 elif self.gene3prime.junction >= cds[1]:
                     break
                 else:
-                    self.transcript_cds_junction_3prime += cds[1] - self.gene3prime.junction
+                    self.transcript_cds_junction_3prime += (cds[1] - self.gene3prime.junction)
 
         self.cds_3prime = self.transcript1.coding_sequence[self.transcript_cds_junction_3prime::]
 
@@ -428,6 +449,8 @@ class FusionTranscript():
         Predict the potential nucleotide sequence
         """
 
+        self.transcript_cdna_junction_5prime = 0
+        self.transcript_cdna_junction_3prime = 0
         transcript_seq=''
 
         #5prime transcript
