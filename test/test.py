@@ -20,9 +20,8 @@ dnm3 = agfusion.Gene(
     db=db
 )
 
-
-fusion = agfusion.model.Fusion(fgfr2,dnm3,db=db,transcripts_5prime=['ENST00000351936'],transcripts_3prime=['ENST00000355305'])
-#fusion = agfusion.model.Fusion(fgfr2,dnm3,db=db)
+#fusion = agfusion.model.Fusion(fgfr2,dnm3,db=db,transcripts_5prime=['ENST00000346997'],transcripts_3prime=['ENST00000355305'])
+fusion = agfusion.model.Fusion(fgfr2,dnm3,db=db)
 fusion.save_transcript_cdna('fgfr2-dnm3/transcript.cdna.fa')
 fusion.save_transcript_cds('fgfr2-dnm3/transcript.cds.fa')
 fusion.save_proteins('fgfr2-dnm3/protein.fa')
@@ -31,6 +30,6 @@ fusion.save_image('fgfr2-dnm3/fgfr2-dnm3')
 
 
 #assert cdna
-cdna = SeqIO.parse(open('fgfr2-dnm3.cdna.fa','r'),'fasta').next()
-trans=fusion.transcripts[u'ENST00000613048-ENST00000627582']
-cdna.seq==trans.cdna.seq
+#cdna = SeqIO.parse(open('fgfr2-dnm3.cdna.fa','r'),'fasta').next()
+#trans=fusion.transcripts[u'ENST00000613048-ENST00000627582']
+#cdna.seq==trans.cdna.seq

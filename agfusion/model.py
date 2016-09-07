@@ -78,6 +78,7 @@ class Model(object):
                 domain_end = (int(domain[3])/float(length_normalize))*0.9 + offset
                 domain_center = (domain_end-domain_start)/2. + domain_start
 
+
                 ax.add_patch(
                     patches.Rectangle(
                         (
@@ -95,6 +96,18 @@ class Model(object):
                     horizontalalignment='center',
                     fontsize=fontsize
                 )
+
+            #add the junction
+
+            ax.add_line(plt.Line2D(
+                (
+                    (transcript.transcript_protein_junction_5prime/float(length_normalize))*0.9 + offset,
+                    (transcript.transcript_protein_junction_5prime/float(length_normalize))*0.9 + offset
+                ),
+                (0.4,0.6),
+                color='black'
+                )
+            )
 
             ax.axis('off')
             filename = file_prefix + '.' + name + '.' + file_type
@@ -234,9 +247,6 @@ class FusionTranscript():
         self.name=self.transcript1.id + '-' + self.transcript2.id
         self.gene_names = self.gene5prime.gene.name + '-' + self.gene3prime.gene.name
 
-        self.transcript_cds = None
-        self.transcript_cdna = None
-        self.transcript_protein = None
         self.transcript_protein_molecular_weight = 0
         self.cds=None
         self.cdna=None
@@ -352,13 +362,19 @@ class FusionTranscript():
 
         self.protein_names = self.transcript1.protein_id + '-' + self.transcript2.protein_id
 
+        #TODO the fusion cds could be a multiple of three but the 5' and 3'
+        # cds are not.
+
         if (len(self.cds_5prime)/3.).is_integer() and (len(self.cds_3prime)/3.).is_integer():
+            self.effect='in-frame'
+        elif (len(self.cds)/3.).is_integer():
             self.effect='in-frame'
         else:
             self.effect='out-of-frame'
 
         self.transcript_protein_junction_5prime = int(self.transcript_cds_junction_5prime/3.)
-        self.transcript_protein_junction_3prime = len(self.transcript2.protein_sequence) - int(self.transcript_cds_junction_3prime/3.)
+        #self.transcript_protein_junction_3prime = len(self.transcript2.protein_sequence) - int(self.transcript_cds_junction_3prime/3.)
+        self.transcript_protein_junction_3prime = int(self.transcript_cds_junction_3prime/3.)
 
         protein_seq = self.cds.seq.translate()
         protein_seq = protein_seq[0:protein_seq.find('*')]

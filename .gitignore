@@ -1,3 +1,5 @@
 ./bin/test.db
 data/
 test/*
+test/
+test/fgfr2-dnm3/*
