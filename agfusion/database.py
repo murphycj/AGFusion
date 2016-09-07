@@ -208,12 +208,13 @@ class AGFusionDBBManager(AGFusionDB):
         data_into_db = []
         for index, chunk in data.items():
             for r in chunk:
-                data_into_db.append([
-                    str(r[0]),
-                    str(r[1]),
-                    str(r[2]),
-                    str(r[3])
-                ])
+                if str(r[1])!='':
+                    data_into_db.append([
+                        str(r[0]),
+                        str(r[1]),
+                        str(r[2]),
+                        str(r[3])
+                    ])
 
         self.c.execute('DELETE FROM ' + table)
         self.conn.commit()

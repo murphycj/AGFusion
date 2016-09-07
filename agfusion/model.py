@@ -107,16 +107,18 @@ class Model(object):
 
             #add the junction
 
-
-            ax.add_line(plt.Line2D(
-                (
-                    (transcript.transcript_protein_junction_5prime/float(length_normalize))*0.9 + offset,
-                    (transcript.transcript_protein_junction_5prime/float(length_normalize))*0.9 + offset
-                ),
-                (0.4,0.6),
-                color='black'
+            try:
+                ax.add_line(plt.Line2D(
+                    (
+                        (transcript.transcript_protein_junction_5prime/float(length_normalize))*0.9 + offset,
+                        (transcript.transcript_protein_junction_5prime/float(length_normalize))*0.9 + offset
+                    ),
+                    (0.4,0.6),
+                    color='black'
+                    )
                 )
-            )
+            except:
+                import pdb; pdb.set_trace()
 
             ax.axis('off')
             ax.set_xlim(0,1)
@@ -317,7 +319,7 @@ class FusionTranscript():
         if len(new_name)<1:
             #import pdb; pdb.set_trace()
             #assert len(new_name)==1, "more than one name returned for " + d[1]
-            print name
+            print 'No pfam name for %s' % name
             return name
         if len(new_name)>1:
             import pdb; pdb.set_trace()
@@ -341,16 +343,18 @@ class FusionTranscript():
         domains = map(lambda x: list(x),self.db.c.fetchall())
 
         for d in domains:
-            d[0]=self.name
             if str(d[1])=='':
                 continue
 
+            d[0]=self.name
             d[1] = self._fetch_domain_name(d[1])
+            d[2] = int(d[2])
+            d[3] = int(d[3])
 
             try:
-                if self.transcript_protein_junction_5prime < int(d[2]):
+                if self.transcript_protein_junction_5prime < d[2]:
                     continue
-                elif self.transcript_protein_junction_5prime >= int(d[3]):
+                elif self.transcript_protein_junction_5prime >= d[3]:
                     fusion_domains.append(d)
                 else:
                     d[3] = self.transcript_protein_junction_5prime
@@ -366,19 +370,17 @@ class FusionTranscript():
 
         domains = map(lambda x: list(x),self.db.c.fetchall())
         for d in domains:
-            d[0]=self.name
-            d[1] = str(d[1])
-            d[2] = int(d[2])
-            d[3] = int(d[3])
-
             if str(d[1])=='':
                 continue
 
+            d[0]=self.name
             d[1] = self._fetch_domain_name(d[1])
+            d[2] = int(d[2])
+            d[3] = int(d[3])
 
-            if self.transcript_protein_junction_3prime > int(d[3]):
+            if self.transcript_protein_junction_3prime > d[3]:
                 continue
-            elif self.transcript_protein_junction_5prime <= int(d[2]):
+            elif self.transcript_protein_junction_5prime <= d[2]:
                 d[2]=(d[2]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
                 d[3]=(d[3]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
                 fusion_domains.append(d)
