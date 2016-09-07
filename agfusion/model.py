@@ -70,6 +70,8 @@ class Model(object):
 
                 if length_normalize is None:
                     length_normalize = transcript.protein_length
+                else:
+                    assert length_normalize >= transcript.protein_length, "length normalization should be ≥ protein length"
 
                 offset=0.05
 
@@ -77,7 +79,6 @@ class Model(object):
                 domain_start = (int(domain[2])/float(length_normalize))*0.9 + offset
                 domain_end = (int(domain[3])/float(length_normalize))*0.9 + offset
                 domain_center = (domain_end-domain_start)/2. + domain_start
-
 
                 ax.add_patch(
                     patches.Rectangle(
@@ -99,6 +100,7 @@ class Model(object):
 
             #add the junction
 
+
             ax.add_line(plt.Line2D(
                 (
                     (transcript.transcript_protein_junction_5prime/float(length_normalize))*0.9 + offset,
@@ -110,6 +112,8 @@ class Model(object):
             )
 
             ax.axis('off')
+            ax.set_xlim(0,1)
+            ax.set_ylim(0,1)
             filename = file_prefix + '.' + name + '.' + file_type
             fig.savefig(
                 filename,
@@ -117,6 +121,9 @@ class Model(object):
                 bbox_inches='tight'
             )
             plt.close(fig)
+            plt.clf()
+
+            length_normalize = None
 
 
     def save_transcript_cdna(self,out_file):
