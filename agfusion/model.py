@@ -307,6 +307,23 @@ class FusionTranscript():
         self.has_coding_potential=True
         self.predict_effect()
 
+    def _fetch_domain_name(self,name):
+        self.db.c.execute(
+            'SELECT * FROM PFAMMAP WHERE pfam_acc==\"' + \
+            name + \
+            '\"'
+        )
+        new_name = self.db.c.fetchall()
+        if len(new_name)<1:
+            #import pdb; pdb.set_trace()
+            #assert len(new_name)==1, "more than one name returned for " + d[1]
+            print name
+            return name
+        if len(new_name)>1:
+            import pdb; pdb.set_trace()
+        elif len(new_name)==1:
+            return new_name[0][1]
+
     def _annotate(self):
         """
         Annotate the gene fusion's protein using the protein annotaiton
@@ -328,16 +345,7 @@ class FusionTranscript():
             if str(d[1])=='':
                 continue
 
-            self.db.c.execute(
-                'SELECT * FROM PFAMMAP WHERE pfam_acc==\"' + \
-                d[1] + \
-                '\"'
-            )
-            new_name = self.db.c.fetchall()
-            if len(new_name)!=1:
-                import pdb; pdb.set_trace()
-            assert len(new_name)==1, "more than one name returned for " + d[1]
-            d[1] = new_name[0][1]
+            d[1] = self._fetch_domain_name(d[1])
 
             try:
                 if self.transcript_protein_junction_5prime < int(d[2]):
@@ -365,6 +373,8 @@ class FusionTranscript():
 
             if str(d[1])=='':
                 continue
+
+            d[1] = self._fetch_domain_name(d[1])
 
             if self.transcript_protein_junction_3prime > int(d[3]):
                 continue
