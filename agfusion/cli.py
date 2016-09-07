@@ -6,7 +6,7 @@ import argparse
 from agfusion import database, model
 import pyensembl
 
-def manage_db():
+def build_db():
 
     parser = argparse.ArgumentParser(
         description='Build or update the SQLite3 database for a reference ' + \
@@ -17,7 +17,7 @@ def manage_db():
         '--database',
         type=str,
         required=True,
-        help='Path to the database (default: updates the current database if it already exists)'
+        help='Path to the database file (e.g. agfusion.db)'
     )
     parser.add_argument(
         '--ensembl_server',
@@ -56,6 +56,7 @@ def manage_db():
 
     db = database.AGFusionDBBManager(args.database)
     db.fetch_data(args.ensembl_server,args.ensembl_dataset,args.p,data.transcript_ids())
+    db.add_pfam()
 
 def main():
 

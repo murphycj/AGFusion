@@ -315,6 +315,18 @@ class FusionTranscript():
             d[0]=self.name
             if str(d[1])=='':
                 continue
+
+            self.db.c.execute(
+                'SELECT * FROM PFAMMAP WHERE pfam_acc==\"' + \
+                d[1] + \
+                '\"'
+            )
+            new_name = self.db.c.fetchall()
+            if len(new_name)!=1:
+                import pdb; pdb.set_trace()
+            assert len(new_name)==1, "more than one name returned for " + d[1]
+            d[1] = new_name[0][1]
+
             try:
                 if self.transcript_protein_junction_5prime < int(d[2]):
                     continue

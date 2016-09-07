@@ -8,6 +8,7 @@ import glob
 from tqdm import tqdm
 from biomart import BiomartServer
 from agfusion import utils
+import pandas
 
 def split_into_n_lists(seq, n):
   avg = len(seq) / float(n)
@@ -219,6 +220,31 @@ class AGFusionDBBManager(AGFusionDB):
 
         self.c.executemany('INSERT INTO ' + table + ' VALUES (?,?,?,?)', data_into_db)
         self.conn.commit()
+
+    def add_pfam(self,file_name='pdb_pfam_mapping.txt'):
+        data = pandas.read_table(file_name,sep='\t')
+
+        def clean_name(x):
+            return x.split('.')[0]
+
+        data = dict(zip(data['PFAM_ACC'].map(clean_name),data['PFAM_Name']))
+        data = map(lambda x: [x[0],x[1]],data.items())
+
+        if self._check_table('PFAMMAP'):
+            self.c.execute('DELETE FROM PFAMMAP')
+            self.conn.commit()
+
+        self.c.execute(
+            "CREATE TABLE PFAMMAP (" + \
+            "pfam_acc text," + \
+            "pfam_name text" + \
+            ")"
+        )
+        self.conn.commit()
+
+        self.c.executemany('INSERT INTO PFAMMAP VALUES (?,?)', data)
+        self.conn.commit()
+
 
     def fetch_data(self,ensembl_server,ensembl_dataset,p,transcripts):
 
