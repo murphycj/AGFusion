@@ -200,10 +200,9 @@ class Gene(Model):
     wild-type genes or fusion gene.
     """
 
-    def __init__(self,gene=None,junction=0,reference='',db=None):
+    def __init__(self,gene=None,junction=0,db=None):
 
         self.gene = gene
-        self.reference=reference
         self.db=db
 
         self.junction=junction

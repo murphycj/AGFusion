@@ -10,14 +10,12 @@ def test_mouse():
     fgfr2 = agfusion.Gene(
         gene=data.gene_by_id("ENSMUSG00000030849"),
         junction=130167703,
-        reference="GRCm38",
         db=db
     )
 
     dnm3 = agfusion.Gene(
         gene=data.gene_by_id("ENSMUSG00000040265"),
         junction=162076991,
-        reference="GRCm38",
         db=db
     )
 

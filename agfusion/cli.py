@@ -3,7 +3,7 @@ import os
 import sys
 import argparse
 
-from agfusion import database, model
+import agfusion
 import pyensembl
 
 def build_db():
@@ -54,7 +54,7 @@ def build_db():
 
     data = pyensembl.EnsemblRelease(args.release,args.species)
 
-    db = database.AGFusionDBBManager(args.database)
+    db = agfusion.AGFusionDBBManager(args.database)
     db.fetch_data(args.ensembl_server,args.ensembl_dataset,args.p,data.transcript_ids())
     db.add_pfam()
 
@@ -135,22 +135,22 @@ def main():
     if not os.path.exists(args.out):
         os.mkdir(args.out)
 
-    #db = database.AGFusionSQlite3DB(args.db)
+    db = agfusion.AGFusionDB(args.db)
     data = pyensembl.EnsemblRelease(args.release,args.species)
 
-    gene5prime = model.Gene(
+    gene5prime = agfusion.Gene(
         gene=data.gene_by_id(args.gene5prime),
         junction=args.junction5prime,
-        db=None
+        db=db
     )
 
-    gene3prime = model.Gene(
+    gene3prime = agfusion.Gene(
         gene=data.gene_by_id(args.gene3prime),
         junction=args.junction3prime,
-        db=None
+        db=db
     )
 
-    fusion = model.Fusion(gene5prime,gene3prime)
+    fusion = agfusion.Fusion(gene5prime,gene3prime,db=db)
 
     fusion.save_transcript_cdna(args.out)
     fusion.save_transcript_cds(args.out)
