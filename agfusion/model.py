@@ -1,4 +1,5 @@
 import itertools
+import os
 
 from agfusion import utils, exceptions
 import pandas
@@ -31,10 +32,16 @@ class Model(object):
             }
         }
 
-    def save_image(self,file_prefix,length_normalize=None,dpi=90,file_type='png',fontsize=12):
+    def _does_dir_exist(self,out_dir):
+        if not os.path.exists(out_dir):
+            os.mkdir(out_dir)
+
+    def save_image(self,out_dir,length_normalize=None,dpi=90,file_type='png',fontsize=12):
 
         import matplotlib.pyplot as plt
         import matplotlib.patches as patches
+
+        self._does_dir_exist(out_dir)
 
         assert file_type in ['png','pdf','jpeg'], 'provided wrong file type'
 
@@ -114,7 +121,7 @@ class Model(object):
             ax.axis('off')
             ax.set_xlim(0,1)
             ax.set_ylim(0,1)
-            filename = file_prefix + '.' + name + '.' + file_type
+            filename = out_dir + '/' + name + '.' + file_type
             fig.savefig(
                 filename,
                 dpi=dpi,
@@ -126,9 +133,11 @@ class Model(object):
             length_normalize = None
 
 
-    def save_transcript_cdna(self,out_file):
+    def save_transcript_cdna(self,out_dir):
 
-        fout = open(out_file,'w')
+        self._does_dir_exist(out_dir)
+
+        fout = open(out_dir + '/cdna.fa','w')
 
         for name, transcript in self.transcripts.items():
 
@@ -138,9 +147,11 @@ class Model(object):
 
         fout.close()
 
-    def save_transcript_cds(self,out_file):
+    def save_transcript_cds(self,out_dir):
 
-        fout = open(out_file,'w')
+        self._does_dir_exist(out_dir)
+
+        fout = open(out_dir + '/cds.fa','w')
 
         for name, transcript in self.transcripts.items():
 
@@ -150,9 +161,11 @@ class Model(object):
 
         fout.close()
 
-    def save_proteins(self,out_file):
+    def save_proteins(self,out_dir):
 
-        fout = open(out_file,'w')
+        self._does_dir_exist(out_dir)
+
+        fout = open(out_dir + '/protein.fa','w')
 
         for name, transcript in self.transcripts.items():
 
@@ -452,7 +465,7 @@ class FusionTranscript():
                 else:
                     self.transcript_cds_junction_3prime += (self.gene3prime.junction - cds[0] + 1)
         else:
-            for cds in transcript2.coding_sequence_position_ranges:
+            for cds in self.transcript2.coding_sequence_position_ranges:
                 if self.gene3prime.junction <= cds[0]:
                     self.transcript_cds_junction_3prime += (cds[1] - cds[0] + 1)
                 elif self.gene3prime.junction >= cds[1]:

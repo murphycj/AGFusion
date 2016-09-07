@@ -152,9 +152,10 @@ def main():
 
     fusion = model.Fusion(gene5prime,gene3prime)
 
-    fusion.save_transcript_sequences(args.out + '/transcript_sequences.fa')
-    #fusion.save_transcript_sequences(args.out + '/protein_sequences.fa')
-    #fusion.save_image(args.out)
+    fusion.save_transcript_cdna(args.out)
+    fusion.save_transcript_cds(args.out)
+    fusion.save_proteins(args.out)
+    fusion.save_image(args.out)
 
     if args.WT:
         gene5prime.save_image(args.out)
