@@ -75,16 +75,18 @@ class Model(object):
 
             for domain in transcript.domains['pfam']:
 
-                if length_normalize is None:
-                    length_normalize = transcript.protein_length
+                if length_normalize is not None:
+                    normalize = length_normalize
                 else:
-                    assert length_normalize >= transcript.protein_length, "length normalization should be ≥ protein length"
+                    normalize = transcript.protein_length
+
+                assert normalize >= transcript.protein_length, "length normalization should be ≥ protein length"
 
                 offset=0.05
 
                 domain_name = domain[1]
-                domain_start = (int(domain[2])/float(length_normalize))*0.9 + offset
-                domain_end = (int(domain[3])/float(length_normalize))*0.9 + offset
+                domain_start = (int(domain[2])/float(normalize))*0.9 + offset
+                domain_end = (int(domain[3])/float(normalize))*0.9 + offset
                 domain_center = (domain_end-domain_start)/2. + domain_start
 
                 ax.add_patch(
@@ -110,8 +112,8 @@ class Model(object):
             try:
                 ax.add_line(plt.Line2D(
                     (
-                        (transcript.transcript_protein_junction_5prime/float(length_normalize))*0.9 + offset,
-                        (transcript.transcript_protein_junction_5prime/float(length_normalize))*0.9 + offset
+                        (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset,
+                        (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
                     ),
                     (0.4,0.6),
                     color='black'
@@ -268,7 +270,7 @@ class FusionTranscript():
         self.name=self.transcript1.id + '-' + self.transcript2.id
         self.gene_names = self.gene5prime.gene.name + '-' + self.gene3prime.gene.name
 
-        self.transcript_protein_molecular_weight = 0
+        self.transcript_protein_molecular_weight = None
         self.cds=None
         self.cdna=None
         self.protein=None
@@ -290,12 +292,12 @@ class FusionTranscript():
             }
         }
 
-        self.transcript_cdna_junction_5prime = 0
-        self.transcript_cdna_junction_3prime = 0
-        self.transcript_cds_junction_5prime = 0
-        self.transcript_cds_junction_3prime = 0
-        self.transcript_protein_junction_5prime = 0
-        self.transcript_protein_junction_3prime = 0
+        self.transcript_cdna_junction_5prime = None
+        self.transcript_cdna_junction_3prime = None
+        self.transcript_cds_junction_5prime = None
+        self.transcript_cds_junction_3prime = None
+        self.transcript_protein_junction_5prime = None
+        self.transcript_protein_junction_3prime = None
 
         self.effect_5prime='exon'
         self.effect_3prime='exon'
@@ -362,35 +364,37 @@ class FusionTranscript():
             except:
                 import pdb; pdb.set_trace()
 
-        self.db.c.execute(
-            'SELECT * FROM pfam WHERE ensembl_transcript_id==\"' + \
-            self.transcript2.id + \
-            '\"'
-        )
 
-        domains = map(lambda x: list(x),self.db.c.fetchall())
-        for d in domains:
-            if str(d[1])=='':
-                continue
+        if self.effect is not 'out-of-frame':
+            self.db.c.execute(
+                'SELECT * FROM pfam WHERE ensembl_transcript_id==\"' + \
+                self.transcript2.id + \
+                '\"'
+            )
 
-            d[0]=self.name
-            d[1] = self._fetch_domain_name(d[1])
-            d[2] = int(d[2])
-            d[3] = int(d[3])
+            domains = map(lambda x: list(x),self.db.c.fetchall())
+            for d in domains:
+                if str(d[1])=='':
+                    continue
 
-            if self.transcript_protein_junction_3prime > d[3]:
-                continue
-            elif self.transcript_protein_junction_5prime <= d[2]:
-                d[2]=(d[2]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
-                d[3]=(d[3]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
-                fusion_domains.append(d)
-            else:
-                d[2]=(d[2]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
-                d[3]=(d[3]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
-                fusion_domains.append(d)
+                d[0]=self.name
+                d[1] = self._fetch_domain_name(d[1])
+                d[2] = int(d[2])
+                d[3] = int(d[3])
 
-            if d[3]<d[2]:
-                import pdb; pdb.set_trace()
+                if self.transcript_protein_junction_3prime > d[3]:
+                    continue
+                elif self.transcript_protein_junction_5prime <= d[2]:
+                    d[2]=(d[2]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
+                    d[3]=(d[3]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
+                    fusion_domains.append(d)
+                else:
+                    d[2]=(d[2]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
+                    d[3]=(d[3]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
+                    fusion_domains.append(d)
+
+                if d[3]<d[2]:
+                    import pdb; pdb.set_trace()
 
 
         self.domains['pfam'] = fusion_domains
@@ -405,19 +409,19 @@ class FusionTranscript():
 
         self.protein_names = self.transcript1.protein_id + '-' + self.transcript2.protein_id
 
-        #TODO the fusion cds could be a multiple of three but the 5' and 3'
-        # cds are not.
+        self.transcript_protein_junction_5prime = int(self.transcript_cds_junction_5prime/3.)
 
         if (len(self.cds_5prime)/3.).is_integer() and (len(self.cds_3prime)/3.).is_integer():
             self.effect='in-frame'
-        elif (len(self.cds)/3.).is_integer():
-            self.effect='in-frame'
+            self.transcript_protein_junction_3prime = int(self.transcript_cds_junction_3prime/3.)
+        elif ((len(self.cds_5prime)/3. % 1) + (len(self.cds_3prime)/3. % 1)) == 1:
+            self.effect='in-frame (with mutation)'
+            self.transcript_protein_junction_3prime = int(self.transcript_cds_junction_3prime/3.)
         else:
             self.effect='out-of-frame'
 
-        self.transcript_protein_junction_5prime = int(self.transcript_cds_junction_5prime/3.)
-        #self.transcript_protein_junction_3prime = len(self.transcript2.protein_sequence) - int(self.transcript_cds_junction_3prime/3.)
-        self.transcript_protein_junction_3prime = int(self.transcript_cds_junction_3prime/3.)
+        #if self.name=='ENST00000357308-ENST00000303698':
+        #    import pdb; pdb.set_trace()
 
         protein_seq = self.cds.seq.translate()
         protein_seq = protein_seq[0:protein_seq.find('*')]
