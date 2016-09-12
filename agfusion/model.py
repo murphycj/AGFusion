@@ -88,7 +88,6 @@ class Model(object):
                 domain_start = (int(domain[2])/float(normalize))*0.9 + offset
                 domain_end = (int(domain[3])/float(normalize))*0.9 + offset
                 domain_center = (domain_end-domain_start)/2. + domain_start
-                print domain_start, domain_end
 
                 ax.add_patch(
                     patches.Rectangle(
@@ -387,12 +386,12 @@ class FusionTranscript():
 
                 if self.transcript_protein_junction_3prime > d[3]:
                     continue
-                elif self.transcript_protein_junction_5prime <= d[2]:
+                elif self.transcript_protein_junction_3prime <= d[2]:
                     d[2]=(d[2]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
                     d[3]=(d[3]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
                     fusion_domains.append(d)
                 else:
-                    d[2]=(d[2]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
+                    d[2]=self.transcript_protein_junction_5prime
                     d[3]=(d[3]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
                     fusion_domains.append(d)
 
@@ -436,7 +435,8 @@ class FusionTranscript():
             description="length=" + str(self.protein_length) + \
                 ", kD: " + str(self.molecular_weight) + \
                 ", transcripts: " + str(self.name) + ', ' + \
-                ", genes: " + str(self.gene_names)
+                ", genes: " + str(self.gene_names) + \
+                ", effect: " + self.effect
         )
 
     def _fetch_transcript_cds(self):
