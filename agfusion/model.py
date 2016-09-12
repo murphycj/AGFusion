@@ -71,23 +71,24 @@ class Model(object):
                 fontsize=fontsize
             )
 
+            if length_normalize is not None:
+                normalize = length_normalize
+            else:
+                normalize = transcript.protein_length
+
+            assert normalize >= transcript.protein_length, "length normalization should be ≥ protein length"
+
+            offset=0.05
+
             #plot domains
 
             for domain in transcript.domains['pfam']:
-
-                if length_normalize is not None:
-                    normalize = length_normalize
-                else:
-                    normalize = transcript.protein_length
-
-                assert normalize >= transcript.protein_length, "length normalization should be ≥ protein length"
-
-                offset=0.05
 
                 domain_name = domain[1]
                 domain_start = (int(domain[2])/float(normalize))*0.9 + offset
                 domain_end = (int(domain[3])/float(normalize))*0.9 + offset
                 domain_center = (domain_end-domain_start)/2. + domain_start
+                print domain_start, domain_end
 
                 ax.add_patch(
                     patches.Rectangle(
@@ -365,7 +366,8 @@ class FusionTranscript():
                 import pdb; pdb.set_trace()
 
 
-        if self.effect is not 'out-of-frame':
+        if self.effect != 'out-of-frame':
+
             self.db.c.execute(
                 'SELECT * FROM pfam WHERE ensembl_transcript_id==\"' + \
                 self.transcript2.id + \
@@ -373,11 +375,12 @@ class FusionTranscript():
             )
 
             domains = map(lambda x: list(x),self.db.c.fetchall())
+
             for d in domains:
                 if str(d[1])=='':
                     continue
 
-                d[0]=self.name
+                d[0] = self.name
                 d[1] = self._fetch_domain_name(d[1])
                 d[2] = int(d[2])
                 d[3] = int(d[3])
@@ -420,9 +423,6 @@ class FusionTranscript():
         else:
             self.effect='out-of-frame'
 
-        #if self.name=='ENST00000357308-ENST00000303698':
-        #    import pdb; pdb.set_trace()
-
         protein_seq = self.cds.seq.translate()
         protein_seq = protein_seq[0:protein_seq.find('*')]
 
@@ -438,8 +438,6 @@ class FusionTranscript():
                 ", transcripts: " + str(self.name) + ', ' + \
                 ", genes: " + str(self.gene_names)
         )
-
-        self._annotate()
 
     def _fetch_transcript_cds(self):
         """
@@ -629,3 +627,4 @@ class FusionTranscript():
         if self.has_coding_potential:
             self._fetch_transcript_cds()
             self._fetch_protein()
+            self._annotate()
