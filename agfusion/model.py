@@ -167,6 +167,7 @@ class Model(object):
             )
 
             filename = out_dir + '/' + name + '.' + file_type
+
             fig.savefig(
                 filename,
                 dpi=dpi,
@@ -245,7 +246,18 @@ class Gene(Model):
 
     def __init__(self,gene=None,junction=0,db=None):
 
-        self.gene = db.data.gene_by_id(gene)
+        #try to find gene by ensembl id first, then search by gene symbol
+        try:
+            self.gene = db.data.gene_by_id(gene)
+        except:
+            temp = db.data.genes_by_name(gene)
+            if len(temp)==0:
+                raise exceptions.GeneIDException('!!! ERROR - could not find gene with name %s.' % temp)
+            elif len(temp)>1:
+                raise exceptions.TooManyGenesException('!!! ERROR - multiple ensembl IDs found matching %s. Try specifying just the Ensembl ID' % temp)
+            else:
+                self.gene = temp[0]
+
         self.db=db
 
         self.junction=junction

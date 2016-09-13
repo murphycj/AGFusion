@@ -9,6 +9,11 @@ class GeneIDException(Exception):
         Exception.__init__(self,"my exception was raised with arguments {0}".format(dErrArguments))
         self.dErrorArguments = dErrorArguements
 
+class TooManyGenesException(Exception):
+    def __init__(self,dErrArguments):
+        Exception.__init__(self,"my exception was raised with arguments {0}".format(dErrArguments))
+        self.dErrorArguments = dErrorArguements
+
 class JunctionException(Exception):
     def __init__(self):
         Exception.__init__(self,"Junction not within gene boundaries")

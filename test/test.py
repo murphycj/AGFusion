@@ -8,13 +8,13 @@ def test_mouse():
     db = agfusion.AGFusionDB('../data/agfusion.db',release=84,species='mouse')
 
     fgfr2 = agfusion.Gene(
-        gene="ENSMUSG00000030849",
+        gene="Fgfr2",
         junction=130167703,
         db=db
     )
 
     dnm3 = agfusion.Gene(
-        gene="ENSMUSG00000040265",
+        gene="Dnm3",
         junction=162076991,
         db=db
     )
@@ -24,8 +24,8 @@ def test_mouse():
     fusion.save_transcript_cds('fgfr2-dnm3_mouse')
     fusion.save_proteins('fgfr2-dnm3_mouse')
     #fusion.save_annotations('fgfr2-dnm3/domains.csv')
-    fusion.output_to_html()
-    #fusion.save_image('fgfr2-dnm3_mouse/fgfr2-dnm3')
+    #fusion.output_to_html()
+    fusion.save_image('fgfr2-dnm3_mouse/fgfr2-dnm3')
 
 def test_human():
 

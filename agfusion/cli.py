@@ -176,15 +176,17 @@ def main():
     fusion.save_proteins(args.out)
 
     colors={}
+
     if args.colors is not None:
         for i in args.colors:
             pair = i.split(':')
+
             assert len(pair)==2," did not properly specify --colors"
+
             if pair[0] in colors:
                 print "!!! WARNING - you specified colors for %s twice." % pair[0]
-            colors[pair[0]] = pair[1]
 
-    print colors
+            colors[pair[0]] = pair[1]
 
     fusion.save_image(out_dir=args.out,colors=colors)
 
