@@ -16,7 +16,8 @@
   --db ../data/agfusion.db \
   --release 84 \
   --species mouse \
-  --out DLG1-BRAF
+  --out DLG1-BRAF \
+  --colors Pkinase_Tyr:red
 
 #../bin/agfusion \
 #  --gene5prime ENSMUSG00000000441 \

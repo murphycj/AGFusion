@@ -9,6 +9,7 @@ from tqdm import tqdm
 from biomart import BiomartServer
 from agfusion import utils
 import pandas
+import pyensembl
 
 def split_into_n_lists(seq, n):
   avg = len(seq) / float(n)
@@ -84,7 +85,7 @@ class AGFusionDB(object):
     reference_name
     """
 
-    def __init__(self,database):
+    def __init__(self,database,release,species):
 
         self.database=os.path.abspath(database)
         self.fastas = {}
@@ -93,9 +94,10 @@ class AGFusionDB(object):
 
         self.conn = sqlite3.connect(
             self.database
-            )
+        )
         self.c = self.conn.cursor()
         self.conn.commit()
+        self.data = pyensembl.EnsemblRelease(release,species)
 
     def _check_table(self,table):
         """

@@ -5,26 +5,27 @@ from Bio import SeqIO
 def test_mouse():
     data = pyensembl.EnsemblRelease(84,'mouse')
 
-    db = agfusion.AGFusionDB('../data/agfusion.db')
+    db = agfusion.AGFusionDB('../data/agfusion.db',release=84,species='mouse')
 
     fgfr2 = agfusion.Gene(
-        gene=data.gene_by_id("ENSMUSG00000030849"),
+        gene="ENSMUSG00000030849",
         junction=130167703,
         db=db
     )
 
     dnm3 = agfusion.Gene(
-        gene=data.gene_by_id("ENSMUSG00000040265"),
+        gene="ENSMUSG00000040265",
         junction=162076991,
         db=db
     )
 
     fusion = agfusion.model.Fusion(fgfr2,dnm3,db=db)
-    fusion.save_transcript_cdna('fgfr2-dnm3_mouse/transcript.cdna.fa')
-    fusion.save_transcript_cds('fgfr2-dnm3_mouse/transcript.cds.fa')
-    fusion.save_proteins('fgfr2-dnm3_mouse/protein.fa')
+    fusion.save_transcript_cdna('fgfr2-dnm3_mouse')
+    fusion.save_transcript_cds('fgfr2-dnm3_mouse')
+    fusion.save_proteins('fgfr2-dnm3_mouse')
     #fusion.save_annotations('fgfr2-dnm3/domains.csv')
-    fusion.save_image('fgfr2-dnm3_mouse/fgfr2-dnm3')
+    fusion.output_to_html()
+    #fusion.save_image('fgfr2-dnm3_mouse/fgfr2-dnm3')
 
 def test_human():
 
@@ -60,5 +61,5 @@ def test_human():
     #trans=fusion.transcripts[u'ENST00000613048-ENST00000627582']
     #cdna.seq==trans.cdna.seq
 
-#test_mouse()
-test_human()
+test_mouse()
+#test_human()

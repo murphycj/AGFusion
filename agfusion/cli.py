@@ -4,7 +4,6 @@ import sys
 import argparse
 
 import agfusion
-import pyensembl
 
 def build_db():
 
@@ -115,24 +114,36 @@ def main():
         help='Ensembl release'
     )
     parser.add_argument(
+        '--colors',
+        type=str,
+        required=False,
+        nargs='+',
+        default=None,
+        help='(Optional) Space-delimited list of domain namd and color to ' + \
+            'specify certain colors for domains. Format --color domain_name:color' + \
+            ' (e.g. --color Pkinase_Tyr:blue I-set:#006600). ' + \
+            'Can use specific color names for hex representation. Default ' + \
+            'blue for everything.'
+    )
+    parser.add_argument(
         '--type',
         type=str,
         required=False,
         default='png',
-        help='Image file type (png, jpeg, pdf). Default: png'
+        help='(Optional) Image file type (png, jpeg, pdf). Default: png'
     )
     parser.add_argument(
         '--scale',
         type=int,
         required=False,
         default=-1,
-        help='Length in amino acids to scale the gene fusion image (default: max length of fusion product)'
+        help='(Optional) Length in amino acids to scale the gene fusion image (default: max length of fusion product)'
     )
     parser.add_argument(
         '--WT',
         action='store_true',
         required=False,
-        help='Include this to plot wild-type architechtures of the 5\' and 3\' genes'
+        help='(Optional) Include this to plot wild-type architechtures of the 5\' and 3\' genes'
     )
 
     args = parser.parse_args()
@@ -140,27 +151,42 @@ def main():
     if not os.path.exists(args.out):
         os.mkdir(args.out)
 
-    db = agfusion.AGFusionDB(args.db)
-    data = pyensembl.EnsemblRelease(args.release,args.species)
+    db = agfusion.AGFusionDB(args.db,args.release,args.species)
 
     gene5prime = agfusion.Gene(
-        gene=data.gene_by_id(args.gene5prime),
+        gene=args.gene5prime,
         junction=args.junction5prime,
         db=db
     )
 
     gene3prime = agfusion.Gene(
-        gene=data.gene_by_id(args.gene3prime),
+        gene=args.gene3prime,
         junction=args.junction3prime,
         db=db
     )
 
-    fusion = agfusion.Fusion(gene5prime,gene3prime,db=db)
+    fusion = agfusion.Fusion(
+        gene5prime=gene5prime,
+        gene3prime=gene3prime,
+        db=db
+    )
 
     fusion.save_transcript_cdna(args.out)
     fusion.save_transcript_cds(args.out)
     fusion.save_proteins(args.out)
-    fusion.save_image(args.out)
+
+    colors={}
+    if args.colors is not None:
+        for i in args.colors:
+            pair = i.split(':')
+            assert len(pair)==2," did not properly specify --colors"
+            if pair[0] in colors:
+                print "!!! WARNING - you specified colors for %s twice." % pair[0]
+            colors[pair[0]] = pair[1]
+
+    print colors
+
+    fusion.save_image(out_dir=args.out,colors=colors)
 
     if args.WT:
         gene5prime.save_image(args.out)

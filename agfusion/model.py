@@ -7,6 +7,8 @@ from PIL import *
 import pyensembl
 from Bio import Seq, SeqIO, SeqRecord, SeqUtils
 from Bio.Alphabet import generic_dna,generic_protein
+import matplotlib.pyplot as plt, mpld3
+import matplotlib.patches as patches
 
 MIN_DOMAIN_LENGTH=5
 
@@ -38,10 +40,111 @@ class Model(object):
         if not os.path.exists(out_dir):
             os.mkdir(out_dir)
 
-    def save_image(self,out_dir,length_normalize=None,dpi=90,file_type='png',fontsize=12):
+    def _draw(self,fig,name,transcript,length_normalize,fontsize,colors):
 
-        import matplotlib.pyplot as plt
-        import matplotlib.patches as patches
+        ax = fig.add_subplot(111)
+
+        #main protein body
+
+        ax.add_patch(
+            patches.Rectangle(
+                (0.05, 0.45),
+                0.9,
+                0.1,
+                fill=False
+            )
+        )
+        ax.text(
+            0.5,
+            0.9,
+            name,
+            horizontalalignment='center',
+            fontsize=fontsize
+        )
+
+        if length_normalize is not None:
+            normalize = length_normalize
+        else:
+            normalize = transcript.protein_length
+
+        assert normalize >= transcript.protein_length, "length normalization should be ≥ protein length"
+
+        offset=0.05
+
+        #plot domains
+
+        for domain in transcript.domains['pfam']:
+
+            domain_name = domain[1]
+            domain_start = (int(domain[2])/float(normalize))*0.9 + offset
+            domain_end = (int(domain[3])/float(normalize))*0.9 + offset
+            domain_center = (domain_end-domain_start)/2. + domain_start
+
+            color = 'blue'
+            if domain_name in colors:
+                color = colors[domain_name]
+
+            ax.add_patch(
+                patches.Rectangle(
+                    (
+                        domain_start,
+                        0.45,
+                    ),
+                    domain_end-domain_start,
+                    0.1,
+                    color=color
+                )
+            )
+            ax.text(
+                domain_center,
+                0.4,
+                domain_name,
+                horizontalalignment='center',
+                fontsize=fontsize
+            )
+
+        #add the junction
+
+        ax.add_line(plt.Line2D(
+            (
+                (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset,
+                (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
+            ),
+            (0.4,0.6),
+            color='black'
+            )
+        )
+
+        ax.axis('off')
+        ax.set_xlim(0,1)
+        ax.set_ylim(0,1)
+
+        length_normalize = None
+
+    def output_to_html(self,length_normalize=None,dpi=90,fontsize=12):
+
+        dict_of_plots = list()
+
+        for name, transcript in self.transcripts.items():
+
+            if not transcript.has_coding_potential:
+                continue
+
+            fig = plt.figure(figsize=(20,5),frameon=False)
+
+            self._draw(
+                fig,
+                name,
+                transcript,
+                length_normalize,
+                fontsize
+            )
+            dict_of_plots.append(mpld3.fig_to_dict(fig))
+
+            plt.close(fig)
+            plt.clf()
+
+    def save_image(self,out_dir,length_normalize=None,dpi=90,file_type='png',fontsize=12,colors={}):
 
         self._does_dir_exist(out_dir)
 
@@ -52,81 +155,17 @@ class Model(object):
             if not transcript.has_coding_potential:
                 continue
 
-            fig = plt.figure(figsize=(20,5))
-            ax = fig.add_subplot(111)
+            fig = plt.figure(figsize=(20,5),frameon=False)
 
-            #main protein body
-
-            ax.add_patch(
-                patches.Rectangle(
-                    (0.05, 0.45),
-                    0.9,
-                    0.1,
-                    fill=False
-                )
-            )
-            ax.text(
-                0.5,
-                0.9,
-                name,
-                horizontalalignment='center',
-                fontsize=fontsize
+            self._draw(
+                fig=fig,
+                name=name,
+                transcript=transcript,
+                length_normalize=length_normalize,
+                fontsize=fontsize,
+                colors=colors
             )
 
-            if length_normalize is not None:
-                normalize = length_normalize
-            else:
-                normalize = transcript.protein_length
-
-            assert normalize >= transcript.protein_length, "length normalization should be ≥ protein length"
-
-            offset=0.05
-
-            #plot domains
-
-            for domain in transcript.domains['pfam']:
-
-                domain_name = domain[1]
-                domain_start = (int(domain[2])/float(normalize))*0.9 + offset
-                domain_end = (int(domain[3])/float(normalize))*0.9 + offset
-                domain_center = (domain_end-domain_start)/2. + domain_start
-
-                ax.add_patch(
-                    patches.Rectangle(
-                        (
-                            domain_start,
-                            0.45
-                        ),
-                        domain_end-domain_start,
-                        0.1
-                    )
-                )
-                ax.text(
-                    domain_center,
-                    0.4,
-                    domain_name,
-                    horizontalalignment='center',
-                    fontsize=fontsize
-                )
-
-            #add the junction
-
-            try:
-                ax.add_line(plt.Line2D(
-                    (
-                        (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset,
-                        (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
-                    ),
-                    (0.4,0.6),
-                    color='black'
-                    )
-                )
-            except:
-                import pdb; pdb.set_trace()
-
-            ax.axis('off')
-            ax.set_xlim(0,1)
-            ax.set_ylim(0,1)
             filename = out_dir + '/' + name + '.' + file_type
             fig.savefig(
                 filename,
@@ -135,8 +174,6 @@ class Model(object):
             )
             plt.close(fig)
             plt.clf()
-
-            length_normalize = None
 
 
     def save_transcript_cdna(self,out_dir):
@@ -208,7 +245,7 @@ class Gene(Model):
 
     def __init__(self,gene=None,junction=0,db=None):
 
-        self.gene = gene
+        self.gene = db.data.gene_by_id(gene)
         self.db=db
 
         self.junction=junction
