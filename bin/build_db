@@ -2,4 +2,4 @@
 
 from agfusion import cli
 
-cli.manage_db()
+cli.build_db()

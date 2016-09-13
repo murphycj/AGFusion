@@ -8,6 +8,8 @@ import pyensembl
 from Bio import Seq, SeqIO, SeqRecord, SeqUtils
 from Bio.Alphabet import generic_dna,generic_protein
 
+MIN_DOMAIN_LENGTH=5
+
 class Model(object):
     def __new__(cls, *args, **kwargs):
         if cls is Model:
@@ -358,12 +360,11 @@ class FusionTranscript():
                     continue
                 elif self.transcript_protein_junction_5prime >= d[3]:
                     fusion_domains.append(d)
-                else:
+                elif (self.transcript_protein_junction_5prime - d[2]) >= MIN_DOMAIN_LENGTH:
                     d[3] = self.transcript_protein_junction_5prime
                     fusion_domains.append(d)
             except:
                 import pdb; pdb.set_trace()
-
 
         if self.effect != 'out-of-frame':
 
@@ -434,7 +435,7 @@ class FusionTranscript():
             name=self.protein_names,
             description="length=" + str(self.protein_length) + \
                 ", kD: " + str(self.molecular_weight) + \
-                ", transcripts: " + str(self.name) + ', ' + \
+                ", transcripts: " + str(self.name) + \
                 ", genes: " + str(self.gene_names) + \
                 ", effect: " + self.effect
         )

@@ -20,23 +20,16 @@ def build_db():
         help='Path to the database file (e.g. agfusion.db)'
     )
     parser.add_argument(
-        '--ensembl_server',
-        type=str,
-        required=False,
-        default='http://useast.ensembl.org/biomart',
-        help='Name of the database (default: http://useast.ensembl.org/biomart)'
-    )
-    parser.add_argument(
         '--ensembl_dataset',
         type=str,
         required=True,
-        help='The reference ensembl dataset to query biomart (e.g. hsapiens_gene_ensembl)'
+        help='The reference ensembl dataset to query biomart (hsapiens_gene_ensembl or mmusculus_gene_ensembl)'
     )
     parser.add_argument(
         '--species',
         type=str,
         required=True,
-        help='Reference genome (GRCh38, GRCh37, or GRCm38)'
+        help='Human or mouse'
     )
     parser.add_argument(
         '--release',
@@ -45,17 +38,29 @@ def build_db():
         help='Ensembl release'
     )
     parser.add_argument(
+        '--ensembl_server',
+        type=str,
+        required=False,
+        default='http://useast.ensembl.org/biomart',
+        help='(Optional) Name of the database (default: http://useast.ensembl.org/biomart)'
+    )
+    parser.add_argument(
         '--p',
         type=int,
         default=1,
-        help='Number of processers to use to fetch data from Biomart (default 1).'
+        help='(Optional) Number of processers to use to fetch data from Biomart (default 1).'
     )
     args = parser.parse_args()
 
     data = pyensembl.EnsemblRelease(args.release,args.species)
 
+    if args.species.lower()=='human':
+        dataset='hsapiens_gene_ensembl'
+    elif args.species.lower()=='mouse':
+        dataset='mmusculus_gene_ensembl'
+
     db = agfusion.AGFusionDBBManager(args.database)
-    db.fetch_data(args.ensembl_server,args.ensembl_dataset,args.p,data.transcript_ids())
+    db.fetch_data(args.ensembl_server,dataset,args.p,data.transcript_ids())
     db.add_pfam()
 
 def main():
