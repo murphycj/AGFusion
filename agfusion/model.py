@@ -247,16 +247,17 @@ class Gene(Model):
     def __init__(self,gene=None,junction=0,db=None):
 
         #try to find gene by ensembl id first, then search by gene symbol
-        try:
+        if gene in db.data.gene_ids():
             self.gene = db.data.gene_by_id(gene)
-        except:
+        elif gene in db.data.gene_names():
             temp = db.data.genes_by_name(gene)
-            if len(temp)==0:
-                raise exceptions.GeneIDException('!!! ERROR - could not find gene with name %s.' % temp)
-            elif len(temp)>1:
-                raise exceptions.TooManyGenesException('!!! ERROR - multiple ensembl IDs found matching %s. Try specifying just the Ensembl ID' % temp)
+
+            if len(temp)>1:
+                raise exceptions.TooManyGenesException(gene)
             else:
                 self.gene = temp[0]
+        else:
+            raise exceptions.GeneIDException(gene)
 
         self.db=db
 
