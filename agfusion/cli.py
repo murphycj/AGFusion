@@ -145,6 +145,12 @@ def main():
         required=False,
         help='(Optional) Include this to plot wild-type architechtures of the 5\' and 3\' genes'
     )
+    parser.add_argument(
+        '--middlestar',
+        action='store_true',
+        required=False,
+        help='(Optional) Insert a * at the junction position for the cdna, cds, and protein sequences (default False).'
+    )
 
     args = parser.parse_args()
 

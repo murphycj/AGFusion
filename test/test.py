@@ -19,7 +19,7 @@ def test_mouse():
         db=db
     )
 
-    fusion = agfusion.model.Fusion(fgfr2,dnm3,db=db)
+    fusion = agfusion.model.Fusion(fgfr2,dnm3,db=db,middlestar=True)
     fusion.save_transcript_cdna('fgfr2-dnm3_mouse')
     fusion.save_transcript_cds('fgfr2-dnm3_mouse')
     fusion.save_proteins('fgfr2-dnm3_mouse')

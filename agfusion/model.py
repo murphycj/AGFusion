@@ -18,8 +18,6 @@ class Model(object):
             raise TypeError("Model shoud not be instantiated")
         return object.__new__(cls, *args, **kwargs)
 
-        self.is_fusion = False
-
         self.domains={
             i:{''} for i,j,k in utils.PROTEIN_DOMAIN
         }
@@ -247,6 +245,7 @@ class Gene(Model):
     def __init__(self,gene=None,junction=0,db=None):
 
         #try to find gene by ensembl id first, then search by gene symbol
+
         if gene in db.data.gene_ids():
             self.gene = db.data.gene_by_id(gene)
         elif gene in db.data.gene_names():
@@ -254,8 +253,8 @@ class Gene(Model):
 
             if len(temp)>1:
                 raise exceptions.TooManyGenesException(gene)
-            else:
-                self.gene = temp[0]
+
+            self.gene = temp[0]
         else:
             raise exceptions.GeneIDException(gene)
 
@@ -270,12 +269,12 @@ class Fusion(Model):
     Generates the information needed for the gene fusion
     """
 
-    def __init__(self,gene5prime=None,gene3prime=None,db=None,transcripts_5prime=None,transcripts_3prime=None):
+    def __init__(self,gene5prime=None,gene3prime=None,db=None,transcripts_5prime=None,transcripts_3prime=None,middlestar=False):
         self.gene5prime=gene5prime
         self.gene3prime=gene3prime
         self.name = self.gene5prime.gene.name + '-' + self.gene3prime.gene.name
         self.db=db
-        self.is_fusion = True
+        self.middlestar=middlestar
 
         self.transcripts = {}
 
@@ -304,7 +303,8 @@ class Fusion(Model):
                 transcript2,
                 gene5prime,
                 gene3prime,
-                db=db
+                db=db,
+                middlestar=middlestar
             )
 
 class FusionTranscript():
@@ -312,12 +312,13 @@ class FusionTranscript():
     Generates the information needed for the gene fusion transctips
     """
 
-    def __init__(self,transcript1=None,transcript2=None,gene5prime=None,gene3prime=None,db=None):
+    def __init__(self,transcript1=None,transcript2=None,gene5prime=None,gene3prime=None,db=None,middlestar=False):
         self.transcript1=transcript1
         self.transcript2=transcript2
         self.gene5prime=gene5prime
         self.gene3prime=gene3prime
         self.db=db
+        self.middlestar=middlestar
 
         self.name=self.transcript1.id + '-' + self.transcript2.id
         self.gene_names = self.gene5prime.gene.name + '-' + self.gene3prime.gene.name
@@ -371,8 +372,6 @@ class FusionTranscript():
         )
         new_name = self.db.c.fetchall()
         if len(new_name)<1:
-            #import pdb; pdb.set_trace()
-            #assert len(new_name)==1, "more than one name returned for " + d[1]
             print 'No pfam name for %s' % name
             return name
         if len(new_name)>1:
@@ -467,14 +466,20 @@ class FusionTranscript():
         if (len(self.cds_5prime)/3.).is_integer() and (len(self.cds_3prime)/3.).is_integer():
             self.effect='in-frame'
             self.transcript_protein_junction_3prime = int(self.transcript_cds_junction_3prime/3.)
-        elif ((len(self.cds_5prime)/3. % 1) + (len(self.cds_3prime)/3. % 1)) == 1:
+        elif round((len(self.cds_5prime)/3. % 1) + (len(self.cds_3prime)/3. % 1),2) == 1.0:
             self.effect='in-frame (with mutation)'
             self.transcript_protein_junction_3prime = int(self.transcript_cds_junction_3prime/3.)
         else:
             self.effect='out-of-frame'
 
-        protein_seq = self.cds.seq.translate()
-        protein_seq = protein_seq[0:protein_seq.find('*')]
+        if self.middlestar:
+            temp = str(self.cds.seq)
+            star_position = temp.find('*')
+            protein_seq = self.cds.seq.translate()
+            protein_seq = protein_seq[0:protein_seq.find('*')]
+        else:
+            protein_seq = self.cds.seq.translate()
+            protein_seq = protein_seq[0:protein_seq.find('*')]
 
         self.molecular_weight = SeqUtils.molecular_weight(protein_seq)/1000.
         self.protein_length = len(protein_seq)
@@ -539,8 +544,13 @@ class FusionTranscript():
 
         self.cds_3prime = self.transcript2.coding_sequence[self.transcript_cds_junction_3prime::]
 
+        if self.middlestar:
+            seq = self.cds_5prime + '*' + self.cds_3prime
+        else:
+            seq = self.cds_5prime + self.cds_3prime
+
         self.cds = SeqRecord.SeqRecord(
-            Seq.Seq(self.cds_5prime + self.cds_3prime,generic_dna),
+            Seq.Seq(seq,generic_dna),
             id=self.name,
             name=self.name,
             description="length=" + str(len(self.cds_5prime + self.cds_3prime)) + \
@@ -597,7 +607,10 @@ class FusionTranscript():
                 else:
                     self.transcript_cdna_junction_3prime += (exon.end - self.gene3prime.junction + 1)
 
-        transcript_seq += self.transcript2.sequence[self.transcript_cdna_junction_3prime::]
+        if self.middlestar:
+            transcript_seq += '*' + self.transcript2.sequence[self.transcript_cdna_junction_3prime::]
+        else:
+            transcript_seq += self.transcript2.sequence[self.transcript_cdna_junction_3prime::]
 
         self.cdna = SeqRecord.SeqRecord(
             Seq.Seq(transcript_seq,generic_dna),
