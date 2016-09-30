@@ -115,6 +115,61 @@ class Model():
             )
         )
 
+        #plot protein length markers
+
+        ax.add_line(plt.Line2D(
+            (0.05,0.95),
+            (0.35,0.35),
+            color='black'
+            )
+        )
+
+        ax.add_line(plt.Line2D(
+            (0.05,0.05),
+            (0.30,0.35),
+            color='black'
+            )
+        )
+        ax.text(
+            0.05,
+            0.25,
+            "0",
+            horizontalalignment='center',
+            fontsize=fontsize
+        )
+
+        ax.add_line(plt.Line2D(
+            (0.95,0.95),
+            (0.30,0.35),
+            color='black'
+            )
+        )
+        ax.text(
+            0.95,
+            0.25,
+            str(transcript.protein_length),
+            horizontalalignment='center',
+            fontsize=fontsize
+        )
+
+        ax.add_line(plt.Line2D(
+            (
+                (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset,
+                (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
+            ),
+            (0.3,0.35),
+            color='black'
+            )
+        )
+
+        ax.text(
+            (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset,
+            0.25,
+            str(transcript.transcript_protein_junction_5prime),
+            horizontalalignment='center',
+            fontsize=fontsize
+        )
+
         ax.axis('off')
         ax.set_xlim(0,1)
         ax.set_ylim(0,1)
