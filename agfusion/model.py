@@ -9,6 +9,7 @@ from Bio import Seq, SeqIO, SeqRecord, SeqUtils
 from Bio.Alphabet import generic_dna,generic_protein
 import matplotlib.pyplot as plt, mpld3
 import matplotlib.patches as patches
+import json
 
 MIN_DOMAIN_LENGTH=5
 
@@ -122,6 +123,7 @@ class Model(object):
     def output_to_html(self,length_normalize=None,dpi=90,fontsize=12):
 
         dict_of_plots = list()
+        i=1
 
         for name, transcript in self.transcripts.items():
 
@@ -131,16 +133,22 @@ class Model(object):
             fig = plt.figure(figsize=(20,5),frameon=False)
 
             self._draw(
-                fig,
-                name,
-                transcript,
-                length_normalize,
-                fontsize
+                fig=fig,
+                name=name,
+                transcript=transcript,
+                length_normalize=length_normalize,
+                fontsize=fontsize,
+                colors=[]
             )
-            dict_of_plots.append(mpld3.fig_to_dict(fig))
+            single_chart = dict()
+            single_chart['id']='fig_' + str(i)
+            single_chart['json'] = json.dumps(mpld3.fig_to_dict(fig))
+            dict_of_plots.append(single_chart)
+            i+=1
 
-            plt.close(fig)
-            plt.clf()
+            #plt.close(fig)
+            #plt.clf()
+        return dict_of_plots
 
     def save_image(self,out_dir,length_normalize=None,dpi=90,file_type='png',fontsize=12,colors={}):
 
