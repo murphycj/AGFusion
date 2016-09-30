@@ -9,11 +9,12 @@ from Bio import Seq, SeqIO, SeqRecord, SeqUtils
 from Bio.Alphabet import generic_dna,generic_protein
 import matplotlib.pyplot as plt, mpld3
 import matplotlib.patches as patches
+from mpld3 import plugins
 import json
 
 MIN_DOMAIN_LENGTH=5
 
-class Model(object):
+class Model():
     def __new__(cls, *args, **kwargs):
         if cls is Model:
             raise TypeError("Model shoud not be instantiated")
@@ -140,6 +141,7 @@ class Model(object):
                 fontsize=fontsize,
                 colors=[]
             )
+
             single_chart = dict()
             single_chart['id']='fig_' + str(i)
             single_chart['json'] = json.dumps(mpld3.fig_to_dict(fig))
@@ -187,11 +189,22 @@ class Model(object):
 
         self._does_dir_exist(out_dir)
 
-        fout = open(out_dir + '/cdna.fa','w')
+        fout = open(
+            os.path.join(
+                out_dir,
+                self.name + '_cdna.fa'
+            ),
+            'w'
+        )
 
         for name, transcript in self.transcripts.items():
 
             if transcript.cds is not None:
+
+                if self.middlestar:
+                    temp = str(transcript.cdna.seq)
+                    temp = temp[:transcript.transcript_cdna_junction_5prime] + '*' + temp[transcript.transcript_cdna_junction_5prime:]
+                    transcript.cdna.seq = Seq.Seq(temp,generic_dna)
 
                 SeqIO.write(transcript.cdna,fout,"fasta")
 
@@ -201,11 +214,22 @@ class Model(object):
 
         self._does_dir_exist(out_dir)
 
-        fout = open(out_dir + '/cds.fa','w')
+        fout = open(
+            os.path.join(
+                out_dir,
+                self.name + '_cds.fa'
+            ),
+            'w'
+        )
 
         for name, transcript in self.transcripts.items():
 
             if transcript.cds is not None:
+
+                if self.middlestar:
+                    temp = str(transcript.cds.seq)
+                    temp = temp[:transcript.transcript_cds_junction_5prime] + '*' + temp[transcript.transcript_cds_junction_5prime:]
+                    transcript.cds.seq = Seq.Seq(temp,generic_dna)
 
                 SeqIO.write(transcript.cds,fout,"fasta")
 
@@ -215,11 +239,22 @@ class Model(object):
 
         self._does_dir_exist(out_dir)
 
-        fout = open(out_dir + '/protein.fa','w')
+        fout = open(
+            os.path.join(
+                out_dir,
+                self.name + '_protein.fa'
+            ),
+            'w'
+        )
 
         for name, transcript in self.transcripts.items():
 
             if transcript.cds is not None:
+
+                if self.middlestar:
+                    temp = str(transcript.protein.seq)
+                    temp = temp[:transcript.transcript_protein_junction_5prime] + '*' + temp[transcript.transcript_protein_junction_5prime:]
+                    transcript.protein.seq = Seq.Seq(temp,generic_protein)
 
                 SeqIO.write(transcript.protein,fout,"fasta")
 
@@ -480,14 +515,8 @@ class FusionTranscript():
         else:
             self.effect='out-of-frame'
 
-        if self.middlestar:
-            temp = str(self.cds.seq)
-            star_position = temp.find('*')
-            protein_seq = self.cds.seq.translate()
-            protein_seq = protein_seq[0:protein_seq.find('*')]
-        else:
-            protein_seq = self.cds.seq.translate()
-            protein_seq = protein_seq[0:protein_seq.find('*')]
+        protein_seq = self.cds.seq.translate()
+        protein_seq = protein_seq[0:protein_seq.find('*')]
 
         self.molecular_weight = SeqUtils.molecular_weight(protein_seq)/1000.
         self.protein_length = len(protein_seq)
@@ -552,10 +581,7 @@ class FusionTranscript():
 
         self.cds_3prime = self.transcript2.coding_sequence[self.transcript_cds_junction_3prime::]
 
-        if self.middlestar:
-            seq = self.cds_5prime + '*' + self.cds_3prime
-        else:
-            seq = self.cds_5prime + self.cds_3prime
+        seq = self.cds_5prime + self.cds_3prime
 
         self.cds = SeqRecord.SeqRecord(
             Seq.Seq(seq,generic_dna),
@@ -615,10 +641,7 @@ class FusionTranscript():
                 else:
                     self.transcript_cdna_junction_3prime += (exon.end - self.gene3prime.junction + 1)
 
-        if self.middlestar:
-            transcript_seq += '*' + self.transcript2.sequence[self.transcript_cdna_junction_3prime::]
-        else:
-            transcript_seq += self.transcript2.sequence[self.transcript_cdna_junction_3prime::]
+        transcript_seq += self.transcript2.sequence[self.transcript_cdna_junction_3prime::]
 
         self.cdna = SeqRecord.SeqRecord(
             Seq.Seq(transcript_seq,generic_dna),

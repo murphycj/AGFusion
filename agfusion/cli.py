@@ -174,7 +174,8 @@ def main():
     fusion = agfusion.Fusion(
         gene5prime=gene5prime,
         gene3prime=gene3prime,
-        db=db
+        db=db,
+        middlestar=args.middlestar
     )
 
     fusion.save_transcript_cdna(args.out)

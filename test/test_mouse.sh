@@ -17,7 +17,8 @@
   --release 84 \
   --species mouse \
   --out DLG1-BRAF \
-  --colors Pkinase_Tyr:red
+  --colors Pkinase_Tyr:red \
+  --middlestar
 
 #../bin/agfusion \
 #  --gene5prime ENSMUSG00000000441 \
