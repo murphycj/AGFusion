@@ -3,7 +3,6 @@ import os
 
 from agfusion import utils, exceptions
 import pandas
-from PIL import *
 import pyensembl
 from Bio import Seq, SeqIO, SeqRecord, SeqUtils
 from Bio.Alphabet import generic_dna,generic_protein
@@ -43,24 +42,6 @@ class Model(object):
     def _draw(self,fig,name,transcript,length_normalize,fontsize,colors,rename):
 
         ax = fig.add_subplot(111)
-
-        #main protein body
-
-        ax.add_patch(
-            patches.Rectangle(
-                (0.05, 0.45),
-                0.9,
-                0.1,
-                fill=False
-            )
-        )
-        ax.text(
-            0.5,
-            0.9,
-            name,
-            horizontalalignment='center',
-            fontsize=fontsize
-        )
 
         if length_normalize is not None:
             normalize = length_normalize
@@ -175,6 +156,24 @@ class Model(object):
             fontsize=fontsize
         )
 
+        #main protein body
+
+        ax.add_patch(
+            patches.Rectangle(
+                (0.05, 0.45),
+                0.9,
+                0.1,
+                fill=False
+            )
+        )
+        ax.text(
+            0.5,
+            0.9,
+            name,
+            horizontalalignment='center',
+            fontsize=fontsize
+        )
+
         ax.axis('off')
         ax.set_xlim(0,1)
         ax.set_ylim(0,1)
@@ -219,6 +218,9 @@ class Model(object):
         return dict_of_plots, plot_key
 
     def save_image(self,transcript,out_dir,length_normalize=None,dpi=90,file_type='png',fontsize=12,colors={},rename={}):
+        """
+
+        """
 
         self._does_dir_exist(out_dir)
 
@@ -249,6 +251,9 @@ class Model(object):
         return filename
 
     def save_images(self,out_dir,length_normalize=None,dpi=90,file_type='png',fontsize=12,colors={},rename={}):
+        """
+
+        """
 
         self._does_dir_exist(out_dir)
 
@@ -428,28 +433,50 @@ class Fusion(Model):
 
             #skip if the junction is outside the range of either transcript
 
+            name = transcript1.id + '-' + transcript2.id
+
             if not transcript1.contains(transcript1.contig,self.gene5prime.junction,self.gene5prime.junction):
-                continue
+                self.transcripts[name] = FusionTranscript(
+                    transcript1=transcript1,
+                    transcript2=transcript2,
+                    gene5prime=gene5prime,
+                    gene3prime=gene3prime,
+                    db=db,
+                    middlestar=middlestar,
+                    predict_effect=False
+                )
+                self.transcripts[name].effect='Outside transcript boundry'
+                self.transcripts[name].has_coding_potential=False
 
-            if not transcript2.contains(transcript2.contig,self.gene3prime.junction,self.gene3prime.junction):
-                continue
+            elif not transcript2.contains(transcript2.contig,self.gene3prime.junction,self.gene3prime.junction):
+                self.transcripts[name] = FusionTranscript(
+                    transcript1=transcript1,
+                    transcript2=transcript2,
+                    gene5prime=gene5prime,
+                    gene3prime=gene3prime,
+                    db=db,
+                    middlestar=middlestar,
+                    predict_effect=False
+                )
+                self.transcripts[name].effect='Outside transcript boundry'
+                self.transcripts[name].has_coding_potential=False
 
-            name = transcript1.id+'-'+transcript2.id
-            self.transcripts[name] = FusionTranscript(
-                transcript1,
-                transcript2,
-                gene5prime,
-                gene3prime,
-                db=db,
-                middlestar=middlestar
-            )
+            else:
+                self.transcripts[name] = FusionTranscript(
+                    transcript1=transcript1,
+                    transcript2=transcript2,
+                    gene5prime=gene5prime,
+                    gene3prime=gene3prime,
+                    db=db,
+                    middlestar=middlestar,
+                )
 
 class FusionTranscript(object):
     """
     Generates the information needed for the gene fusion transctips
     """
 
-    def __init__(self,transcript1=None,transcript2=None,gene5prime=None,gene3prime=None,db=None,middlestar=False):
+    def __init__(self,transcript1=None,transcript2=None,gene5prime=None,gene3prime=None,db=None,middlestar=False,predict_effect=True):
         self.transcript1=transcript1
         self.transcript2=transcript2
         self.gene5prime=gene5prime
@@ -491,14 +518,10 @@ class FusionTranscript(object):
         self.effect_5prime='exon'
         self.effect_3prime='exon'
         self.effect=''
-
-        self.has_start_codon_5prime=True
-        self.has_start_codon_3prime=True
-        self.has_stop_codon_5prime=True
-        self.has_stop_codon_3prime=True
-
         self.has_coding_potential=True
-        self.predict_effect(db)
+
+        if predict_effect:
+            self.predict_effect(db)
 
     def _fetch_domain_name(self,name,db):
         db.c.execute(
@@ -789,18 +812,29 @@ class FusionTranscript(object):
         #they don't have stop and/or start codons
 
         if not self.transcript1.contains_start_codon:
-            self.has_start_codon_5prime=False
             self.has_coding_potential=False
         if not self.transcript1.contains_stop_codon:
-            self.has_stop_codon_5prime=False
             self.has_coding_potential=False
 
         if not self.transcript2.contains_start_codon:
-            self.has_start_codon_3prime=False
             self.has_coding_potential=False
         if not self.transcript2.contains_stop_codon:
-            self.stop_codon_3prime=False
             self.has_coding_potential=False
+
+        #if the 5' gene has a start codon and the 3' gene has a stop
+        #codon, but one or both are missing a stop codon or start codon,
+        #respectively, then a protein can be produced
+
+        #if (self.has_start_codon_5prime and self.has_stop_codon_3prime) and
+        #    (not self.has_stop_codon_5prime or not self.has_start_codon_3prime):
+
+        #    self.has_coding_potential=True
+
+        #finally, if the fusion transcript has coding potential then
+        #fetch its CDS and protein sequences and annotate it
+
+        if self.transcript1.name=='ENSMUST00000115196':
+            import pdb; pdb.set_trace()
 
         if self.has_coding_potential:
             self._fetch_transcript_cds()
