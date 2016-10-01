@@ -119,11 +119,21 @@ def main():
         required=False,
         nargs='+',
         default=None,
-        help='(Optional) Space-delimited list of domain namd and color to ' + \
+        help='(Optional) Space-delimited list of domain name and color to ' + \
             'specify certain colors for domains. Format --color domain_name:color' + \
             ' (e.g. --color Pkinase_Tyr:blue I-set:#006600). ' + \
             'Can use specific color names for hex representation. Default ' + \
             'blue for everything.'
+    )
+    parser.add_argument(
+        '--rename',
+        type=str,
+        required=False,
+        nargs='+',
+        default=None,
+        help='(Optional) Space-delimited list of domain name and new name to ' + \
+            'rename particular domains. Format --rename domain_name:new_domain_name' + \
+            ' (e.g. --rename Pkinase_Tyr:Kinase).'
     )
     parser.add_argument(
         '--type',
@@ -183,6 +193,7 @@ def main():
     fusion.save_proteins(args.out)
 
     colors={}
+    rename = {}
 
     if args.colors is not None:
         for i in args.colors:
@@ -195,7 +206,18 @@ def main():
 
             colors[pair[0]] = pair[1]
 
-    fusion.save_image(out_dir=args.out,colors=colors)
+    if args.rename is not None:
+        for i in args.rename:
+            pair = i.split(':')
+
+            assert len(pair)==2," did not properly specify --rename"
+
+            if pair[0] in rename:
+                print "!!! WARNING - you rename %s twice." % pair[0]
+
+            rename[pair[0]] = pair[1]
+
+    fusion.save_images(out_dir=args.out,colors=colors,rename=rename)
 
     if args.WT:
         gene5prime.save_image(args.out)

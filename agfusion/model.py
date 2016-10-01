@@ -14,7 +14,7 @@ import json
 
 MIN_DOMAIN_LENGTH=5
 
-class Model():
+class Model(object):
     def __new__(cls, *args, **kwargs):
         if cls is Model:
             raise TypeError("Model shoud not be instantiated")
@@ -40,7 +40,7 @@ class Model():
         if not os.path.exists(out_dir):
             os.mkdir(out_dir)
 
-    def _draw(self,fig,name,transcript,length_normalize,fontsize,colors):
+    def _draw(self,fig,name,transcript,length_normalize,fontsize,colors,rename):
 
         ax = fig.add_subplot(111)
 
@@ -76,11 +76,15 @@ class Model():
         for domain in transcript.domains['pfam']:
 
             domain_name = domain[1]
+
+            if domain_name in rename:
+                domain_name = rename[domain_name]
+
             domain_start = (int(domain[2])/float(normalize))*0.9 + offset
             domain_end = (int(domain[3])/float(normalize))*0.9 + offset
             domain_center = (domain_end-domain_start)/2. + domain_start
 
-            color = 'blue'
+            color = '#00B7FF'
             if domain_name in colors:
                 color = colors[domain_name]
 
@@ -95,6 +99,7 @@ class Model():
                     color=color
                 )
             )
+
             ax.text(
                 domain_center,
                 0.4,
@@ -179,6 +184,7 @@ class Model():
     def output_to_html(self,length_normalize=None,dpi=90,fontsize=12):
 
         dict_of_plots = list()
+        plot_key = dict()
         i=1
 
         for name, transcript in self.transcripts.items():
@@ -186,7 +192,7 @@ class Model():
             if not transcript.has_coding_potential:
                 continue
 
-            fig = plt.figure(figsize=(20,5),frameon=False)
+            fig = plt.figure(figsize=(15,4),frameon=False)
 
             self._draw(
                 fig=fig,
@@ -194,24 +200,59 @@ class Model():
                 transcript=transcript,
                 length_normalize=length_normalize,
                 fontsize=fontsize,
-                colors=[]
+                colors=[],
+                rename=[]
             )
 
             single_chart = dict()
-            single_chart['id']='fig_' + str(i)
+            single_chart['id'] = 'fig' + str(i)
             single_chart['json'] = json.dumps(mpld3.fig_to_dict(fig))
             dict_of_plots.append(single_chart)
+
+            plot_key['fig' + str(i)] = transcript.name
+
             i+=1
 
-            #plt.close(fig)
-            #plt.clf()
-        return dict_of_plots
+            plt.close(fig)
+            plt.clf()
 
-    def save_image(self,out_dir,length_normalize=None,dpi=90,file_type='png',fontsize=12,colors={}):
+        return dict_of_plots, plot_key
+
+    def save_image(self,transcript,out_dir,length_normalize=None,dpi=90,file_type='png',fontsize=12,colors={},rename={}):
 
         self._does_dir_exist(out_dir)
 
-        assert file_type in ['png','pdf','jpeg'], 'provided wrong file type'
+        transcript = self.transcripts[transcript]
+
+        fig = plt.figure(figsize=(20,5),frameon=False)
+
+        self._draw(
+            fig=fig,
+            name=transcript.name,
+            transcript=transcript,
+            length_normalize=length_normalize,
+            fontsize=fontsize,
+            colors=colors,
+            rename=rename
+        )
+
+        filename = out_dir + '/' + transcript.name + '.' + file_type
+
+        fig.savefig(
+            filename,
+            dpi=dpi,
+            bbox_inches='tight'
+        )
+        plt.close(fig)
+        plt.clf()
+
+        return filename
+
+    def save_images(self,out_dir,length_normalize=None,dpi=90,file_type='png',fontsize=12,colors={},rename={}):
+
+        self._does_dir_exist(out_dir)
+
+        assert file_type in ['png','pdf'], 'provided wrong file type'
 
         for name, transcript in self.transcripts.items():
 
@@ -226,7 +267,8 @@ class Model():
                 transcript=transcript,
                 length_normalize=length_normalize,
                 fontsize=fontsize,
-                colors=colors
+                colors=colors,
+                rename=rename
             )
 
             filename = out_dir + '/' + name + '.' + file_type
@@ -356,8 +398,6 @@ class Gene(Model):
         else:
             raise exceptions.GeneIDException(gene)
 
-        self.db=db
-
         self.junction=junction
         if self.junction < self.gene.start or self.junction > self.gene.end:
             raise exceptions.JunctionException()
@@ -371,7 +411,6 @@ class Fusion(Model):
         self.gene5prime=gene5prime
         self.gene3prime=gene3prime
         self.name = self.gene5prime.gene.name + '-' + self.gene3prime.gene.name
-        self.db=db
         self.middlestar=middlestar
 
         self.transcripts = {}
@@ -405,7 +444,7 @@ class Fusion(Model):
                 middlestar=middlestar
             )
 
-class FusionTranscript():
+class FusionTranscript(object):
     """
     Generates the information needed for the gene fusion transctips
     """
@@ -415,7 +454,6 @@ class FusionTranscript():
         self.transcript2=transcript2
         self.gene5prime=gene5prime
         self.gene3prime=gene3prime
-        self.db=db
         self.middlestar=middlestar
 
         self.name=self.transcript1.id + '-' + self.transcript2.id
@@ -460,15 +498,15 @@ class FusionTranscript():
         self.has_stop_codon_3prime=True
 
         self.has_coding_potential=True
-        self.predict_effect()
+        self.predict_effect(db)
 
-    def _fetch_domain_name(self,name):
-        self.db.c.execute(
+    def _fetch_domain_name(self,name,db):
+        db.c.execute(
             'SELECT * FROM PFAMMAP WHERE pfam_acc==\"' + \
             name + \
             '\"'
         )
-        new_name = self.db.c.fetchall()
+        new_name = db.c.fetchall()
         if len(new_name)<1:
             print 'No pfam name for %s' % name
             return name
@@ -477,13 +515,13 @@ class FusionTranscript():
         elif len(new_name)==1:
             return new_name[0][1]
 
-    def _annotate(self):
+    def _annotate(self,db):
         """
         Annotate the gene fusion's protein using the protein annotaiton
         from its two genes
         """
 
-        self.db.c.execute(
+        db.c.execute(
             'SELECT * FROM pfam WHERE ensembl_transcript_id==\"' + \
             self.transcript1.id + \
             '\"'
@@ -491,14 +529,14 @@ class FusionTranscript():
 
         fusion_domains=[]
 
-        domains = map(lambda x: list(x),self.db.c.fetchall())
+        domains = map(lambda x: list(x),db.c.fetchall())
 
         for d in domains:
             if str(d[1])=='':
                 continue
 
-            d[0]=self.name
-            d[1] = self._fetch_domain_name(d[1])
+            d[0] = self.name
+            d[1] = self._fetch_domain_name(d[1],db)
             d[2] = int(d[2])
             d[3] = int(d[3])
 
@@ -515,20 +553,20 @@ class FusionTranscript():
 
         if self.effect != 'out-of-frame':
 
-            self.db.c.execute(
+            db.c.execute(
                 'SELECT * FROM pfam WHERE ensembl_transcript_id==\"' + \
                 self.transcript2.id + \
                 '\"'
             )
 
-            domains = map(lambda x: list(x),self.db.c.fetchall())
+            domains = map(lambda x: list(x),db.c.fetchall())
 
             for d in domains:
                 if str(d[1])=='':
                     continue
 
                 d[0] = self.name
-                d[1] = self._fetch_domain_name(d[1])
+                d[1] = self._fetch_domain_name(d[1],db)
                 d[2] = int(d[2])
                 d[3] = int(d[3])
 
@@ -713,21 +751,11 @@ class FusionTranscript():
         if self.transcript2.complete and (len(self.transcript2)-self.transcript_cdna_junction_5prime) < len(self.transcript2.five_prime_utr_sequence):
             self.effect_5prime='3UTR'
 
-    def predict_effect(self):
+    def predict_effect(self,db):
         """
         types of fusions: in-frame, out-of-frame, and any combination of
         UTR, intron, intergenic, exonic (no known CDS),
         CDS(not-reliable-start-or-end), CDS(truncated), CDS(complete)
-
-
-        CDS
-        exon 5' CDS
-        exon 3' CDS
-        5' utr
-        3' utr
-        intron
-        intergenic
-
         """
 
         #check if within exon
@@ -777,4 +805,4 @@ class FusionTranscript():
         if self.has_coding_potential:
             self._fetch_transcript_cds()
             self._fetch_protein()
-            self._annotate()
+            self._annotate(db)
