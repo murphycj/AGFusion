@@ -25,12 +25,6 @@ python ./agfusion
 
 ‘’’
 
-# Installation
-
-‘’’
-pip install agfusion
-‘’’
-
 # Dependencies
 
 python 2.7.8
@@ -40,6 +34,32 @@ pyensembl
 matplotlib
 mpld3
 json
+
+# Installation
+
+‘’’
+pip install agfusion
+‘’’
+
+After install pyensembl you need to install the reference genome you will use.
+
+For GRCh38:
+
+‘’’
+pyensembl install --release 84 --species homo_sapiens
+‘’’
+
+For GRCh37:
+
+‘’’
+pyensembl install --release 75 --species homo_sapiens
+‘’’
+
+For GRCm38:
+
+‘’’
+pyensembl install --release 84 --species mus_musculus
+‘’’
 
 # License
 

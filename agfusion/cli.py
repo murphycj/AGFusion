@@ -2,15 +2,17 @@ import sqlite3
 import os
 import sys
 import argparse
+import logging
+import urllib
 
 import agfusion
 
 def build_db():
 
     parser = argparse.ArgumentParser(
-        description='Build or update the SQLite3 database for a reference ' + \
-        'genomes by querying Biomart. If the database given by --name already ' + \
-        'exists, then species-specific portion of the database will be updated.'
+        description='Build the SQLite3 database for a reference ' + \
+        'genomes by querying Biomart. The the database given by --database ' + \
+        'already exists then that portion will be overwritten.'
     )
     parser.add_argument(
         '--database',
@@ -19,29 +21,10 @@ def build_db():
         help='Path to the database file (e.g. agfusion.db)'
     )
     parser.add_argument(
-        '--ensembl_dataset',
+        '--genome',
         type=str,
         required=True,
-        help='The reference ensembl dataset to query biomart (hsapiens_gene_ensembl or mmusculus_gene_ensembl)'
-    )
-    parser.add_argument(
-        '--species',
-        type=str,
-        required=True,
-        help='Human or mouse'
-    )
-    parser.add_argument(
-        '--release',
-        type=str,
-        required=True,
-        help='Ensembl release'
-    )
-    parser.add_argument(
-        '--ensembl_server',
-        type=str,
-        required=False,
-        default='http://useast.ensembl.org/biomart',
-        help='(Optional) Name of the database (default: http://useast.ensembl.org/biomart)'
+        help='GRCh38, GRCh37, or GRCm38'
     )
     parser.add_argument(
         '--p',
@@ -49,18 +32,25 @@ def build_db():
         default=1,
         help='(Optional) Number of processers to use to fetch data from Biomart (default 1).'
     )
+
     args = parser.parse_args()
 
-    data = pyensembl.EnsemblRelease(args.release,args.species)
+    db = agfusion.AGFusionDBBManager(args.database,args.genome)
 
-    if args.species.lower()=='human':
-        dataset='hsapiens_gene_ensembl'
-    elif args.species.lower()=='mouse':
-        dataset='mmusculus_gene_ensembl'
+    db.logger.info('Fetching data from Biomart...')
 
-    db = agfusion.AGFusionDBBManager(args.database)
-    db.fetch_data(args.ensembl_server,dataset,args.p,data.transcript_ids())
-    db.add_pfam()
+    db.fetch_data(args.p)
+
+    db.logger.info('Retrieving PFAM domain name mapping file...')
+
+    pfam_file = os.path.join(os.path.dirname(args.database),'pdb_pfam_mapping.txt')
+    r = urllib.urlretrieve('ftp://ftp.ebi.ac.uk/pub/databases/Pfam//mappings/pdb_pfam_mapping.txt',pfam_file)
+
+    db.logger.info('Adding PFAM data to the database...')
+
+    db.add_pfam(pfam_file=pfam_file)
+
+    db.logger.info('Done!')
 
 def main():
 
@@ -102,16 +92,10 @@ def main():
         help='The SQLite3 database.'
     )
     parser.add_argument(
-        '--species',
+        '--genome',
         type=str,
         required=True,
-        help='Reference genome (GRCh38, GRCh37, or GRCm38)'
-    )
-    parser.add_argument(
-        '--release',
-        type=str,
-        required=True,
-        help='Ensembl release'
+        help='GRCh38, GRCh37, or GRCm38'
     )
     parser.add_argument(
         '--colors',
@@ -167,7 +151,7 @@ def main():
     if not os.path.exists(args.out):
         os.mkdir(args.out)
 
-    db = agfusion.AGFusionDB(args.db,args.release,args.species)
+    db = agfusion.AGFusionDB(args.db,args.genome)
 
     gene5prime = agfusion.Gene(
         gene=args.gene5prime,

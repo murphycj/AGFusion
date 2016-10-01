@@ -4,6 +4,7 @@ import os
 import sqlite3
 import requests
 import glob
+import logging
 
 from tqdm import tqdm
 from biomart import BiomartServer
@@ -32,7 +33,7 @@ def _chunker(seq, n):
 def _collect_results(result):
 
     if result is None:
-        print 'Could not fetch some data for some reason...'
+        logging.error(' Could not fetch some data for some reason...')
         sys.exit()
 
     results.extend(result)
@@ -56,10 +57,10 @@ def _query_job(index,filters,attributes,ntries,ensembl,return_dict):
 
     except requests.HTTPError:
         if ntries==3:
-            print 'Max number of retries on this chunk!'
+            logging.error(' Max number of retries on this chunk!')
             raise
         else:
-            print 'Chunk too large, splitting into two chunk and retrying...'
+            logging.debug(' Chunk too large, splitting into two chunk and retrying...')
             for f in split_into_n_lists(filters[filters.keys()[0]],2):
                 filter_sub = {filters.keys()[0]:f}
                 _query_job(
@@ -85,10 +86,18 @@ class AGFusionDB(object):
     reference_name
     """
 
-    def __init__(self,database,release,species):
+    def __init__(self,database,genome):
 
         self.database=os.path.abspath(database)
         self.fastas = {}
+
+        self.logger = logging.getLogger('AGFusion')
+        self.logger.setLevel(logging.INFO)
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        ch.setFormatter(formatter)
+        self.logger.addHandler(ch)
 
         assert os.path.exists(self.database), "database does not exist!"
 
@@ -97,7 +106,16 @@ class AGFusionDB(object):
         )
         self.c = self.conn.cursor()
         self.conn.commit()
-        self.data = pyensembl.EnsemblRelease(release,species)
+
+        if genome=='GRCm38':
+            self.data = pyensembl.EnsemblRelease(84,'mouse')
+        elif genome=='GRCh38':
+            self.data = pyensembl.EnsemblRelease(84,'human')
+        elif genome=='GRCh37':
+            self.data = pyensembl.EnsemblRelease(75,'human')
+        else:
+            self.logger.error(' You provided an incorrect reference genome. Use one of the following: GRCh38, GRCh37, or GRCm38')
+            sys.exit()
 
     def _check_table(self,table):
         """
@@ -126,18 +144,23 @@ class AGFusionDBBManager(AGFusionDB):
     reference
     """
 
-    def __init__(self,database):
+    def __init__(self,database,genome):
 
         if not os.path.exists(database):
-            print 'Creating database...'
             fout = open(os.path.abspath(database),'a')
             fout.close()
 
-        super(AGFusionDBBManager,self).__init__(database)
+        super(AGFusionDBBManager,self).__init__(database,genome)
+
+        if genome=='GRCh38' or genome=='GRCh37':
+            self.ensembl_dataset='hsapiens_gene_ensembl'
+            self.ensembl_server='http://useast.ensembl.org/biomart'
+        elif genome=='GRCm38':
+            self.ensembl_dataset='mmusculus_gene_ensembl'
+            self.ensembl_server='http://useast.ensembl.org/biomart'
 
         self._ensembl=None
         self._biomart=None
-        #self.reference=reference
 
         self._check_for_tables()
 
@@ -190,11 +213,10 @@ class AGFusionDBBManager(AGFusionDB):
 
         return return_dict
 
-    def _fetch_protein_level_info(self,genes,p,columns,table):
-        print 'Fetching protein-level information...'
+    def _fetch_protein_level_info(self,transcripts,p,columns,table):
 
         data = self._fetch(
-            ids=genes,
+            ids=transcripts,
             filters='ensembl_transcript_id',
             attributes=['ensembl_transcript_id'] + columns,
             p=p,
@@ -203,7 +225,7 @@ class AGFusionDBBManager(AGFusionDB):
 
         #process data
 
-        print 'Adding protein-level information to the database...'
+        self.logger.info(' Adding Biomart information to the database...')
 
         #format the data correctly so it can be put into the database
 
@@ -224,8 +246,8 @@ class AGFusionDBBManager(AGFusionDB):
         self.c.executemany('INSERT INTO ' + table + ' VALUES (?,?,?,?)', data_into_db)
         self.conn.commit()
 
-    def add_pfam(self,file_name='pdb_pfam_mapping.txt'):
-        data = pandas.read_table(file_name,sep='\t')
+    def add_pfam(self,pfam_file='pdb_pfam_mapping.txt'):
+        data = pandas.read_table(pfam_file,sep='\t')
 
         def clean_name(x):
             return x.split('.')[0]
@@ -233,9 +255,7 @@ class AGFusionDBBManager(AGFusionDB):
         data = dict(zip(data['PFAM_ACC'].map(clean_name),data['PFAM_Name']))
         data = map(lambda x: [x[0],x[1]],data.items())
 
-        if self._check_table('PFAMMAP'):
-            self.c.execute('DELETE FROM PFAMMAP')
-            self.conn.commit()
+        self.c.execute('drop table if exists PFAMMAP')
 
         self.c.execute(
             "CREATE TABLE PFAMMAP (" + \
@@ -249,13 +269,13 @@ class AGFusionDBBManager(AGFusionDB):
         self.conn.commit()
 
 
-    def fetch_data(self,ensembl_server,ensembl_dataset,p,transcripts):
+    def fetch_data(self,p):
 
-        self._biomart = BiomartServer(ensembl_server)
-        self._ensembl = self._biomart.datasets[ensembl_dataset]
+        self._biomart = BiomartServer(self.ensembl_server)
+        self._ensembl = self._biomart.datasets[self.ensembl_dataset]
 
         self._fetch_protein_level_info(
-            transcripts,
+            self.data.transcript_ids(),
             p,
             utils.PFAM_DOMAIN,
             'pfam'
