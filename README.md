@@ -51,7 +51,7 @@ Example usage from the command line:
 
 Example output visualization of the domain structure of the DLG1-BRAF fusion:
 
-![alt tag](https://github.com/murphycj/AGFusion/tree/master/test/DLG1-BRAF/ENSMUST00000023454-ENSMUST00000002487.png)
+![alt tag](https://github.com/murphycj/AGFusion/blob/master/test/DLG1-BRAF/ENSMUST00000023454-ENSMUST00000002487.png)
 
 # Dependencies
 
