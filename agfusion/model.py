@@ -57,7 +57,7 @@ class Model(object):
 
             domain_name = str(domain[1])
 
-            color = '#00B7FF'
+            color = '#3385ff'
             if domain_name in colors:
                 color = colors[domain_name]
 

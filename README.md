@@ -77,16 +77,26 @@ You can programmatically change domains names and colors:
 
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/test/DLG1-BRAF/ENSMUST00000132176-ENSMUST00000002487.renam.recolor.png)
 
+# Database
+
+For annotating with PFAM domains, AGFusion depends on a simple sqlite3 database (agfusion.db in the above examples). You can either download the database that comes with this package (recommended) or rebuild the database with the following command:
+
+```
+./build_db \
+  --db agfusion.db \
+  --genome GRCm38
+```
+
 # Dependencies
 
-python 2.7.8
-pyensembl>=0.9.5
-matplotlib>=1.5.0
-biomart>=0.9.0
-pandas>=0.18.1
-biopython>=1.67
-mpld3>=0.2
-jsonpickle>=0.9.
+- python 2.7.8
+- pyensembl>=0.9.5
+- matplotlib>=1.5.0
+- biomart>=0.9.0
+- pandas>=0.18.1
+- biopython>=1.67
+- mpld3>=0.2
+- jsonpickle>=0.9.
 
 # Installation
 
