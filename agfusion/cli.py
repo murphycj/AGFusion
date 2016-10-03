@@ -36,7 +36,7 @@ def build_db():
 
     args = parser.parse_args()
 
-    db = agfusion.AGFusionDBBManager(args.database)
+    db = agfusion.AGFusionDBBManager(args.database,args.genome)
 
     if args.genome=='GRCm38':
         pyensembl_data = pyensembl.EnsemblRelease(84,'mouse')
@@ -192,6 +192,7 @@ def main():
         gene5prime=gene5prime,
         gene3prime=gene3prime,
         db=db,
+        genome=args.genome,
         middlestar=args.middlestar
     )
 

@@ -411,7 +411,7 @@ class Fusion(Model):
     Generates the information needed for the gene fusion
     """
 
-    def __init__(self,gene5prime=None,gene3prime=None,db=None,transcripts_5prime=None,transcripts_3prime=None,middlestar=False):
+    def __init__(self,gene5prime=None,gene3prime=None,db=None,genome='',transcripts_5prime=None,transcripts_3prime=None,middlestar=False):
         self.gene5prime=gene5prime
         self.gene3prime=gene3prime
         self.name = self.gene5prime.gene.name + '-' + self.gene3prime.gene.name
@@ -441,6 +441,7 @@ class Fusion(Model):
                     gene5prime=gene5prime,
                     gene3prime=gene3prime,
                     db=db,
+                    genome=genome,
                     middlestar=middlestar,
                     predict_effect=False
                 )
@@ -454,6 +455,7 @@ class Fusion(Model):
                     gene5prime=gene5prime,
                     gene3prime=gene3prime,
                     db=db,
+                    genome=genome,
                     middlestar=middlestar,
                     predict_effect=False
                 )
@@ -467,6 +469,7 @@ class Fusion(Model):
                     gene5prime=gene5prime,
                     gene3prime=gene3prime,
                     db=db,
+                    genome=genome,
                     middlestar=middlestar,
                 )
 
@@ -475,12 +478,13 @@ class FusionTranscript(object):
     Generates the information needed for the gene fusion transctips
     """
 
-    def __init__(self,transcript1=None,transcript2=None,gene5prime=None,gene3prime=None,db=None,middlestar=False,predict_effect=True):
+    def __init__(self,transcript1=None,transcript2=None,gene5prime=None,gene3prime=None,db=None,genome='',middlestar=False,predict_effect=True):
         self.transcript1=transcript1
         self.transcript2=transcript2
         self.gene5prime=gene5prime
         self.gene3prime=gene3prime
         self.middlestar=middlestar
+        self.genome=genome
 
         self.name=self.transcript1.id + '-' + self.transcript2.id
         self.gene_names = self.gene5prime.gene.name + '-' + self.gene3prime.gene.name
@@ -544,7 +548,7 @@ class FusionTranscript(object):
         """
 
         db.c.execute(
-            'SELECT * FROM pfam WHERE ensembl_transcript_id==\"' + \
+            'SELECT * FROM ' + self.genome + '_pfam WHERE ensembl_transcript_id==\"' + \
             self.transcript1.id + \
             '\"'
         )
@@ -576,7 +580,7 @@ class FusionTranscript(object):
         if self.effect != 'out-of-frame':
 
             db.c.execute(
-                'SELECT * FROM pfam WHERE ensembl_transcript_id==\"' + \
+                'SELECT * FROM ' + self.genome + '_pfam WHERE ensembl_transcript_id==\"' + \
                 self.transcript2.id + \
                 '\"'
             )

@@ -139,12 +139,14 @@ class AGFusionDBBManager(AGFusionDB):
             fout = open(os.path.abspath(database),'a')
             fout.close()
 
-        super(AGFusionDBBManager,self).__init__(database,genome)
+        super(AGFusionDBBManager,self).__init__(database)
 
-        if genome=='GRCh38' or genome=='GRCh37':
+        self.genome=genome
+
+        if self.genome=='GRCh38' or self.genome=='GRCh37':
             self.ensembl_dataset='hsapiens_gene_ensembl'
             self.ensembl_server='http://useast.ensembl.org/biomart'
-        elif genome=='GRCm38':
+        elif self.genome=='GRCm38':
             self.ensembl_dataset='mmusculus_gene_ensembl'
             self.ensembl_server='http://useast.ensembl.org/biomart'
 
@@ -158,7 +160,7 @@ class AGFusionDBBManager(AGFusionDB):
         for i in utils.PROTEIN_DOMAIN:
             if not self._check_table(i[0]):
                 self.c.execute(
-                    "CREATE TABLE " + i[0] +" (" + \
+                    "CREATE TABLE " + self.genome + '_' + i[0] +" (" + \
                     "ensembl_transcript_id text," +
                     i[0] + " text," + \
                     i[1] + " text," + \
@@ -267,5 +269,5 @@ class AGFusionDBBManager(AGFusionDB):
             pyensembl_data.transcript_ids(),
             p,
             utils.PFAM_DOMAIN,
-            'pfam'
+            self.genome + '_pfam'
         )
