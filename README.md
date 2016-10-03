@@ -1,9 +1,22 @@
-# Visualize Gene Fusion (VGFusion)
+# Annotate Gene Fusion (AGFusion)
 Python package that visualizes and annotates gene fusions. Currently, the software can only visualize the PFAM domains of in-frame gene fusions. The software can also output fasta files of the predicted cDNA, CDS, and protein sequences resulting from fusion of all combinations of transcripts.
 
 # Example Usage
 
 The minimum amount of information you need to provide are the two fusion gene partners (gene symbol or Ensembl ID) and their respective predicted fusion junctions in genomic coordinates.
+
+Example usage from the command line:
+
+```
+./agfusion \
+  --gene5prime ENSMUSG00000022770 \
+  --gene3prime ENSMUSG00000002413 \
+  --junction5prime 31684294 \
+  --junction3prime 39648486 \
+  --db agfusion.db \
+  --genome GRCm38 \
+  --out DLG1-BRAF
+```
 
 Example usage within a python script:
 
@@ -28,25 +41,19 @@ braf = agfusion.Gene(
     pyensembl_data=data
 )
 
+#construct the gene fusion
+
 fusion = agfusion.model.Fusion(dlg1,braf,db=db,middlestar=False)
+
+#save the predicted cDNA, CDS, and protein sequences
 
 fusion.save_transcript_cdna('DLG1-BRAF_mouse')
 fusion.save_transcript_cds('DLG1-BRAF_mouse')
 fusion.save_proteins('DLG1-BRAF_mouse')
+
+#save the visualizations of the fusion domain structure
+
 fusion.save_images('DLG1-BRAF_mouse')
-```
-
-Example usage from the command line:
-
-```
-./agfusion \
-  --gene5prime ENSMUSG00000022770 \
-  --gene3prime ENSMUSG00000002413 \
-  --junction5prime 31684294 \
-  --junction3prime 39648486 \
-  --db agfusion.db \
-  --genome GRCm38 \
-  --out DLG1-BRAF
 ```
 
 Example output visualization of the domain structure of the DLG1-BRAF fusion:
