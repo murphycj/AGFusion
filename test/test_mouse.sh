@@ -14,8 +14,7 @@
   --junction5prime 31684294 \
   --junction3prime 39648486 \
   --db ../data/agfusion.db \
-  --release 84 \
-  --species mouse \
+  --genome GRCm38 \
   --out DLG1-BRAF \
   --colors Pkinase_Tyr:red \
   --rename Pkinase_Tyr:Kinase \

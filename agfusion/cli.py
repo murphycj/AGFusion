@@ -6,6 +6,7 @@ import logging
 import urllib
 
 import agfusion
+import pyensembl
 
 def build_db():
 
@@ -35,11 +36,21 @@ def build_db():
 
     args = parser.parse_args()
 
-    db = agfusion.AGFusionDBBManager(args.database,args.genome)
+    db = agfusion.AGFusionDBBManager(args.database)
+
+    if args.genome=='GRCm38':
+        pyensembl_data = pyensembl.EnsemblRelease(84,'mouse')
+    elif args.genome=='GRCh38':
+        pyensembl_data = pyensembl.EnsemblRelease(84,'human')
+    elif args.genome=='GRCh37':
+        pyensembl_data = pyensembl.EnsemblRelease(75,'human')
+    else:
+        db.logger.error(' You provided an incorrect reference genome. Use one of the following: GRCh38, GRCh37, or GRCm38')
+        sys.exit()
 
     db.logger.info('Fetching data from Biomart...')
 
-    db.fetch_data(args.p)
+    db.fetch_data(pyensembl_data,args.p)
 
     db.logger.info('Retrieving PFAM domain name mapping file...')
 
@@ -151,18 +162,30 @@ def main():
     if not os.path.exists(args.out):
         os.mkdir(args.out)
 
-    db = agfusion.AGFusionDB(args.db,args.genome)
+    db = agfusion.AGFusionDB(args.db)
+
+    if args.genome=='GRCm38':
+        pyensembl_data = pyensembl.EnsemblRelease(84,'mouse')
+    elif args.genome=='GRCh38':
+        pyensembl_data = pyensembl.EnsemblRelease(84,'human')
+    elif args.genome=='GRCh37':
+        pyensembl_data = pyensembl.EnsemblRelease(75,'human')
+    else:
+        db.logger.error(' You provided an incorrect reference genome. Use one of the following: GRCh38, GRCh37, or GRCm38')
+        sys.exit()
 
     gene5prime = agfusion.Gene(
         gene=args.gene5prime,
         junction=args.junction5prime,
-        db=db
+        db=db,
+        pyensembl_data=pyensembl_data
     )
 
     gene3prime = agfusion.Gene(
         gene=args.gene3prime,
         junction=args.junction3prime,
-        db=db
+        db=db,
+        pyensembl_data=pyensembl_data
     )
 
     fusion = agfusion.Fusion(

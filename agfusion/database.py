@@ -10,7 +10,6 @@ from tqdm import tqdm
 from biomart import BiomartServer
 from agfusion import utils
 import pandas
-import pyensembl
 
 def split_into_n_lists(seq, n):
   avg = len(seq) / float(n)
@@ -86,7 +85,7 @@ class AGFusionDB(object):
     reference_name
     """
 
-    def __init__(self,database,genome):
+    def __init__(self,database):
 
         self.database=os.path.abspath(database)
         self.fastas = {}
@@ -106,16 +105,6 @@ class AGFusionDB(object):
         )
         self.c = self.conn.cursor()
         self.conn.commit()
-
-        if genome=='GRCm38':
-            self.data = pyensembl.EnsemblRelease(84,'mouse')
-        elif genome=='GRCh38':
-            self.data = pyensembl.EnsemblRelease(84,'human')
-        elif genome=='GRCh37':
-            self.data = pyensembl.EnsemblRelease(75,'human')
-        else:
-            self.logger.error(' You provided an incorrect reference genome. Use one of the following: GRCh38, GRCh37, or GRCm38')
-            sys.exit()
 
     def _check_table(self,table):
         """
@@ -269,13 +258,13 @@ class AGFusionDBBManager(AGFusionDB):
         self.conn.commit()
 
 
-    def fetch_data(self,p):
+    def fetch_data(self,pyensembl_data,p):
 
         self._biomart = BiomartServer(self.ensembl_server)
         self._ensembl = self._biomart.datasets[self.ensembl_dataset]
 
         self._fetch_protein_level_info(
-            self.data.transcript_ids(),
+            pyensembl_data.transcript_ids(),
             p,
             utils.PFAM_DOMAIN,
             'pfam'

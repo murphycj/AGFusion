@@ -3,7 +3,6 @@ import os
 
 from agfusion import utils, exceptions
 import pandas
-import pyensembl
 from Bio import Seq, SeqIO, SeqRecord, SeqUtils
 from Bio.Alphabet import generic_dna,generic_protein
 import matplotlib.pyplot as plt, mpld3
@@ -48,7 +47,7 @@ class Model(object):
         else:
             normalize = transcript.protein_length
 
-        assert normalize >= transcript.protein_length, "length normalization should be ≥ protein length"
+        assert normalize >= transcript.protein_length, "length normalization should be >= protein length"
 
         offset=0.05
 
@@ -387,14 +386,14 @@ class Gene(Model):
     wild-type genes or fusion gene.
     """
 
-    def __init__(self,gene=None,junction=0,db=None):
+    def __init__(self,gene=None,junction=0,db=None,pyensembl_data=None):
 
         #try to find gene by ensembl id first, then search by gene symbol
 
-        if gene in db.data.gene_ids():
-            self.gene = db.data.gene_by_id(gene)
-        elif gene in db.data.gene_names():
-            temp = db.data.genes_by_name(gene)
+        if gene in pyensembl_data.gene_ids():
+            self.gene = pyensembl_data.gene_by_id(gene)
+        elif gene in pyensembl_data.gene_names():
+            temp = pyensembl_data.genes_by_name(gene)
 
             if len(temp)>1:
                 raise exceptions.TooManyGenesException(gene)
