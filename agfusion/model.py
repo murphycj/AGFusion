@@ -55,7 +55,11 @@ class Model(object):
 
         for domain in transcript.domains['pfam']:
 
-            domain_name = domain[1]
+            domain_name = str(domain[1])
+
+            color = '#00B7FF'
+            if domain_name in colors:
+                color = colors[domain_name]
 
             if domain_name in rename:
                 domain_name = rename[domain_name]
@@ -63,10 +67,6 @@ class Model(object):
             domain_start = (int(domain[2])/float(normalize))*0.9 + offset
             domain_end = (int(domain[3])/float(normalize))*0.9 + offset
             domain_center = (domain_end-domain_start)/2. + domain_start
-
-            color = '#00B7FF'
-            if domain_name in colors:
-                color = colors[domain_name]
 
             ax.add_patch(
                 patches.Rectangle(

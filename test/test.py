@@ -27,7 +27,7 @@ def test_mouse():
         pyensembl_data=data
     )
 
-    fusion = agfusion.model.Fusion(dlg1,braf,db=db,middlestar=False)
+    fusion = agfusion.model.Fusion(dlg1,braf,db=db,genome='GRCm38',middlestar=False)
 
     fusion.save_transcript_cdna('DLG1-BRAF_mouse')
     fusion.save_transcript_cds('DLG1-BRAF_mouse')

@@ -16,8 +16,6 @@
   --db ../data/agfusion.db \
   --genome GRCm38 \
   --out DLG1-BRAF \
-  --colors Pkinase_Tyr:red \
-  --rename Pkinase_Tyr:Kinase \
   --middlestar
 
 #../bin/agfusion \
