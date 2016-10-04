@@ -43,7 +43,7 @@ braf = agfusion.Gene(
 
 #construct the gene fusion
 
-fusion = agfusion.model.Fusion(dlg1,braf,db=db,middlestar=False)
+fusion = agfusion.Fusion(dlg1,braf,db=db,middlestar=False)
 
 #save the predicted cDNA, CDS, and protein sequences
 

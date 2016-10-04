@@ -38,14 +38,23 @@
 #  --species human \
 #  --release 84
 
+#../bin/agfusion \
+#  --gene5prime ENSG00000058091 \
+#  --gene3prime ENSG00000004864 \
+#  --junction5prime 90604249 \
+#  --junction3prime 96296951 \
+#  --out CDK14-SLC25A13 \
+#  --db ../data/agfusion.db \
+#  --genome GRCh38
+
 ../bin/agfusion \
-  --gene5prime ENSG00000058091 \
-  --gene3prime ENSG00000004864 \
-  --junction5prime 90604249 \
-  --junction3prime 96296951 \
-  --out CDK14-SLC25A13 \
+  --gene5prime WHSC1L1 \
+  --gene3prime FGFR1 \
+  --junction5prime 38162105 \
+  --junction3prime 38285611 \
+  --out WHSC1L1-EFGFR1RP44 \
   --db ../data/agfusion.db \
-  --genome GRCh38
+  --genome GRCh37
 
 #../bin/agfusion \
 #  --gene5prime ENSG00000198380 \
