@@ -1,6 +1,13 @@
 import itertools
 import os
 
+#this is so I can plot graphics on a headless server
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot
+matplotlib.pyplot.ioff()
+
 from agfusion import utils, exceptions
 import pandas
 from Bio import Seq, SeqIO, SeqRecord, SeqUtils
