@@ -1,11 +1,10 @@
 ../bin/agfusion \
   --gene5prime ENSG00000100325 \
-  --gene3prime ENSG00000278311 \
+  --gene3prime GGNBP2 \
   --junction5prime 30228234 \
   --junction3prime 34910661 \
   --out ASCC2-GGNBP2 \
-  --db ../data/agfusion.db \
-  --genome GRCh38
+  --genome GRCh37
 
 
 #../bin/agfusion \

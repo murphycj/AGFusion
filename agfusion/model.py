@@ -282,7 +282,7 @@ class Model(object):
                 rename=rename
             )
 
-            filename = os.path.join(out_dir, name + '.'  file_type)
+            filename = os.path.join(out_dir, name + '.'  + file_type)
 
             fig.savefig(
                 filename,
@@ -395,21 +395,37 @@ class Gene(Model):
 
     def __init__(self,gene=None,junction=0,db=None,pyensembl_data=None):
 
-        #try to find gene by ensembl id first, then search by gene symbol
+        gene = gene.upper()
+
+        #search for ensembl gene id first
 
         if gene in pyensembl_data.gene_ids():
             self.gene = pyensembl_data.gene_by_id(gene)
-        elif gene in pyensembl_data.gene_names():
-            temp = pyensembl_data.genes_by_name(gene)
-
-            if len(temp)>1:
-                raise exceptions.TooManyGenesException(gene)
-
-            self.gene = temp[0]
         else:
-            raise exceptions.GeneIDException(gene)
+
+            #search by gene symbol next
+
+            if pyensembl_data.species.latin_name=='mus_musculus':
+                gene = gene.capitalize()
+
+            if gene in pyensembl_data.gene_names():
+                temp = pyensembl_data.genes_by_name(gene)
+
+                if len(temp)>1:
+
+                    #if too many ensembl gene IDs returned
+
+                    ids = map(lambda x: x.id, temp)
+
+                    raise exceptions.TooManyGenesException(gene,ids)
+                else:
+                    self.gene = temp[0]
+            else:
+
+                raise exceptions.GeneIDException(gene)
 
         self.junction=junction
+
         if self.junction < self.gene.start or self.junction > self.gene.end:
             raise exceptions.JunctionException()
 

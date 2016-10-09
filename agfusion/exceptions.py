@@ -6,12 +6,12 @@ class DataBaseError(Exception):
 
 class GeneIDException(Exception):
     def __init__(self,gene):
-        Exception.__init__(self,"No Ensembl ID found for {0}! Check to make sure you are using the right genome build.".format(gene))
+        Exception.__init__(self,"No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(gene))
         self.gene = gene
 
 class TooManyGenesException(Exception):
-    def __init__(self,gene):
-        Exception.__init__(self,"Multiple ensembl IDs found matching {0}. Try specifying just the Ensembl ID.".format(gene))
+    def __init__(self,gene,ids):
+        Exception.__init__(self,"Multiple Ensembl IDs found matching {0}: {1}. Specify which Ensembl ID.".format(gene,', '.join(ids)))
         self.gene = gene
 
 class JunctionException(Exception):

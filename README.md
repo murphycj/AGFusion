@@ -37,6 +37,23 @@ You can programmatically change domains names and colors:
 
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/test/DLG1-BRAF/ENSMUST00000132176-ENSMUST00000002487.renam.recolor.png)
 
+You can rescale the protein length so the images of two different fusions have appropriate relative lengths when plotted side by side:
+
+```
+./agfusion \
+  --gene5prime ENSMUSG00000022770 \
+  --gene3prime ENSMUSG00000002413 \
+  --junction5prime 31684294 \
+  --junction3prime 39648486 \
+  --genome GRCm38 \
+  --out DLG1-BRAF \
+  --colors Pkinase_Tyr:red \
+  --rename Pkinase_Tyr:Kinase
+```
+
+![alt tag](https://github.com/murphycj/AGFusion/blob/master/test/DLG1-BRAF/ENSMUST00000132176-ENSMUST00000002487.renam.recolor.png)
+
+
 # More examples
 
 Example usage within a python script:
