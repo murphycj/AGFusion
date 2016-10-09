@@ -29,6 +29,7 @@ You can programmatically change domains names and colors:
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
   --junction3prime 39648486 \
+  --db agfusion.db \
   --genome GRCm38 \
   --out DLG1-BRAF \
   --colors Pkinase_Tyr:red \
@@ -46,7 +47,7 @@ import agfusion
 import pyensembl
 
 data = pyensembl.EnsemblRelease(84,'mouse')
-db = agfusion.AGFusionDB(‘/path/to/agfusion.db')
+db = agfusion.AGFusionDB('../data/agfusion.db')
 
 dlg1 = agfusion.Gene(
     gene="ENSMUSG00000022770",
