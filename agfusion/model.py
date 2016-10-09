@@ -244,7 +244,7 @@ class Model(object):
             rename=rename
         )
 
-        filename = out_dir + '/' + transcript.name + '.' + file_type
+        filename = os.path.join(out_dir,transcript.name + '.' + file_type)
 
         fig.savefig(
             filename,
@@ -282,7 +282,7 @@ class Model(object):
                 rename=rename
             )
 
-            filename = out_dir + '/' + name + '.' + file_type
+            filename = os.path.join(out_dir, name + '.'  file_type)
 
             fig.savefig(
                 filename,
