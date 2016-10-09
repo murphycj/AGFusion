@@ -6,7 +6,7 @@ class DataBaseError(Exception):
 
 class GeneIDException(Exception):
     def __init__(self,gene):
-        Exception.__init__(self,"No Ensembl IDs found for {0}".format(gene))
+        Exception.__init__(self,"No Ensembl ID found for {0}! Check to make sure you are using the right genome build.".format(gene))
         self.gene = gene
 
 class TooManyGenesException(Exception):

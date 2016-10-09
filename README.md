@@ -3,7 +3,7 @@ Python package that visualizes and annotates gene fusions. Currently, the softwa
 
 # Example Usage
 
-The minimum amount of information you need to provide are the two fusion gene partners (gene symbol or Ensembl ID) and their respective predicted fusion junctions in genomic coordinates.
+You just need to provide the two fusion gene partners (gene symbol or Ensembl ID), their predicted fusion junctions in genomic coordinates, and the genome build.
 
 Example usage from the command line:
 
@@ -13,10 +13,32 @@ Example usage from the command line:
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
   --junction3prime 39648486 \
-  --db agfusion.db \
   --genome GRCm38 \
   --out DLG1-BRAF
 ```
+
+Example output visualization of the domain structure of the DLG1-BRAF fusion:
+
+![alt tag](https://github.com/murphycj/AGFusion/blob/master/test/DLG1-BRAF/ENSMUST00000023454-ENSMUST00000002487.png)
+
+You can programmatically change domains names and colors:
+
+```
+./agfusion \
+  --gene5prime ENSMUSG00000022770 \
+  --gene3prime ENSMUSG00000002413 \
+  --junction5prime 31684294 \
+  --junction3prime 39648486 \
+  --db agfusion.db \
+  --genome GRCm38 \
+  --out DLG1-BRAF \
+  --colors Pkinase_Tyr:red \
+  --rename Pkinase_Tyr:Kinase
+```
+
+![alt tag](https://github.com/murphycj/AGFusion/blob/master/test/DLG1-BRAF/ENSMUST00000132176-ENSMUST00000002487.renam.recolor.png)
+
+# More examples
 
 Example usage within a python script:
 
@@ -56,11 +78,15 @@ fusion.save_proteins('DLG1-BRAF_mouse')
 fusion.save_images('DLG1-BRAF_mouse')
 ```
 
-Example output visualization of the domain structure of the DLG1-BRAF fusion:
+For annotating with PFAM domains, AGFusion depends on a simple sqlite3 database (agfusion.db in the above examples). You can either download the database that comes with this package (recommended) or rebuild the database with the following command:
 
-![alt tag](https://github.com/murphycj/AGFusion/blob/master/test/DLG1-BRAF/ENSMUST00000023454-ENSMUST00000002487.png)
+```
+./build_db \
+  --db agfusion.db \
+  --genome GRCm38
+```
 
-You can programmatically change domains names and colors:
+And then specify the database with the --db flag:
 
 ```
 ./agfusion \
@@ -70,22 +96,9 @@ You can programmatically change domains names and colors:
   --junction3prime 39648486 \
   --db agfusion.db \
   --genome GRCm38 \
-  --out DLG1-BRAF \
-  --colors Pkinase_Tyr:red \
-  --rename Pkinase_Tyr:Kinase
+  --out DLG1-BRAF
 ```
 
-![alt tag](https://github.com/murphycj/AGFusion/blob/master/test/DLG1-BRAF/ENSMUST00000132176-ENSMUST00000002487.renam.recolor.png)
-
-# Database
-
-For annotating with PFAM domains, AGFusion depends on a simple sqlite3 database (agfusion.db in the above examples). You can either download the database that comes with this package (recommended) or rebuild the database with the following command:
-
-```
-./build_db \
-  --db agfusion.db \
-  --genome GRCm38
-```
 
 # Dependencies
 

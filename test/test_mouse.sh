@@ -13,7 +13,6 @@
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
   --junction3prime 39648486 \
-  --db ../data/agfusion.db \
   --genome GRCm38 \
   --out DLG1-BRAF \
   --middlestar

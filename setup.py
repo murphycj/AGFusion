@@ -12,6 +12,7 @@ setup(
     license='MIT',
     url='https://github.com/murphycj/AGFusion',
     long_description=README,
+    include_package_data=True,
     install_requires=[
         'pyensembl>=0.9.5',
         'matplotlib>=1.5.0',

@@ -97,16 +97,17 @@ def main():
         help='Directory to save results'
     )
     parser.add_argument(
-        '--db',
-        type=str,
-        required=True,
-        help='The SQLite3 database.'
-    )
-    parser.add_argument(
         '--genome',
         type=str,
         required=True,
         help='GRCh38, GRCh37, or GRCm38'
+    )
+    parser.add_argument(
+        '--db',
+        type=str,
+        default=None,
+        required=False,
+        help='(Optional) The SQLite3 database. Defaults to using the database provided by the package.'
     )
     parser.add_argument(
         '--colors',
@@ -162,7 +163,16 @@ def main():
     if not os.path.exists(args.out):
         os.mkdir(args.out)
 
-    db = agfusion.AGFusionDB(args.db)
+    #if user does not specify a sqlite database then use the one provided
+    #by the package
+
+    if args.db is None:
+        file_path = os.path.split(__file__)[0]
+        db = agfusion.AGFusionDB(os.path.join(file_path,'data','agfusion.db'))
+    else:
+        db = agfusion.AGFusionDB(args.db)
+
+    #get the pyensembl data
 
     if args.genome=='GRCm38':
         pyensembl_data = pyensembl.EnsemblRelease(84,'mouse')

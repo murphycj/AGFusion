@@ -2,7 +2,7 @@ import agfusion
 import pyensembl
 from Bio import SeqIO
 
-def test_mouse():
+def test_mouse_basic():
     """
     This tests whether various gene fusions correspond to the expected output
     """
@@ -90,6 +90,22 @@ def test_human():
     #cdna = SeqIO.parse(open('fgfr2-dnm3.cdna.fa','r'),'fasta').next()
     #trans=fusion.transcripts[u'ENST00000613048-ENST00000627582']
     #cdna.seq==trans.cdna.seq
+
+def test_id_mapping():
+    """
+    Test that AGFusion properly map ids and catch errors and special cases
+    """
+
+    data = pyensembl.EnsemblRelease(75,'human')
+    db = agfusion.AGFusionDB('../data/agfusion.db')
+
+
+    fgfr2 = agfusion.Gene(
+        gene=data.gene_by_id("ENSG00000100325"),
+        junction=34910661,
+        reference="GRCh37",
+        db=db
+    )
 
 test_mouse()
 #test_human()

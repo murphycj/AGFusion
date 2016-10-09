@@ -1,3 +1,13 @@
+../bin/agfusion \
+  --gene5prime ENSG00000100325 \
+  --gene3prime ENSG00000278311 \
+  --junction5prime 30228234 \
+  --junction3prime 34910661 \
+  --out ASCC2-GGNBP2 \
+  --db ../data/agfusion.db \
+  --genome GRCh38
+
+
 #../bin/agfusion \
 #  --gene5prime ENSG00000066468 \
 #  --gene3prime ENSG00000197959 \
@@ -47,14 +57,14 @@
 #  --db ../data/agfusion.db \
 #  --genome GRCh38
 
-../bin/agfusion \
-  --gene5prime WHSC1L1 \
-  --gene3prime FGFR1 \
-  --junction5prime 38162105 \
-  --junction3prime 38285611 \
-  --out WHSC1L1-EFGFR1RP44 \
-  --db ../data/agfusion.db \
-  --genome GRCh37
+#../bin/agfusion \
+#  --gene5prime WHSC1L1 \
+#  --gene3prime FGFR1 \
+#  --junction5prime 38162105 \
+#  --junction3prime 38285611 \
+#  --out WHSC1L1-EFGFR1RP44 \
+#  --db ../data/agfusion.db \
+#  --genome GRCh37
 
 #../bin/agfusion \
 #  --gene5prime ENSG00000198380 \

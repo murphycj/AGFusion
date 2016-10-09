@@ -1,5 +1,5 @@
 include README.md
-include data/agfusion.db
+include agfusion/data/agfusion.db
 include bin/agfusion
 include bin/build_db
 include test/test.py
