@@ -1,4 +1,4 @@
 .DS_Store
-./doc/_build/
-./doc/_static/*
+doc/_build/**
+doc/_static/**
 test/DLG1-BRAF/*
