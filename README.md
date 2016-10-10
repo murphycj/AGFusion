@@ -1,6 +1,8 @@
 # Annotate Gene Fusion (AGFusion)
 For a given gene fusion, AGFusion will predict the cDNA, CDS, and protein sequences resulting from fusion of all combinations of transcripts and save them to fasta files. AGFusion can also plot the protein domain architecture of the fusion transcripts. Currently, only PFAM domains are used to annotate gene fusions. CDS and protein sequences are only outputted for fusions that can form a protein.
 
+Docs are at http://pythonhosted.org/agfusion/
+
 # Example Usage
 
 You just need to provide the two fusion gene partners (gene symbol or Ensembl ID), their predicted fusion junctions in genomic coordinates, and the genome build.
