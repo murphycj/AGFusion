@@ -19,9 +19,9 @@ Example usage from the command line:
 
 Example output visualization of the domain structure of the DLG1-BRAF fusion:
 
-![alt tag](https://github.com/murphycj/AGFusion/blob/master/agfusion/data/ENSMUST00000132176-ENSMUST00000002487.png)
+![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000132176-ENSMUST00000002487.png)
 
-You can programmatically change domain names and colors:
+You can change domain names and colors:
 
 ```
 ../bin/agfusion \
@@ -35,7 +35,7 @@ You can programmatically change domain names and colors:
   --rename Pkinase_Tyr:Kinase L27_1:L27
 ```
 
-![alt tag](https://github.com/murphycj/AGFusion/blob/master/agfusion/data/ENSMUST00000132176-ENSMUST00000002487-color.png)
+![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000132176-ENSMUST00000002487-color.png)
 
 You can rescale the protein length so that images of two different fusions have appropriate relative lengths when plotted side by side:
 
@@ -60,12 +60,12 @@ You can rescale the protein length so that images of two different fusions have 
 
 ```
 
-![alt tag](https://github.com/murphycj/AGFusion/blob/master/agfusion/data/ENSMUST00000132176-ENSMUST00000002487-scale.png)
-![alt tag](https://github.com/murphycj/AGFusion/blob/master/agfusion/data/ENSMUST00000120187-ENSMUST00000086074.png)
+![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000132176-ENSMUST00000002487-scale.png)
+![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000120187-ENSMUST00000086074.png)
 
 # Installation
 
-First you need to install pyensembl (and the other dependencies) and download the reference genome you will use by running one of the following.
+First you need to install pyensembl (and the other dependencies listed at the bottom of this readme) and download the reference genome you will use by running one of the following.
 
 For GRCh38:
 
