@@ -170,8 +170,8 @@ def main():
         '--scale',
         type=int,
         required=False,
-        default=-1,
-        help='(Optional) Length in amino acids to scale the gene fusion image (default: max length of fusion product)'
+        default=None,
+        help='(Optional) Set maximum width (in amino acids) of the figure to rescale the fusion (default: max length of fusion product)'
     )
     #parser.add_argument(
     #    '--WT',
@@ -252,6 +252,7 @@ def main():
 
     fusion.save_images(
         out_dir=args.out,
+        scale=args.scale,
         colors=colors,
         rename=rename,
         fontsize=args.fontsize,

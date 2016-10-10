@@ -170,18 +170,20 @@ class Fusion():
         if not os.path.exists(out_dir):
             os.mkdir(out_dir)
 
-    def _draw(self,fig,name,transcript,length_normalize,fontsize,colors,rename):
+    def _draw(self,fig='',name='',transcript=None,scale=None,fontsize=12,colors=None,rename=None):
 
         ax = fig.add_subplot(111)
 
-        if length_normalize is not None:
-            normalize = length_normalize
+        #scale the protein
+
+        if scale is not None:
+            normalize = scale
         else:
             normalize = transcript.protein_length
 
-        assert normalize >= transcript.protein_length, "length normalization should be >= protein length"
+        offset = 0.05 + (1.0 - float(transcript.protein_length)/normalize)*0.45
 
-        offset=0.05
+        assert normalize >= transcript.protein_length, "length normalization should be >= protein length"
 
         #plot domains
 
@@ -234,44 +236,57 @@ class Fusion():
 
         #plot protein length markers
 
+        protein_frame_length=transcript.protein_length/float(normalize)*0.9
+
+        line_end = transcript.protein_length/float(normalize)*0.9 + offset
+
         ax.text(
             0.5,
-            0.15,
+            0.10,
             "Amino acid position",
             horizontalalignment='center',
             fontsize=fontsize
         )
 
         ax.add_line(plt.Line2D(
-            (0.05,0.95),
-            (0.35,0.35),
+            (
+                offset,
+                offset+protein_frame_length
+            ),
+            (0.3,0.3),
             color='black'
             )
         )
 
         ax.add_line(plt.Line2D(
-            (0.05,0.05),
-            (0.30,0.35),
+            (
+                offset,
+                offset
+            ),
+            (0.25,0.3),
             color='black'
             )
         )
         ax.text(
-            0.05,
-            0.25,
+            offset,
+            0.2,
             "0",
             horizontalalignment='center',
             fontsize=fontsize
         )
 
         ax.add_line(plt.Line2D(
-            (0.95,0.95),
-            (0.30,0.35),
+            (
+                offset+protein_frame_length,
+                offset+protein_frame_length
+            ),
+            (0.25,0.3),
             color='black'
             )
         )
         ax.text(
-            0.95,
-            0.25,
+            offset+protein_frame_length,
+            0.2,
             str(transcript.protein_length),
             horizontalalignment='center',
             fontsize=fontsize
@@ -282,25 +297,25 @@ class Fusion():
                 (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset,
                 (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
             ),
-            (0.3,0.35),
+            (0.25,0.3),
             color='black'
             )
         )
 
         ax.text(
             (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset,
-            0.25,
+            0.2,
             str(transcript.transcript_protein_junction_5prime),
             horizontalalignment='center',
             fontsize=fontsize
         )
 
-        #main protein body
+        #main protein frame
 
         ax.add_patch(
             patches.Rectangle(
-                (0.05, 0.45),
-                0.9,
+                (offset, 0.45),
+                protein_frame_length,
                 0.1,
                 fill=False
             )
@@ -319,7 +334,7 @@ class Fusion():
 
         length_normalize = None
 
-    def output_to_html(self,length_normalize=None,dpi=90,fontsize=12):
+    def output_to_html(self,scale=None,dpi=90,fontsize=12):
 
         dict_of_plots = list()
         plot_key = dict()
@@ -336,7 +351,7 @@ class Fusion():
                 fig=fig,
                 name=name,
                 transcript=transcript,
-                length_normalize=length_normalize,
+                scale=scale,
                 fontsize=fontsize,
                 colors=[],
                 rename=[]
@@ -356,7 +371,7 @@ class Fusion():
 
         return dict_of_plots, plot_key
 
-    def save_image(self,transcript,out_dir,length_normalize=None,dpi=90,file_type='png',fontsize=12,colors={},rename={}):
+    def save_image(self,transcript,out_dir,scale=None,dpi=90,file_type='png',fontsize=12,colors={},rename={}):
         """
 
         """
@@ -371,7 +386,7 @@ class Fusion():
             fig=fig,
             name=transcript.name,
             transcript=transcript,
-            length_normalize=length_normalize,
+            scale=scale,
             fontsize=fontsize,
             colors=colors,
             rename=rename
@@ -390,8 +405,8 @@ class Fusion():
         return filename
 
     def save_images(
-            self,out_dir='',length_normalize=None,file_type='png',
-            colors={},rename={},fontsize=12,height=20,width=5,dpi=None):
+            self,out_dir='',scale=None,file_type='png',
+            colors={},rename={},fontsize=12,height=5,width=20,dpi=None):
         """
 
         """
@@ -411,7 +426,7 @@ class Fusion():
                 fig=fig,
                 name=name,
                 transcript=transcript,
-                length_normalize=length_normalize,
+                scale=scale,
                 fontsize=fontsize,
                 colors=colors,
                 rename=rename

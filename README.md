@@ -19,23 +19,23 @@ Example usage from the command line:
 
 Example output visualization of the domain structure of the DLG1-BRAF fusion:
 
-![alt tag](https://github.com/murphycj/AGFusion/blob/master/test/DLG1-BRAF/ENSMUST00000023454-ENSMUST00000002487.png)
+![alt tag](https://github.com/murphycj/AGFusion/blob/master/agfusion/data/ENSMUST00000132176-ENSMUST00000002487.png)
 
 You can programmatically change domains names and colors:
 
 ```
-./agfusion \
+../bin/agfusion \
   --gene5prime ENSMUSG00000022770 \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
   --junction3prime 39648486 \
   --genome GRCm38 \
   --out DLG1-BRAF \
-  --colors Pkinase_Tyr:red \
-  --rename Pkinase_Tyr:Kinase
+  --colors Pkinase_Tyr:red L27_1:#00cc00 \
+  --rename Pkinase_Tyr:Kinase L27_1:L27
 ```
 
-![alt tag](https://github.com/murphycj/AGFusion/blob/master/test/DLG1-BRAF/ENSMUST00000132176-ENSMUST00000002487.renam.recolor.png)
+![alt tag](https://github.com/murphycj/AGFusion/blob/master/agfusion/data/ENSMUST00000132176-ENSMUST00000002487-color.png)
 
 You can rescale the protein length so the images of two different fusions have appropriate relative lengths when plotted side by side:
 
@@ -47,11 +47,21 @@ You can rescale the protein length so the images of two different fusions have a
   --junction3prime 39648486 \
   --genome GRCm38 \
   --out DLG1-BRAF \
-  --colors Pkinase_Tyr:red \
-  --rename Pkinase_Tyr:Kinase
+  --scale 2000
+
+./agfusion \
+  --gene5prime ENSMUSG00000030849 \
+  --gene3prime ENSMUSG00000040265 \
+  --junction5prime 130167703 \
+  --junction3prime 162019992 \
+  --genome GRCm38 \
+  --out FGFR2-DNM3 \
+  --scale 2000
+
 ```
 
-![alt tag](https://github.com/murphycj/AGFusion/blob/master/test/DLG1-BRAF/ENSMUST00000132176-ENSMUST00000002487.renam.recolor.png)
+![alt tag](https://github.com/murphycj/AGFusion/blob/master/agfusion/data/ENSMUST00000132176-ENSMUST00000002487-scale.png)
+![alt tag](https://github.com/murphycj/AGFusion/blob/master/agfusion/data/ENSMUST00000120187-ENSMUST00000086074.png)
 
 
 # More examples
