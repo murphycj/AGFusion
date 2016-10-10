@@ -65,23 +65,17 @@ import pyensembl
 data = pyensembl.EnsemblRelease(84,'mouse')
 db = agfusion.AGFusionDB(‘/path/to/agfusion.db')
 
-dlg1 = agfusion.Gene(
-    gene="ENSMUSG00000022770",
-    junction=31684294,
-    db=db,
-    pyensembl_data=data
-)
-
-braf = agfusion.Gene(
-    gene="ENSMUSG00000002413",
-    junction=39648486,
-    db=db,
-    pyensembl_data=data
-)
 
 #construct the gene fusion
 
-fusion = agfusion.Fusion(dlg1,braf,db=db,middlestar=False)
+fusion = agfusion.Fusion(
+        gene5prime="ENSMUSG00000022770",
+        gene5primejunction=31684294,
+        gene3prime="ENSMUSG00000002413",
+        gene3primejunction=39648486,
+        db=db,
+        pyensembl_data=data
+    )
 
 #save the predicted cDNA, CDS, and protein sequences
 

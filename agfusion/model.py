@@ -19,11 +19,81 @@ import json
 
 MIN_DOMAIN_LENGTH=5
 
-class Model(object):
-    def __new__(cls, *args, **kwargs):
-        if cls is Model:
-            raise TypeError("Model shoud not be instantiated")
-        return object.__new__(cls, *args, **kwargs)
+class _Gene():
+    """
+    Stores the necessary information to specify the architecture of either
+    wild-type genes or fusion gene.
+    """
+
+    def __init__(self,gene=None,junction=0,pyensembl_data=None):
+
+        gene = gene.upper()
+
+        #search for ensembl gene id first
+
+        if gene in pyensembl_data.gene_ids():
+            self.gene = pyensembl_data.gene_by_id(gene)
+        else:
+
+            #search by gene symbol next
+
+            if pyensembl_data.species.latin_name=='mus_musculus':
+                gene = gene.capitalize()
+
+            if gene in pyensembl_data.gene_names():
+                temp = pyensembl_data.genes_by_name(gene)
+
+                if len(temp)>1:
+
+                    #if too many ensembl gene IDs returned
+
+                    ids = map(lambda x: x.id, temp)
+
+                    raise exceptions.TooManyGenesException(gene,ids)
+                else:
+                    self.gene = temp[0]
+            else:
+
+                raise exceptions.GeneIDException(gene)
+
+        self.junction=junction
+
+        if self.junction < self.gene.start or self.junction > self.gene.end:
+            raise exceptions.JunctionException()
+
+class Fusion():
+    """
+    Generates the information needed for the gene fusion
+    """
+
+    def __init__(
+            self,
+            gene5prime=None,gene5primejunction=0,
+            gene3prime=None,gene3primejunction=0,
+            db=None,pyensembl_data=None,
+            transcripts_5prime=None,transcripts_3prime=None):
+
+        if pyensembl_data.species.latin_name=='mus_musculus':
+            self.genome='GRCm38'
+        else:
+            if pyensembl_data.release==75:
+                self.genome='GRCh37'
+            else:
+                self.genome='GRCh38'
+
+        self.gene5prime = _Gene(
+            gene=gene5prime,
+            junction=gene5primejunction,
+            pyensembl_data=pyensembl_data
+        )
+
+        self.gene3prime = _Gene(
+            gene=gene3prime,
+            junction=gene3primejunction,
+            pyensembl_data=pyensembl_data
+        )
+
+        self.name = self.gene5prime.gene.name + '-' + self.gene3prime.gene.name
 
         self.domains={
             i:{''} for i,j,k in utils.PROTEIN_DOMAIN
@@ -40,6 +110,61 @@ class Model(object):
                 'low_complexity_end':0
             }
         }
+
+        #construct all the fusion transcript combinations
+
+        self.transcripts = {}
+
+        for combo in list(itertools.product(
+                        self.gene5prime.gene.transcripts,
+                        self.gene3prime.gene.transcripts)):
+            transcript1 = combo[0]
+            transcript2 = combo[1]
+
+            if transcripts_5prime is not None and transcript1.id not in transcripts_5prime:
+                continue
+            if transcripts_3prime is not None and transcript2.id not in transcripts_3prime:
+                continue
+
+            #skip if the junction is outside the range of either transcript
+
+            name = transcript1.id + '-' + transcript2.id
+
+            if not transcript1.contains(transcript1.contig,self.gene5prime.junction,self.gene5prime.junction):
+                self.transcripts[name] = FusionTranscript(
+                    transcript1=transcript1,
+                    transcript2=transcript2,
+                    gene5prime=self.gene5prime,
+                    gene3prime=self.gene3prime,
+                    db=db,
+                    genome=self.genome,
+                    predict_effect=False
+                )
+                self.transcripts[name].effect='Outside transcript boundry'
+                self.transcripts[name].has_coding_potential=False
+
+            elif not transcript2.contains(transcript2.contig,self.gene3prime.junction,self.gene3prime.junction):
+                self.transcripts[name] = FusionTranscript(
+                    transcript1=transcript1,
+                    transcript2=transcript2,
+                    gene5prime=self.gene5prime,
+                    gene3prime=self.gene3prime,
+                    db=db,
+                    genome=self.genome,
+                    predict_effect=False
+                )
+                self.transcripts[name].effect='Outside transcript boundry'
+                self.transcripts[name].has_coding_potential=False
+
+            else:
+                self.transcripts[name] = FusionTranscript(
+                    transcript1=transcript1,
+                    transcript2=transcript2,
+                    gene5prime=self.gene5prime,
+                    gene3prime=self.gene3prime,
+                    db=db,
+                    genome=self.genome
+                )
 
     def _does_dir_exist(self,out_dir):
         if not os.path.exists(out_dir):
@@ -108,6 +233,14 @@ class Model(object):
         )
 
         #plot protein length markers
+
+        ax.text(
+            0.5,
+            0.15,
+            "Amino acid position",
+            horizontalalignment='center',
+            fontsize=fontsize
+        )
 
         ax.add_line(plt.Line2D(
             (0.05,0.95),
@@ -256,7 +389,9 @@ class Model(object):
 
         return filename
 
-    def save_images(self,out_dir,length_normalize=None,dpi=90,file_type='png',fontsize=12,colors={},rename={}):
+    def save_images(
+            self,out_dir='',length_normalize=None,file_type='png',
+            colors={},rename={},fontsize=12,height=20,width=5,dpi=None):
         """
 
         """
@@ -270,7 +405,7 @@ class Model(object):
             if not transcript.has_coding_potential:
                 continue
 
-            fig = plt.figure(figsize=(20,5),frameon=False)
+            fig = plt.figure(figsize=(width,height),dpi=dpi,frameon=False)
 
             self._draw(
                 fig=fig,
@@ -293,7 +428,7 @@ class Model(object):
             plt.clf()
 
 
-    def save_transcript_cdna(self,out_dir):
+    def save_transcript_cdna(self,out_dir='.',middlestar=False):
 
         self._does_dir_exist(out_dir)
 
@@ -309,7 +444,7 @@ class Model(object):
 
             if transcript.cds is not None:
 
-                if self.middlestar:
+                if middlestar:
                     temp = str(transcript.cdna.seq)
                     temp = temp[:transcript.transcript_cdna_junction_5prime] + '*' + temp[transcript.transcript_cdna_junction_5prime:]
                     transcript.cdna.seq = Seq.Seq(temp,generic_dna)
@@ -318,7 +453,7 @@ class Model(object):
 
         fout.close()
 
-    def save_transcript_cds(self,out_dir):
+    def save_transcript_cds(self,out_dir='.',middlestar=False):
 
         self._does_dir_exist(out_dir)
 
@@ -334,7 +469,7 @@ class Model(object):
 
             if transcript.cds is not None:
 
-                if self.middlestar:
+                if middlestar:
                     temp = str(transcript.cds.seq)
                     temp = temp[:transcript.transcript_cds_junction_5prime] + '*' + temp[transcript.transcript_cds_junction_5prime:]
                     transcript.cds.seq = Seq.Seq(temp,generic_dna)
@@ -343,7 +478,7 @@ class Model(object):
 
         fout.close()
 
-    def save_proteins(self,out_dir):
+    def save_proteins(self,out_dir='.',middlestar=False):
 
         self._does_dir_exist(out_dir)
 
@@ -359,7 +494,7 @@ class Model(object):
 
             if transcript.cds is not None:
 
-                if self.middlestar:
+                if middlestar:
                     temp = str(transcript.protein.seq)
                     temp = temp[:transcript.transcript_protein_junction_5prime] + '*' + temp[transcript.transcript_protein_junction_5prime:]
                     transcript.protein.seq = Seq.Seq(temp,generic_protein)
@@ -368,7 +503,7 @@ class Model(object):
 
         fout.close()
 
-    def save_annotations(self,out_file,annotation='pfam'):
+    def save_annotations(self,out_file='.',annotation='pfam'):
 
         fout = open(out_file,'w')
         fout.write("Gene,transcript,domain,protein_start,protein_end\n")
@@ -387,126 +522,16 @@ class Model(object):
                     import pdb; pdb.set_trace()
         fout.close()
 
-class Gene(Model):
-    """
-    Stores the necessary information to specify the architecture of either
-    wild-type genes or fusion gene.
-    """
-
-    def __init__(self,gene=None,junction=0,db=None,pyensembl_data=None):
-
-        gene = gene.upper()
-
-        #search for ensembl gene id first
-
-        if gene in pyensembl_data.gene_ids():
-            self.gene = pyensembl_data.gene_by_id(gene)
-        else:
-
-            #search by gene symbol next
-
-            if pyensembl_data.species.latin_name=='mus_musculus':
-                gene = gene.capitalize()
-
-            if gene in pyensembl_data.gene_names():
-                temp = pyensembl_data.genes_by_name(gene)
-
-                if len(temp)>1:
-
-                    #if too many ensembl gene IDs returned
-
-                    ids = map(lambda x: x.id, temp)
-
-                    raise exceptions.TooManyGenesException(gene,ids)
-                else:
-                    self.gene = temp[0]
-            else:
-
-                raise exceptions.GeneIDException(gene)
-
-        self.junction=junction
-
-        if self.junction < self.gene.start or self.junction > self.gene.end:
-            raise exceptions.JunctionException()
-
-class Fusion(Model):
-    """
-    Generates the information needed for the gene fusion
-    """
-
-    def __init__(self,gene5prime=None,gene3prime=None,db=None,genome='',transcripts_5prime=None,transcripts_3prime=None,middlestar=False):
-        self.gene5prime=gene5prime
-        self.gene3prime=gene3prime
-        self.name = self.gene5prime.gene.name + '-' + self.gene3prime.gene.name
-        self.middlestar=middlestar
-
-        self.transcripts = {}
-
-        for combo in list(itertools.product(
-                        self.gene5prime.gene.transcripts,
-                        self.gene3prime.gene.transcripts)):
-            transcript1 = combo[0]
-            transcript2 = combo[1]
-
-            if transcripts_5prime is not None and transcript1.id not in transcripts_5prime:
-                continue
-            if transcripts_3prime is not None and transcript2.id not in transcripts_3prime:
-                continue
-
-            #skip if the junction is outside the range of either transcript
-
-            name = transcript1.id + '-' + transcript2.id
-
-            if not transcript1.contains(transcript1.contig,self.gene5prime.junction,self.gene5prime.junction):
-                self.transcripts[name] = FusionTranscript(
-                    transcript1=transcript1,
-                    transcript2=transcript2,
-                    gene5prime=gene5prime,
-                    gene3prime=gene3prime,
-                    db=db,
-                    genome=genome,
-                    middlestar=middlestar,
-                    predict_effect=False
-                )
-                self.transcripts[name].effect='Outside transcript boundry'
-                self.transcripts[name].has_coding_potential=False
-
-            elif not transcript2.contains(transcript2.contig,self.gene3prime.junction,self.gene3prime.junction):
-                self.transcripts[name] = FusionTranscript(
-                    transcript1=transcript1,
-                    transcript2=transcript2,
-                    gene5prime=gene5prime,
-                    gene3prime=gene3prime,
-                    db=db,
-                    genome=genome,
-                    middlestar=middlestar,
-                    predict_effect=False
-                )
-                self.transcripts[name].effect='Outside transcript boundry'
-                self.transcripts[name].has_coding_potential=False
-
-            else:
-                self.transcripts[name] = FusionTranscript(
-                    transcript1=transcript1,
-                    transcript2=transcript2,
-                    gene5prime=gene5prime,
-                    gene3prime=gene3prime,
-                    db=db,
-                    genome=genome,
-                    middlestar=middlestar,
-                )
-
 class FusionTranscript(object):
     """
     Generates the information needed for the gene fusion transctips
     """
 
-    def __init__(self,transcript1=None,transcript2=None,gene5prime=None,gene3prime=None,db=None,genome='',middlestar=False,predict_effect=True):
+    def __init__(self,transcript1=None,transcript2=None,gene5prime=None,gene3prime=None,db=None,genome='',predict_effect=True):
         self.transcript1=transcript1
         self.transcript2=transcript2
         self.gene5prime=gene5prime
         self.gene3prime=gene3prime
-        self.middlestar=middlestar
         self.genome=genome
 
         self.name=self.transcript1.id + '-' + self.transcript2.id

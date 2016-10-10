@@ -139,18 +139,46 @@ def main():
         help='(Optional) Image file type (png, jpeg, pdf). Default: png'
     )
     parser.add_argument(
+        '--width',
+        type=int,
+        required=False,
+        default=20,
+        help='(Optional) Image width in inches (default 20).'
+    )
+    parser.add_argument(
+        '--height',
+        type=int,
+        required=False,
+        default=5,
+        help='(Optional) Image file height in inches (default 5).'
+    )
+    parser.add_argument(
+        '--dpi',
+        type=int,
+        required=False,
+        default=None,
+        help='(Optional) Dots per inch.'
+    )
+    parser.add_argument(
+        '--fontsize',
+        type=int,
+        required=False,
+        default=12,
+        help='(Optional) Fontsize (default 12).'
+    )
+    parser.add_argument(
         '--scale',
         type=int,
         required=False,
         default=-1,
         help='(Optional) Length in amino acids to scale the gene fusion image (default: max length of fusion product)'
     )
-    parser.add_argument(
-        '--WT',
-        action='store_true',
-        required=False,
-        help='(Optional) Include this to plot wild-type architechtures of the 5\' and 3\' genes'
-    )
+    #parser.add_argument(
+    #    '--WT',
+    #    action='store_true',
+    #    required=False,
+    #    help='(Optional) Include this to plot wild-type architechtures of the 5\' and 3\' genes'
+    #)
     parser.add_argument(
         '--middlestar',
         action='store_true',
@@ -184,31 +212,18 @@ def main():
         db.logger.error(' You provided an incorrect reference genome. Use one of the following: GRCh38, GRCh37, or GRCm38')
         sys.exit()
 
-    gene5prime = agfusion.Gene(
-        gene=args.gene5prime,
-        junction=args.junction5prime,
-        db=db,
-        pyensembl_data=pyensembl_data
-    )
-
-    gene3prime = agfusion.Gene(
-        gene=args.gene3prime,
-        junction=args.junction3prime,
-        db=db,
-        pyensembl_data=pyensembl_data
-    )
-
     fusion = agfusion.Fusion(
-        gene5prime=gene5prime,
-        gene3prime=gene3prime,
+        gene5prime=args.gene5prime,
+        gene5primejunction=args.junction5prime,
+        gene3prime=args.gene3prime,
+        gene3primejunction=args.junction3prime,
         db=db,
-        genome=args.genome,
-        middlestar=args.middlestar
+        pyensembl_data=pyensembl_data
     )
 
-    fusion.save_transcript_cdna(args.out)
-    fusion.save_transcript_cds(args.out)
-    fusion.save_proteins(args.out)
+    fusion.save_transcript_cdna(out_dir=args.out,middlestar=args.middlestar)
+    fusion.save_transcript_cds(out_dir=args.out,middlestar=args.middlestar)
+    fusion.save_proteins(out_dir=args.out,middlestar=args.middlestar)
 
     colors={}
     rename = {}
@@ -235,8 +250,16 @@ def main():
 
             rename[pair[0]] = pair[1]
 
-    fusion.save_images(out_dir=args.out,colors=colors,rename=rename)
+    fusion.save_images(
+        out_dir=args.out,
+        colors=colors,
+        rename=rename,
+        fontsize=args.fontsize,
+        height=args.height,
+        width=args.width,
+        dpi=args.dpi
+        )
 
-    if args.WT:
-        gene5prime.save_image(args.out)
-        gene3prime.save_image(args.out)
+#    if args.WT:
+#        gene5prime.save_image(args.out)
+#        gene3prime.save_image(args.out)

@@ -8,26 +8,19 @@ def test_mouse_basic():
     """
 
     data = pyensembl.EnsemblRelease(84,'mouse')
-    db = agfusion.AGFusionDB('../data/agfusion.db')
+    db = agfusion.AGFusionDB('../agfusion/data/agfusion.db')
 
     #test the dna and protein coding sequences are correct by comparing
     #with manually generally sequences
 
-    dlg1 = agfusion.Gene(
-        gene="ENSMUSG00000022770",
-        junction=31684294,
+    fusion = agfusion.Fusion(
+        gene5prime="ENSMUSG00000022770",
+        gene5primejunction=31684294,
+        gene3prime="ENSMUSG00000002413",
+        gene3primejunction=39648486,
         db=db,
         pyensembl_data=data
     )
-
-    braf = agfusion.Gene(
-        gene="ENSMUSG00000002413",
-        junction=39648486,
-        db=db,
-        pyensembl_data=data
-    )
-
-    fusion = agfusion.Fusion(dlg1,braf,db=db,genome='GRCm38',middlestar=False)
 
     fusion.save_transcript_cdna('DLG1-BRAF_mouse')
     fusion.save_transcript_cds('DLG1-BRAF_mouse')
@@ -107,5 +100,5 @@ def test_id_mapping():
         db=db
     )
 
-test_mouse()
+test_mouse_basic()
 #test_human()
