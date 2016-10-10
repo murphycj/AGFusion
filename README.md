@@ -1,5 +1,5 @@
 # Annotate Gene Fusion (AGFusion)
-Python package that visualizes and annotates gene fusions. Currently, the software can only visualize the PFAM domains of in-frame gene fusions. The software can also output fasta files of the predicted cDNA, CDS, and protein sequences resulting from fusion of all combinations of transcripts.
+For a given gene fusion, AGFusion will predict the cDNA, CDS, and protein sequences resulting from fusion of all combinations of transcripts and save them to fasta files. AGFusion can also plot the protein domain architecture of the fusion transcripts. Currently, only PFAM domains are used to annotate gene fusions. CDS and protein sequences are only outputted for fusions that can form a protein.
 
 # Example Usage
 
@@ -21,7 +21,7 @@ Example output visualization of the domain structure of the DLG1-BRAF fusion:
 
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/agfusion/data/ENSMUST00000132176-ENSMUST00000002487.png)
 
-You can programmatically change domains names and colors:
+You can programmatically change domain names and colors:
 
 ```
 ../bin/agfusion \
@@ -37,7 +37,7 @@ You can programmatically change domains names and colors:
 
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/agfusion/data/ENSMUST00000132176-ENSMUST00000002487-color.png)
 
-You can rescale the protein length so the images of two different fusions have appropriate relative lengths when plotted side by side:
+You can rescale the protein length so that images of two different fusions have appropriate relative lengths when plotted side by side:
 
 ```
 ./agfusion \
@@ -50,8 +50,8 @@ You can rescale the protein length so the images of two different fusions have a
   --scale 2000
 
 ./agfusion \
-  --gene5prime ENSMUSG00000030849 \
-  --gene3prime ENSMUSG00000040265 \
+  --gene5prime FGFR2 \
+  --gene3prime DNM3 \
   --junction5prime 130167703 \
   --junction3prime 162019992 \
   --genome GRCm38 \
@@ -65,7 +65,7 @@ You can rescale the protein length so the images of two different fusions have a
 
 # Installation
 
-First you need to install pyensembl (and the other dependencies) and the reference genome you will use by running one of the following.
+First you need to install pyensembl (and the other dependencies) and download the reference genome you will use by running one of the following.
 
 For GRCh38:
 

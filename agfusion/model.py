@@ -216,7 +216,7 @@ class Fusion():
 
             ax.text(
                 domain_center,
-                0.4,
+                0.35,
                 domain_name,
                 horizontalalignment='center',
                 fontsize=fontsize
@@ -242,7 +242,7 @@ class Fusion():
 
         ax.text(
             0.5,
-            0.10,
+            0.01,
             "Amino acid position",
             horizontalalignment='center',
             fontsize=fontsize
@@ -269,7 +269,7 @@ class Fusion():
         )
         ax.text(
             offset,
-            0.2,
+            0.15,
             "0",
             horizontalalignment='center',
             fontsize=fontsize
@@ -286,7 +286,7 @@ class Fusion():
         )
         ax.text(
             offset+protein_frame_length,
-            0.2,
+            0.15,
             str(transcript.protein_length),
             horizontalalignment='center',
             fontsize=fontsize
@@ -304,7 +304,7 @@ class Fusion():
 
         ax.text(
             (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset,
-            0.2,
+            0.15,
             str(transcript.transcript_protein_junction_5prime),
             horizontalalignment='center',
             fontsize=fontsize
