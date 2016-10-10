@@ -63,6 +63,33 @@ You can rescale the protein length so the images of two different fusions have a
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/agfusion/data/ENSMUST00000132176-ENSMUST00000002487-scale.png)
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/agfusion/data/ENSMUST00000120187-ENSMUST00000086074.png)
 
+# Installation
+
+First you need to install pyensembl (and the other dependencies) and the reference genome you will use by running one of the following.
+
+For GRCh38:
+
+```
+pyensembl install --release 84 --species homo_sapiens
+```
+
+For GRCh37:
+
+```
+pyensembl install --release 75 --species homo_sapiens
+```
+
+For GRCm38:
+
+```
+pyensembl install --release 84 --species mus_musculus
+```
+
+Then you can install AGFusion via the following:
+
+```
+pip install agfusion
+```
 
 # More examples
 
@@ -119,7 +146,6 @@ And then specify the database with the --db flag:
   --out DLG1-BRAF
 ```
 
-
 # Dependencies
 
 - python 2.7.8
@@ -130,32 +156,6 @@ And then specify the database with the --db flag:
 - biopython>=1.67
 - mpld3>=0.2
 - jsonpickle>=0.9.
-
-# Installation
-
-```
-pip install agfusion
-```
-
-After installing pyensembl you need to install the reference genome you will use.
-
-For GRCh38:
-
-```
-pyensembl install --release 84 --species homo_sapiens
-```
-
-For GRCh37:
-
-```
-pyensembl install --release 75 --species homo_sapiens
-```
-
-For GRCm38:
-
-```
-pyensembl install --release 84 --species mus_musculus
-```
 
 # License
 
