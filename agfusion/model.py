@@ -78,6 +78,8 @@ class Fusion():
             db=None,pyensembl_data=None,
             transcripts_5prime=None,transcripts_3prime=None):
 
+        #get the reference genom
+
         if pyensembl_data.species.latin_name=='mus_musculus':
             self.genome='GRCm38'
         else:
@@ -174,19 +176,23 @@ class Fusion():
                 )
 
     def _does_dir_exist(self,out_dir):
+
         if not os.path.exists(out_dir):
             os.mkdir(out_dir)
 
-    def _draw(self,fig='',name='',transcript=None,scale=None,fontsize=12,colors=None,rename=None):
+    def _draw(self,fig='',name='',transcript=None,scale=0,fontsize=12,colors=None,rename=None):
+        """
+        Draw an individual figure
+        """
 
         ax = fig.add_subplot(111)
 
         #scale the protein
 
-        if scale is not None:
-            normalize = scale
-        else:
+        if scale < transcript.protein_length:
             normalize = transcript.protein_length
+        else:
+            normalize = scale
 
         offset = 0.05 + (1.0 - float(transcript.protein_length)/normalize)*0.45
 
@@ -341,7 +347,13 @@ class Fusion():
 
         length_normalize = None
 
-    def output_to_html(self,scale=None,dpi=90,fontsize=12):
+    def output_to_html(
+            self,fontsize=12,dpi=90,colors={},rename={},
+            width=8,height=2,scale=0):
+        """
+        Write figures into html format for plotting in web tool rather
+        than writing figures to file
+        """
 
         dict_of_plots = list()
         plot_key = dict()
@@ -352,7 +364,7 @@ class Fusion():
             if not transcript.has_coding_potential:
                 continue
 
-            fig = plt.figure(figsize=(15,4),frameon=False)
+            fig = plt.figure(figsize=(width,height),dpi=dpi,frameon=False)
 
             self._draw(
                 fig=fig,
@@ -378,16 +390,18 @@ class Fusion():
 
         return dict_of_plots, plot_key
 
-    def save_image(self,transcript,out_dir,scale=None,dpi=90,file_type='png',fontsize=12,colors={},rename={}):
+    def save_image(
+            self,transcript='',out_dir='',file_type='png',fontsize=12,
+            dpi=100,colors={},rename={},width=8,height=2,scale=0):
         """
-
+        Save the image for a particular fusion isoform
         """
 
         self._does_dir_exist(out_dir)
 
         transcript = self.transcripts[transcript]
 
-        fig = plt.figure(figsize=(20,5),frameon=False)
+        fig = plt.figure(figsize=(width,height),dpi=dpi,frameon=False)
 
         self._draw(
             fig=fig,
@@ -412,10 +426,10 @@ class Fusion():
         return filename
 
     def save_images(
-            self,out_dir='',scale=None,file_type='png',
-            colors={},rename={},fontsize=12,height=5,width=20,dpi=None):
+            self,out_dir='',file_type='png',fontsize=12,dpi=100,
+            colors={},rename={},width=8,height=2,scale=0):
         """
-
+        Save images of all fusion isoforms and write to file
         """
 
         self._does_dir_exist(out_dir)
@@ -451,6 +465,9 @@ class Fusion():
 
 
     def save_transcript_cdna(self,out_dir='.',middlestar=False):
+        """
+        Save the cDNA sequences for all fusion isoforms to a fasta file
+        """
 
         self._does_dir_exist(out_dir)
 
@@ -476,6 +493,9 @@ class Fusion():
         fout.close()
 
     def save_transcript_cds(self,out_dir='.',middlestar=False):
+        """
+        Save the CDS sequences for all fusion isoforms to a fasta file
+        """
 
         self._does_dir_exist(out_dir)
 
@@ -501,6 +521,9 @@ class Fusion():
         fout.close()
 
     def save_proteins(self,out_dir='.',middlestar=False):
+        """
+        Save the protein sequences for all fusion isoforms to a fasta file
+        """
 
         self._does_dir_exist(out_dir)
 
@@ -525,24 +548,24 @@ class Fusion():
 
         fout.close()
 
-    def save_annotations(self,out_file='.',annotation='pfam'):
-
-        fout = open(out_file,'w')
-        fout.write("Gene,transcript,domain,protein_start,protein_end\n")
-
-        for name, transcript in self.transcripts.items():
-            for domain in transcript.domains[annotation]:
-                try:
-                    fout.write(
-                        self.name + ',' + \
-                        name + ',' + \
-                        domain[1] + ',' + \
-                        str(domain[2]) + ',' + \
-                        str(domain[3]) + '\n'
-                    )
-                except:
-                    import pdb; pdb.set_trace()
-        fout.close()
+#    def save_annotations(self,out_file='.',annotation='pfam'):
+#
+#        fout = open(out_file,'w')
+#        fout.write("Gene,transcript,domain,protein_start,protein_end\n")
+#
+#        for name, transcript in self.transcripts.items():
+#            for domain in transcript.domains[annotation]:
+#                try:
+#                    fout.write(
+#                        self.name + ',' + \
+#                        name + ',' + \
+#                        domain[1] + ',' + \
+#                        str(domain[2]) + ',' + \
+#                        str(domain[3]) + '\n'
+#                    )
+#                except:
+#                    import pdb; pdb.set_trace()
+#        fout.close()
 
 class FusionTranscript(object):
     """
@@ -597,12 +620,19 @@ class FusionTranscript(object):
             self.predict_effect(db)
 
     def _fetch_domain_name(self,name,db):
+        """
+        Query the SQLite database to convert Pfam identifier to
+        Pfam name
+        """
+
         db.c.execute(
             'SELECT * FROM PFAMMAP WHERE pfam_acc==\"' + \
             name + \
             '\"'
         )
+
         new_name = db.c.fetchall()
+
         if len(new_name)<1:
             print 'No pfam name for %s' % name
             return name
@@ -646,6 +676,8 @@ class FusionTranscript(object):
                     fusion_domains.append(d)
             except:
                 import pdb; pdb.set_trace()
+
+        #only find the 3' gene partner's domains if the fusion is in-frame
 
         if self.effect != 'out-of-frame':
 
@@ -704,10 +736,17 @@ class FusionTranscript(object):
         else:
             self.effect='out-of-frame'
 
+        #translate CDS into protein and remove everything after the stop codon
+
         protein_seq = self.cds.seq.translate()
         protein_seq = protein_seq[0:protein_seq.find('*')]
 
+        #predict molecular weight
+
         self.molecular_weight = SeqUtils.molecular_weight(protein_seq)/1000.
+
+        #convert to a sequence record
+
         self.protein_length = len(protein_seq)
 
         self.protein = SeqRecord.SeqRecord(
@@ -766,9 +805,11 @@ class FusionTranscript(object):
                 elif self.gene3prime.junction >= cds[1]:
                     break
                 else:
-                    self.transcript_cds_junction_3prime += (cds[1] - self.gene3prime.junction + 1)
+                    self.transcript_cds_junction_3prime += (cds[1] - self.gene3prime.junction)
 
         self.cds_3prime = self.transcript2.coding_sequence[self.transcript_cds_junction_3prime::]
+
+        #create a sequence record
 
         seq = self.cds_5prime + self.cds_3prime
 
@@ -800,7 +841,7 @@ class FusionTranscript(object):
                 elif self.gene5prime.junction <= exon.start:
                     break
                 else:
-                    self.transcript_cdna_junction_5prime+=self.gene5prime.junction-exon.start
+                    self.transcript_cdna_junction_5prime+=(self.gene5prime.junction - exon.start + 1)
                     break
         else:
             for exon in self.transcript1.exons:
@@ -841,45 +882,78 @@ class FusionTranscript(object):
                 str(self.transcript2.name)
         )
 
-        if self.transcript1.complete and self.transcript_cdna_junction_5prime < len(self.transcript1.five_prime_utr_sequence):
-            self.effect_5prime='5UTR'
+        #find out if the junction on either gene is with in the 5' or 3' UTR,
+        #or if it exactly at the beginning or end of the UTR
 
-        if self.transcript2.complete and (len(self.transcript2)-self.transcript_cdna_junction_5prime) < len(self.transcript2.five_prime_utr_sequence):
+        #the 5' utr
+
+        if self.transcript1.complete and \
+                self.transcript_cdna_junction_5prime < len(self.transcript1.five_prime_utr_sequence):
+            self.effect_5prime='5UTR'
+        elif self.transcript1.complete and \
+                self.transcript_cdna_junction_5prime == len(self.transcript1.five_prime_utr_sequence):
+            self.effect_5prime='5UTR-end'
+
+        if self.transcript2.complete and \
+                self.transcript_cdna_junction_3prime < len(self.transcript2.five_prime_utr_sequence):
+            self.effect_3prime='5UTR'
+        elif self.transcript2.complete and \
+                self.transcript_cdna_junction_3prime == len(self.transcript2.five_prime_utr_sequence):
+            self.effect_3prime='5UTR-end'
+
+        #the 3' utr
+
+        if self.transcript1.complete and \
+                (len(self.transcript1)-self.transcript_cdna_junction_5prime) < len(self.transcript1.three_prime_utr_sequence):
             self.effect_5prime='3UTR'
+        elif self.transcript1.complete and \
+                (len(self.transcript1)-self.transcript_cdna_junction_5prime) == len(self.transcript1.three_prime_utr_sequence):
+            self.effect_5prime='3UTR-start'
+
+        if self.transcript2.complete and \
+                (len(self.transcript2)-self.transcript_cdna_junction_3prime) < len(self.transcript2.three_prime_utr_sequence):
+            self.effect_3prime='3UTR'
+        elif self.transcript2.complete and \
+                (len(self.transcript2)-self.transcript_cdna_junction_3prime) == len(self.transcript2.three_prime_utr_sequence):
+            self.effect_3prime='3UTR-start'
+
+        #if self.name=='ENSMUST00000064477-ENSMUST00000002487':
+            #import pdb; pdb.set_trace()
 
     def predict_effect(self,db):
         """
-        types of fusions: in-frame, out-of-frame, and any combination of
-        UTR, intron, intergenic, exonic (no known CDS),
-        CDS(not-reliable-start-or-end), CDS(truncated), CDS(complete)
+        For all gene isoform combinations predict the effect of the fusion
+        (e.g. in-frame, out-of-frame, etc...). Then if it has coding potential
+        then annotate with domains
         """
 
-        #check if within exon
+        #check if within exon or UTR
 
         self._fetch_transcript_cdna()
 
         #check if within CDS
 
-        try:
+        if self.transcript1.complete and (self.effect_5prime.find('UTR')==-1):
             for cds in self.transcript1.coding_sequence_position_ranges:
                 if self.gene5prime.junction >= cds[0] and self.gene5prime.junction <= cds[1]:
                     self.effect_5prime='CDS'
                     break
-        except:
-            pass
 
-        try:
+        if self.transcript2.complete and (self.effect_3prime.find('UTR')==-1):
             for cds in self.transcript2.coding_sequence_position_ranges:
                 if self.gene3prime.junction >= cds[0] and self.gene3prime.junction <= cds[1]:
                     self.effect_3prime='CDS'
                     break
-        except:
-            pass
 
         #if within CDS, then get CDS and predict protein
 
         if self.effect_5prime=='CDS' and self.effect_3prime=='CDS':
             self.has_coding_potential=True
+        elif self.effect_3prime=='CDS' or self.effect_5prime=='5UTR' or self.effect_5prime=='5UTR-end':
+            self.has_coding_potential=True
+        #elif
+        elif self.effect_5prime=='3UTR':
+            self.has_coding_potential=False
 
         #check if the transcripts are complete, and if not check if
         #they don't have stop and/or start codons
@@ -905,9 +979,6 @@ class FusionTranscript(object):
 
         #finally, if the fusion transcript has coding potential then
         #fetch its CDS and protein sequences and annotate it
-
-        if self.transcript1.name=='ENSMUST00000115196':
-            import pdb; pdb.set_trace()
 
         if self.has_coding_potential:
             self._fetch_transcript_cds()

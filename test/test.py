@@ -2,9 +2,10 @@ import agfusion
 import pyensembl
 from Bio import SeqIO
 
-def test_mouse_basic():
+def test_mouse_1():
     """
-    This tests whether various gene fusions correspond to the expected output
+    test CDS and cDNA correct for junction that is on exon boundaries and
+    produces an in-frame protein.
     """
 
     data = pyensembl.EnsemblRelease(84,'mouse')
@@ -39,7 +40,7 @@ def test_mouse_basic():
         'ENSMUST00000132176-ENSMUST00000002487'
     ]
 
-    assert len(set(fusion.transcripts.keys()).intersection(set(expected_transcript_combinations)))==6, " unexpected number protein coding transcripts."
+    assert len(set(fusion.transcripts.keys()).intersection(set(expected_transcript_combinations)))==6, "Test 1: unexpected number protein coding transcripts."
 
     for seq in test_cdna:
         trans=fusion.transcripts[str(seq.id)]
@@ -49,56 +50,141 @@ def test_mouse_basic():
         trans=fusion.transcripts[str(seq.id)]
         assert seq.seq==trans.cds.seq, "cds is wrongly predicted: %s" % seq.id
 
-    #assert that the following fusions do not produce viable proteins
-    #for various reasons
 
-def test_human():
-
-    data = pyensembl.EnsemblRelease(84,'human')
-    db = agfusion.AGFusionDB('../data/agfusion.db')
-
-
-    fgfr2 = agfusion.Gene(
-        gene=data.gene_by_id("ENSG00000066468"),
-        junction=121485532,
-        reference="GRCh38",
-        db=db
-    )
-
-    dnm3 = agfusion.Gene(
-        gene=data.gene_by_id("ENSG00000197959"),
-        junction=172407772,
-        reference="GRCh38",
-        db=db
-    )
-
-    fusion = agfusion.model.Fusion(fgfr2,dnm3,db=db)
-    fusion.save_transcript_cdna('fgfr2-dnm3')
-    fusion.save_transcript_cds('fgfr2-dnm3')
-    fusion.save_proteins('fgfr2-dnm3')
-    fusion.save_images('fgfr2-dnm3')
-
-
-    #assert cdna
-    #cdna = SeqIO.parse(open('fgfr2-dnm3.cdna.fa','r'),'fasta').next()
-    #trans=fusion.transcripts[u'ENST00000613048-ENST00000627582']
-    #cdna.seq==trans.cdna.seq
-
-def test_id_mapping():
+def test_mouse_2():
     """
-    Test that AGFusion properly map ids and catch errors and special cases
+    Test CDS correct for junction within the exon (not on boundary) for two
+    genes on reverse strand
     """
 
-    data = pyensembl.EnsemblRelease(75,'human')
-    db = agfusion.AGFusionDB('../data/agfusion.db')
+    data = pyensembl.EnsemblRelease(84,'mouse')
+    db = agfusion.AGFusionDB('../agfusion/data/agfusion.db')
 
-
-    fgfr2 = agfusion.Gene(
-        gene=data.gene_by_id("ENSG00000100325"),
-        junction=34910661,
-        reference="GRCh37",
-        db=db
+    fusion = agfusion.Fusion(
+        gene5prime="ENSMUSG00000002413",
+        gene5primejunction=39725110,
+        gene3prime="ENSMUSG00000002413",
+        gene3primejunction=39610402,
+        db=db,
+        pyensembl_data=data
     )
 
-test_mouse_basic()
-#test_human()
+    cds = 'ATGGCGGCGCTGAGTGGCGGCGGTGGCAGCAGCAGCGGTGGCGGCGGCGGCGGTGGCGGCGGCGG' + \
+          'TGGCGGTGGCGACGGCGGCGGCGGCGCCGAGCAGGGCCAGGCTCTGTTCAATGGCGACATGGAGC' + \
+          'CGGAGGCCGGCGCTGGCGCCGCGGCCTCTTCGGCTGCGGACCCGGCCATTCCTGAAGAATTTGCAGCCTTCAAGTAG'
+
+    assert str(fusion.transcripts['ENSMUST00000002487-ENSMUST00000002487'].cds.seq)==cds, "Test 2: CDS wrong"
+
+def test_mouse_3():
+    """
+    Test CDS correct for junction within the exon (not on boundary) for one gene
+    one the forward and one gene on the reverse strand
+    """
+
+    data = pyensembl.EnsemblRelease(84,'mouse')
+    db = agfusion.AGFusionDB('../agfusion/data/agfusion.db')
+
+    fusion = agfusion.Fusion(
+        gene5prime="ENSMUSG00000022770",
+        gene5primejunction=31664869,
+        gene3prime="ENSMUSG00000002413",
+        gene3primejunction=39610402,
+        db=db,
+        pyensembl_data=data
+    )
+
+    cds = 'ATGCCGGTCCGGAAGCAAGAATTTGCAGCCTTCAAGTAG'
+
+    assert str(fusion.transcripts['ENSMUST00000064477-ENSMUST00000002487'].cds.seq)==cds, "Test 3: CDS wrong"
+
+def test_mouse_4():
+    """
+    Test cDNA correctly produced for junctions being in UTRs
+    """
+
+    data = pyensembl.EnsemblRelease(84,'mouse')
+    db = agfusion.AGFusionDB('../agfusion/data/agfusion.db')
+
+    fusion = agfusion.Fusion(
+        gene5prime="ENSMUSG00000022770",
+        gene5primejunction=31664851,
+        gene3prime="ENSMUSG00000022770",
+        gene3primejunction=31873343,
+        db=db,
+        pyensembl_data=data
+    )
+
+    cdna = 'GGGGGTGCGGCCGCCGAAGGGGGAGCTCCTCCCCCGTCCCCTCACCCCCTCAGCTGAGCT' + \
+          'CGGGGCGGGGCGGGGTACGTGGAGCGGGGCCGGGCGGGGAAGCTGCTCCGAGTCCGGCCG' + \
+          'GAGCGCACCCGGGGCGCCCGCGTACGCCGCTCGCGGGAACTTTGCGGCGGAGCCGCAGGT' + \
+          'GTGGAGGCCGCGGAGGGGGGTGCATGAGCGGCGCGGAGAGCGGCGGCTGTCCGGTCCGGC' + \
+          'CCCTGCTGGAGTCGCCGCCGGGAGGAGACGAACGAGGAACCAG' + \
+          'GTGTGTGCCGCCTTCCTGATTCTGGAGAAAA' + \
+          'AAA'
+
+    assert str(fusion.transcripts['ENSMUST00000064477-ENSMUST00000064477'].cdna.seq)==cdna, "Test 4: CDS wrong"
+
+def test_mouse_5():
+    """
+    Test that AGFusion determines if the effect on each individual transcript
+    """
+
+    data = pyensembl.EnsemblRelease(84,'mouse')
+    db = agfusion.AGFusionDB('../agfusion/data/agfusion.db')
+
+
+    fusion = agfusion.Fusion(
+        gene5prime="ENSMUSG00000022770",
+        gene5primejunction=31665577,
+        gene3prime="ENSMUSG00000002413",
+        gene3primejunction=39651764,
+        db=db,
+        pyensembl_data=data
+    )
+
+    fusion = agfusion.Fusion(
+        gene5prime="ENSMUSG00000022770",
+        gene5primejunction=31664851,
+        gene3prime="ENSMUSG00000002413",
+        gene3primejunction=39610382,
+        db=db,
+        pyensembl_data=data
+    )
+    import pdb; pdb.set_trace()
+
+    assert fusion.transcripts['ENSMUST00000064477-ENSMUST00000002487'].effect_5prime=='5UTR-end',"Test 5: Not found in 5'UTR-end"
+    assert fusion.transcripts['ENSMUST00000064477-ENSMUST00000002487'].effect_3prime=='3UTR-start', "Test 5: Not found in at 3'UTR beginning"
+
+    #All fusion isforms should be UTR-UTR
+
+    fusion = agfusion.Fusion(
+        gene5prime="ENSMUSG00000022770",
+        gene5primejunction=31664851,
+        gene3prime="ENSMUSG00000002413",
+        gene3primejunction=39610382,
+        db=db,
+        pyensembl_data=data
+    )
+
+    assert fusion.transcripts['ENSMUST00000064477-ENSMUST00000002487'].effect_5prime=='5UTR-end',"Test 5: Not found in 5'UTR-end"
+    assert fusion.transcripts['ENSMUST00000064477-ENSMUST00000002487'].effect_3prime=='3UTR-start', "Test 5: Not found in at 3'UTR beginning"
+
+    fusion = agfusion.Fusion(
+        gene5prime="ENSMUSG00000022770",
+        gene5primejunction=31664850,
+        gene3prime="ENSMUSG00000002413",
+        gene3primejunction=39610382,
+        db=db,
+        pyensembl_data=data
+    )
+    assert fusion.transcripts['ENSMUST00000064477-ENSMUST00000002487'].effect_5prime=='5UTR',"Test 5: Not found in 5'UTR"
+    assert fusion.transcripts['ENSMUST00000064477-ENSMUST00000002487'].effect_3prime=='3UTR-start', "Test 5: Not found in at 3'UTR beginning"
+
+
+#test_mouse_1()
+#test_mouse_2()
+#test_mouse_3()
+#test_mouse_4()
+test_mouse_5()
+
+print 'All tests passed!'

@@ -82,13 +82,17 @@ def main():
         '--junction5prime',
         type=int,
         required=True,
-        help='Genomic location of predicted fuins for the 5\' gene partner'
+        help='Genomic location of predicted fuins for the 5\' gene partner. ' + \
+             'The 1-based position that is the last nucleotide included in ' + \
+             'the fusion before the junction.'
     )
     parser.add_argument(
         '--junction3prime',
         type=int,
         required=True,
-        help='Genomic location of predicted fuins for the 3\' gene partner'
+        help='Genomic location of predicted fuins for the 3\' gene partner. ' + \
+             'The 1-based position that is the first nucleotide included in ' + \
+             'the fusion after the junction.'
     )
     parser.add_argument(
         '--out',
