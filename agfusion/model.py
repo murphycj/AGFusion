@@ -361,11 +361,6 @@ class Fusion():
         dict_of_plots = list()
         plot_key = dict()
 
-        print height
-        print width
-        print fontsize
-        print dpi
-
         for name, transcript in self.transcripts.items():
 
             if not transcript.has_coding_potential:
