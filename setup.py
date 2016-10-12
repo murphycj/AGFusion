@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 README = open('README.md').read()
 
 setup(
-    version = 0.11,
+    version = 0.121,
     name='agfusion',
     packages = find_packages(),
     description = "Python package providing that can visualize different annotations of a gene fusion.",
@@ -13,6 +13,7 @@ setup(
     url='https://github.com/murphycj/AGFusion',
     long_description=README,
     include_package_data=True,
+    scripts=['bin/agfusion','bin/build_db'],
     install_requires=[
         'pyensembl>=0.9.5',
         'matplotlib>=1.5.0',
