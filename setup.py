@@ -19,7 +19,6 @@ setup(
         'biomart>=0.9.0',
         'pandas>=0.18.1',
         'biopython>=1.67',
-        'mpld3>=0.2',
         'jsonpickle>=0.9.3',
         'tqdm>=4.8.4'
     ]

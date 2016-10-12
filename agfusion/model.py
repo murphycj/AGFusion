@@ -12,9 +12,8 @@ from agfusion import utils, exceptions
 import pandas
 from Bio import Seq, SeqIO, SeqRecord, SeqUtils
 from Bio.Alphabet import generic_dna,generic_protein
-import matplotlib.pyplot as plt, mpld3
+import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-from mpld3 import plugins
 import json
 
 MIN_DOMAIN_LENGTH=5
@@ -350,10 +349,12 @@ class Fusion():
 
     def output_to_html(
             self,fontsize=12,dpi=90,colors={},rename={},
-            width=8,height=2,scale=0):
+            width=8,height=2,scale=0,mpld3=None):
         """
         Write figures into html format for plotting in web tool rather
         than writing figures to file
+
+        Needs the mpld3 package to be used
         """
 
         dict_of_plots = list()
