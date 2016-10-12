@@ -10,7 +10,7 @@ You just need to provide the two fusion gene partners (gene symbol or Ensembl ID
 Example usage from the command line:
 
 ```
-./agfusion \
+agfusion \
   --gene5prime ENSMUSG00000022770 \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
@@ -26,7 +26,7 @@ Example output visualization of the domain structure of the DLG1-BRAF fusion:
 You can change domain names and colors:
 
 ```
-../bin/agfusion \
+agfusion \
   --gene5prime ENSMUSG00000022770 \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
@@ -42,7 +42,7 @@ You can change domain names and colors:
 You can rescale the protein length so that images of two different fusions have appropriate relative lengths when plotted side by side:
 
 ```
-./agfusion \
+agfusion \
   --gene5prime ENSMUSG00000022770 \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
@@ -51,7 +51,7 @@ You can rescale the protein length so that images of two different fusions have 
   --out DLG1-BRAF \
   --scale 2000
 
-./agfusion \
+agfusion \
   --gene5prime FGFR2 \
   --gene3prime DNM3 \
   --junction5prime 130167703 \
@@ -91,61 +91,6 @@ Then you can install AGFusion via the following:
 
 ```
 pip install agfusion
-```
-
-# More examples
-
-Example usage within a python script:
-
-```
-import agfusion
-import pyensembl
-
-data = pyensembl.EnsemblRelease(84,'mouse')
-db = agfusion.AGFusionDB(‘/path/to/agfusion.db')
-
-
-#construct the gene fusion
-
-fusion = agfusion.Fusion(
-        gene5prime="ENSMUSG00000022770",
-        gene5primejunction=31684294,
-        gene3prime="ENSMUSG00000002413",
-        gene3primejunction=39648486,
-        db=db,
-        pyensembl_data=data
-    )
-
-#save the predicted cDNA, CDS, and protein sequences
-
-fusion.save_transcript_cdna('DLG1-BRAF_mouse')
-fusion.save_transcript_cds('DLG1-BRAF_mouse')
-fusion.save_proteins('DLG1-BRAF_mouse')
-
-#save the visualizations of the fusion domain structure
-
-fusion.save_images('DLG1-BRAF_mouse')
-```
-
-For annotating with PFAM domains, AGFusion depends on a simple sqlite3 database (agfusion.db in the above examples). You can either download the database that comes with this package (recommended) or rebuild the database with the following command:
-
-```
-./build_db \
-  --db agfusion.db \
-  --genome GRCm38
-```
-
-And then specify the database with the --db flag:
-
-```
-./agfusion \
-  --gene5prime ENSMUSG00000022770 \
-  --gene3prime ENSMUSG00000002413 \
-  --junction5prime 31684294 \
-  --junction3prime 39648486 \
-  --db agfusion.db \
-  --genome GRCm38 \
-  --out DLG1-BRAF
 ```
 
 # Dependencies

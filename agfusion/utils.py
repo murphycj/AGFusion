@@ -1,3 +1,50 @@
+# all combinations except those that do not produce some sort of
+# chimeric protein are commented out
+
+import itertools
+
+junction_locations = [
+    'CDS','CDS (start)','CDS (end)','5UTR','5UTR (end)',
+    '3UTR','3UTR (start)','exon'
+    ]
+
+CODING_COMBINATIONS = list(itertools.product(junction_locations,junction_locations))
+CODING_COMBINATIONS = {i:False for i in CODING_COMBINATIONS}
+
+
+CODING_COMBINATIONS['CDS','CDS']=True
+CODING_COMBINATIONS['CDS','CDS (start)']=True
+CODING_COMBINATIONS['CDS','CDS (end)']=True
+CODING_COMBINATIONS['CDS','5UTR']=True
+CODING_COMBINATIONS['CDS','5UTR (end)']=True
+CODING_COMBINATIONS['CDS','3UTR']=True
+CODING_COMBINATIONS['CDS','3UTR (start)']=True
+CODING_COMBINATIONS['CDS (end)','CDS']=True
+CODING_COMBINATIONS['CDS (end)','CDS (start)']=True
+CODING_COMBINATIONS['CDS (end)','CDS (end)']=True
+CODING_COMBINATIONS['CDS (end)','5UTR']=True
+CODING_COMBINATIONS['CDS (end)','5UTR (end)']=True
+CODING_COMBINATIONS['CDS (end)','3UTR']=True
+CODING_COMBINATIONS['CDS (end)','3UTR (start)']=True
+CODING_COMBINATIONS['CDS (start)','CDS (start)']=True
+CODING_COMBINATIONS['5UTR','CDS (start)']=True
+CODING_COMBINATIONS['5UTR (end)','CDS (start)']=True
+CODING_COMBINATIONS['3UTR','CDS']=True
+CODING_COMBINATIONS['3UTR','CDS (start)']=True
+CODING_COMBINATIONS['3UTR','CDS (end)']=True
+CODING_COMBINATIONS['3UTR','5UTR']=True
+CODING_COMBINATIONS['3UTR','5UTR (end)']=True
+CODING_COMBINATIONS['3UTR','3UTR']=True
+CODING_COMBINATIONS['3UTR','3UTR (start)']=True
+CODING_COMBINATIONS['3UTR (start)','CDS']=True
+CODING_COMBINATIONS['3UTR (start)','CDS (start)']=True
+CODING_COMBINATIONS['3UTR (start)','CDS (end)']=True
+CODING_COMBINATIONS['3UTR (start)','5UTR']=True
+CODING_COMBINATIONS['3UTR (start)','5UTR (end)']=True
+CODING_COMBINATIONS['3UTR (start)','3UTR']=True
+CODING_COMBINATIONS['3UTR (start)','3UTR (start)']=True
+
+
 PROTEIN_DOMAIN = [
     ['prosite','prosite_start','prosite_end'],
     ['pfam','pfam_start','pfam_end'],

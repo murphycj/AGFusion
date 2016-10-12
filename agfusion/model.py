@@ -19,6 +19,7 @@ import json
 
 MIN_DOMAIN_LENGTH=5
 
+
 class _Gene():
     """
     Stores the necessary information to specify the architecture of either
@@ -357,7 +358,6 @@ class Fusion():
 
         dict_of_plots = list()
         plot_key = dict()
-        i=1
 
         for name, transcript in self.transcripts.items():
 
@@ -377,13 +377,11 @@ class Fusion():
             )
 
             single_chart = dict()
-            single_chart['id'] = 'fig' + str(i)
+            single_chart['id'] = name
             single_chart['json'] = json.dumps(mpld3.fig_to_dict(fig))
             dict_of_plots.append(single_chart)
 
-            plot_key['fig' + str(i)] = transcript.name
-
-            i+=1
+            plot_key[name] = transcript.name
 
             plt.close(fig)
             plt.clf()
@@ -481,7 +479,7 @@ class Fusion():
 
         for name, transcript in self.transcripts.items():
 
-            if transcript.cds is not None:
+            if transcript.cdna is not None:
 
                 if middlestar:
                     temp = str(transcript.cdna.seq)
@@ -582,12 +580,20 @@ class FusionTranscript(object):
         self.name=self.transcript1.id + '-' + self.transcript2.id
         self.gene_names = self.gene5prime.gene.name + '-' + self.gene3prime.gene.name
 
-        self.transcript_protein_molecular_weight = None
         self.cds=None
+        self.transcript_cds_junction_5prime = None
+        self.transcript_cds_junction_3prime = None
+
         self.cdna=None
+        self.cdna_5prime=''
+        self.cdna_3prime=''
+        self.transcript_cdna_junction_5prime = None
+        self.transcript_cdna_junction_3prime = None
+
         self.protein=None
         self.protein_length=None
         self.molecular_weight=None
+
         self.domains={
             i:[] for i,j,k in utils.PROTEIN_DOMAIN
         }
@@ -604,17 +610,13 @@ class FusionTranscript(object):
             }
         }
 
-        self.transcript_cdna_junction_5prime = None
-        self.transcript_cdna_junction_3prime = None
-        self.transcript_cds_junction_5prime = None
-        self.transcript_cds_junction_3prime = None
         self.transcript_protein_junction_5prime = None
         self.transcript_protein_junction_3prime = None
 
         self.effect_5prime='exon'
         self.effect_3prime='exon'
         self.effect=''
-        self.has_coding_potential=True
+        self.has_coding_potential=False
 
         if predict_effect:
             self.predict_effect(db)
@@ -830,7 +832,6 @@ class FusionTranscript(object):
 
         self.transcript_cdna_junction_5prime = 0
         self.transcript_cdna_junction_3prime = 0
-        transcript_seq=''
 
         #5prime transcript
 
@@ -852,7 +853,7 @@ class FusionTranscript(object):
                 else:
                     self.transcript_cdna_junction_5prime += (exon.end - self.gene5prime.junction + 1)
 
-        transcript_seq += self.transcript1.sequence[0:self.transcript_cdna_junction_5prime]
+        self.cdna_5prime = self.transcript1.sequence[0:self.transcript_cdna_junction_5prime]
 
         if self.transcript2.strand=="+":
             for exon in self.transcript2.exons:
@@ -861,7 +862,7 @@ class FusionTranscript(object):
                 elif self.gene3prime.junction <= exon.start:
                     break
                 else:
-                    self.transcript_cdna_junction_3prime += (self.gene3prime.junction - exon.start + 1)
+                    self.transcript_cdna_junction_3prime += (self.gene3prime.junction - exon.start)
         else:
             for exon in self.transcript2.exons:
                 if self.gene3prime.junction <= exon.start:
@@ -869,15 +870,15 @@ class FusionTranscript(object):
                 elif self.gene3prime.junction >= exon.end:
                     break
                 else:
-                    self.transcript_cdna_junction_3prime += (exon.end - self.gene3prime.junction + 1)
+                    self.transcript_cdna_junction_3prime += (exon.end - self.gene3prime.junction)
 
-        transcript_seq += self.transcript2.sequence[self.transcript_cdna_junction_3prime::]
+        self.cdna_3prime = self.transcript2.sequence[self.transcript_cdna_junction_3prime::]
 
         self.cdna = SeqRecord.SeqRecord(
-            Seq.Seq(transcript_seq,generic_dna),
+            Seq.Seq(self.cdna_5prime+self.cdna_3prime,generic_dna),
             id=self.name,
             name=self.name,
-            description="length=" + str(len(transcript_seq)) + \
+            description="length=" + str(len(self.cdna_5prime+self.cdna_3prime)) + \
                 ", alternative transcript names: " + str(self.transcript1.name) + ', ' + \
                 str(self.transcript2.name)
         )
@@ -892,14 +893,14 @@ class FusionTranscript(object):
             self.effect_5prime='5UTR'
         elif self.transcript1.complete and \
                 self.transcript_cdna_junction_5prime == len(self.transcript1.five_prime_utr_sequence):
-            self.effect_5prime='5UTR-end'
+            self.effect_5prime='5UTR (end)'
 
         if self.transcript2.complete and \
                 self.transcript_cdna_junction_3prime < len(self.transcript2.five_prime_utr_sequence):
             self.effect_3prime='5UTR'
         elif self.transcript2.complete and \
                 self.transcript_cdna_junction_3prime == len(self.transcript2.five_prime_utr_sequence):
-            self.effect_3prime='5UTR-end'
+            self.effect_3prime='5UTR (end)'
 
         #the 3' utr
 
@@ -908,17 +909,14 @@ class FusionTranscript(object):
             self.effect_5prime='3UTR'
         elif self.transcript1.complete and \
                 (len(self.transcript1)-self.transcript_cdna_junction_5prime) == len(self.transcript1.three_prime_utr_sequence):
-            self.effect_5prime='3UTR-start'
+            self.effect_5prime='3UTR (start)'
 
         if self.transcript2.complete and \
                 (len(self.transcript2)-self.transcript_cdna_junction_3prime) < len(self.transcript2.three_prime_utr_sequence):
             self.effect_3prime='3UTR'
         elif self.transcript2.complete and \
                 (len(self.transcript2)-self.transcript_cdna_junction_3prime) == len(self.transcript2.three_prime_utr_sequence):
-            self.effect_3prime='3UTR-start'
-
-        #if self.name=='ENSMUST00000064477-ENSMUST00000002487':
-            #import pdb; pdb.set_trace()
+            self.effect_3prime='3UTR (start)'
 
     def predict_effect(self,db):
         """
@@ -931,7 +929,7 @@ class FusionTranscript(object):
 
         self._fetch_transcript_cdna()
 
-        #check if within CDS
+        #check if within CDS and if it occurs at the very beginning or end of CDS
 
         if self.transcript1.complete and (self.effect_5prime.find('UTR')==-1):
             for cds in self.transcript1.coding_sequence_position_ranges:
@@ -939,24 +937,39 @@ class FusionTranscript(object):
                     self.effect_5prime='CDS'
                     break
 
+            if self.transcript1.strand=="+":
+                if self.gene5prime.junction==self.transcript1.coding_sequence_position_ranges[0][0]:
+                    self.effect_5prime='CDS (start)'
+                elif self.gene5prime.junction==self.transcript1.coding_sequence_position_ranges[-1][1]:
+                    self.effect_5prime='CDS (end)'
+            else:
+                if self.gene5prime.junction==self.transcript1.coding_sequence_position_ranges[0][1]:
+                    self.effect_5prime='CDS (start)'
+                elif self.gene5prime.junction==self.transcript1.coding_sequence_position_ranges[-1][0]:
+                    self.effect_5prime='CDS (end)'
+
         if self.transcript2.complete and (self.effect_3prime.find('UTR')==-1):
             for cds in self.transcript2.coding_sequence_position_ranges:
                 if self.gene3prime.junction >= cds[0] and self.gene3prime.junction <= cds[1]:
                     self.effect_3prime='CDS'
                     break
 
-        #if within CDS, then get CDS and predict protein
+            if self.transcript2.strand=="+":
+                if self.gene3prime.junction==self.transcript2.coding_sequence_position_ranges[0][0]:
+                    self.effect_3prime='CDS (start)'
+                elif self.gene3prime.junction==self.transcript2.coding_sequence_position_ranges[-1][1]:
+                    self.effect_3prime='CDS (end)'
+            else:
+                if self.gene3prime.junction==self.transcript2.coding_sequence_position_ranges[0][1]:
+                    self.effect_3prime='CDS (start)'
+                elif self.gene3prime.junction==self.transcript2.coding_sequence_position_ranges[-1][0]:
+                    self.effect_3prime='CDS (end)'
 
-        if self.effect_5prime=='CDS' and self.effect_3prime=='CDS':
-            self.has_coding_potential=True
-        elif self.effect_3prime=='CDS' or self.effect_5prime=='5UTR' or self.effect_5prime=='5UTR-end':
-            self.has_coding_potential=True
-        #elif
-        elif self.effect_5prime=='3UTR':
-            self.has_coding_potential=False
+        #get if has coding potential
 
-        #check if the transcripts are complete, and if not check if
-        #they don't have stop and/or start codons
+        self.has_coding_potential = utils.CODING_COMBINATIONS[(self.effect_5prime,self.effect_3prime)]
+
+        #check if not check if they don't have stop and/or start codons
 
         if not self.transcript1.contains_start_codon:
             self.has_coding_potential=False
@@ -968,16 +981,7 @@ class FusionTranscript(object):
         if not self.transcript2.contains_stop_codon:
             self.has_coding_potential=False
 
-        #if the 5' gene has a start codon and the 3' gene has a stop
-        #codon, but one or both are missing a stop codon or start codon,
-        #respectively, then a protein can be produced
-
-        #if (self.has_start_codon_5prime and self.has_stop_codon_3prime) and
-        #    (not self.has_stop_codon_5prime or not self.has_start_codon_3prime):
-
-        #    self.has_coding_potential=True
-
-        #finally, if the fusion transcript has coding potential then
+        #if the fusion transcript has coding potential then
         #fetch its CDS and protein sequences and annotate it
 
         if self.has_coding_potential:
