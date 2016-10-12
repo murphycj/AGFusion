@@ -195,6 +195,7 @@ class Fusion():
             normalize = scale
 
         offset = 0.05 + (1.0 - float(transcript.protein_length)/normalize)*0.45
+        vertical_offset = 0.15
 
         assert normalize >= transcript.protein_length, "length normalization should be >= protein length"
 
@@ -219,7 +220,7 @@ class Fusion():
                 patches.Rectangle(
                     (
                         domain_start,
-                        0.45,
+                        0.45+vertical_offset,
                     ),
                     domain_end-domain_start,
                     0.1,
@@ -229,7 +230,7 @@ class Fusion():
 
             ax.text(
                 domain_center,
-                0.35,
+                0.35+vertical_offset,
                 domain_name,
                 horizontalalignment='center',
                 fontsize=fontsize
@@ -242,7 +243,7 @@ class Fusion():
                 (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset,
                 (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
             ),
-            (0.4,0.6),
+            (0.4+vertical_offset,0.6+vertical_offset),
             color='black'
             )
         )
@@ -255,7 +256,7 @@ class Fusion():
 
         ax.text(
             0.5,
-            0.01,
+            0.01+vertical_offset,
             "Amino acid position",
             horizontalalignment='center',
             fontsize=fontsize
@@ -266,7 +267,7 @@ class Fusion():
                 offset,
                 offset+protein_frame_length
             ),
-            (0.3,0.3),
+            (0.3+vertical_offset,0.3+vertical_offset),
             color='black'
             )
         )
@@ -276,13 +277,13 @@ class Fusion():
                 offset,
                 offset
             ),
-            (0.25,0.3),
+            (0.25+vertical_offset,0.3+vertical_offset),
             color='black'
             )
         )
         ax.text(
             offset,
-            0.15,
+            0.15+vertical_offset,
             "0",
             horizontalalignment='center',
             fontsize=fontsize
@@ -293,13 +294,13 @@ class Fusion():
                 offset+protein_frame_length,
                 offset+protein_frame_length
             ),
-            (0.25,0.3),
+            (0.25+vertical_offset,0.3+vertical_offset),
             color='black'
             )
         )
         ax.text(
             offset+protein_frame_length,
-            0.15,
+            0.15+vertical_offset,
             str(transcript.protein_length),
             horizontalalignment='center',
             fontsize=fontsize
@@ -310,14 +311,14 @@ class Fusion():
                 (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset,
                 (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
             ),
-            (0.25,0.3),
+            (0.25+vertical_offset,0.3+vertical_offset),
             color='black'
             )
         )
 
         ax.text(
             (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset,
-            0.15,
+            0.15+vertical_offset,
             str(transcript.transcript_protein_junction_5prime),
             horizontalalignment='center',
             fontsize=fontsize
@@ -327,7 +328,7 @@ class Fusion():
 
         ax.add_patch(
             patches.Rectangle(
-                (offset, 0.45),
+                (offset, 0.45+vertical_offset),
                 protein_frame_length,
                 0.1,
                 fill=False
@@ -359,6 +360,11 @@ class Fusion():
 
         dict_of_plots = list()
         plot_key = dict()
+
+        print height
+        print width
+        print fontsize
+        print dpi
 
         for name, transcript in self.transcripts.items():
 
