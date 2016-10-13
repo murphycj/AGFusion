@@ -15,8 +15,8 @@ class GeneIDException5prime(Exception):
         self.gene = gene
 
 class TooManyGenesException(Exception):
-    def __init__(self,gene,ids):
-        Exception.__init__(self,"Multiple Ensembl IDs found matching {0}: {1}. Specify which Ensembl ID.".format(gene,', '.join(ids)))
+    def __init__(self,gene,ids,build):
+        Exception.__init__(self,"Multiple Ensembl IDs found matching {0}: {1} for genome {2}. Specify which Ensembl ID.".format(gene,', '.join(ids),build))
         self.gene = gene
 
 class JunctionException5prime(Exception):

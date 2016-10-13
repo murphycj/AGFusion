@@ -25,7 +25,7 @@ class _Gene():
     wild-type genes or fusion gene.
     """
 
-    def __init__(self,gene=None,junction=0,pyensembl_data=None,gene5prime=False):
+    def __init__(self,gene=None,junction=0,pyensembl_data=None,genome='',gene5prime=False):
 
         gene = gene.upper()
 
@@ -49,7 +49,7 @@ class _Gene():
 
                     ids = map(lambda x: x.id, temp)
 
-                    raise exceptions.TooManyGenesException(gene,ids)
+                    raise exceptions.TooManyGenesException(gene,ids,genome)
                 else:
                     self.gene = temp[0]
             else:
@@ -92,6 +92,7 @@ class Fusion():
             gene=gene5prime,
             junction=gene5primejunction,
             pyensembl_data=pyensembl_data,
+            genome=self.genome,
             gene5prime=True
         )
 
@@ -99,6 +100,7 @@ class Fusion():
             gene=gene3prime,
             junction=gene3primejunction,
             pyensembl_data=pyensembl_data,
+            genome=self.genome,
             gene5prime=False
         )
 
