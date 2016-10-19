@@ -205,6 +205,36 @@ def test_mouse_10(data,db):
 
     assert str(fusion.transcripts['ENSMUST00000064477-ENSMUST00000002487'].cdna.seq)==cdna,"Test 10: incorrect cDNA"
 
+def test_mouse_11(data,db):
+
+    fusion = agfusion.Fusion(
+        gene5prime="ENSMUSG00000022770",
+        gene5primejunction=31743271,
+        gene3prime="ENSMUSG00000002413",
+        gene3primejunction=39665003,
+        db=db,
+        pyensembl_data=data
+    )
+    t = fusion.transcripts['ENSMUST00000023454-ENSMUST00000002487']
+
+    assert t.effect_5prime=="intron (cds)","Test 11: incorrect 5' effect: %s" % t.effect_5prime
+    assert t.effect_3prime=="intron (cds)","Test 11: incorrect 3' effect: %s" % t.effect_3prime
+
+def test_mouse_12(data,db):
+
+    fusion = agfusion.Fusion(
+        gene5prime="ENSMUSG00000022770",
+        gene5primejunction=31664820,
+        gene3prime="ENSMUSG00000002413",
+        gene3primejunction=39610405,
+        db=db,
+        pyensembl_data=data
+    )
+    t = fusion.transcripts['ENSMUST00000023454-ENSMUST00000002487']
+
+    assert t.effect_5prime=="intron (before cds)","Test 12: incorrect 5' effect: %s" % t.effect_5prime
+    assert t.effect_3prime=="intron (cds)","Test 12: incorrect 3' effect: %s" % t.effect_3prime
+
 data = pyensembl.EnsemblRelease(84,'mouse')
 db = agfusion.AGFusionDB('../agfusion/data/agfusion.db')
 
@@ -218,5 +248,7 @@ test_mouse_7(data,db)
 test_mouse_8(data,db)
 test_mouse_9(data,db)
 test_mouse_10(data,db)
+test_mouse_11(data,db)
+test_mouse_12(data,db)
 
 print 'All tests passed!'

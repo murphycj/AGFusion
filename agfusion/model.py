@@ -501,6 +501,18 @@ class Fusion():
 
         self._does_dir_exist(out_dir)
 
+        #check if any transcripts have coding potential
+
+        n=0
+        for name, transcript in self.transcripts.items():
+
+            if transcript.cds is not None:
+                n+=1
+
+        if n == 0:
+            print 'Warning: the ' + self.name + ' fusion does not produce any protein coding transcripts. No cds.fa file will be written'
+            return
+
         fout = open(
             os.path.join(
                 out_dir,
@@ -528,6 +540,18 @@ class Fusion():
         """
 
         self._does_dir_exist(out_dir)
+
+        #check if any transcripts have coding potential
+
+        n=0
+        for name, transcript in self.transcripts.items():
+
+            if transcript.cds is not None:
+                n+=1
+
+        if n == 0:
+            print 'Warning: the ' + self.name + ' fusion does not produce any protein coding transcripts. No proteins.fa file will be written'
+            return
 
         fout = open(
             os.path.join(
@@ -837,10 +861,28 @@ class FusionTranscript(object):
         self.transcript_cdna_junction_5prime = 0
         self.transcript_cdna_junction_3prime = 0
 
-        #5prime transcript
+        # get the 5prime transcript sequence and determine if junction is
+        # within intron
+
+        n = 0
+        n_max = len(self.transcript1.exons)
 
         if self.transcript1.strand=="+":
             for exon in self.transcript1.exons:
+
+                #is in intron?
+                if n==0 and self.gene5prime.junction < exon.start:
+                    self.effect_5prime='intron (before cds)'
+
+                if n==n_max and self.gene5prime.junction > exon.end:
+                    self.effect_5prime='intron (after cds)'
+                elif self.gene5prime.junction > exon.end and self.gene5prime.junction < self.transcript1.exons[n+1].start:
+                    self.effect_5prime='intron'
+
+                n += 1
+
+                #get sequence
+
                 if self.gene5prime.junction >= exon.end:
                     self.transcript_cdna_junction_5prime += (exon.end - exon.start + 1)
                 elif self.gene5prime.junction <= exon.start:
@@ -850,6 +892,20 @@ class FusionTranscript(object):
                     break
         else:
             for exon in self.transcript1.exons:
+
+                #is in intron?
+                if n==0 and self.gene5prime.junction > exon.end:
+                    self.effect_5prime='intron (before cds)'
+
+                if n==n_max and self.gene5prime.junction < exon.start:
+                    self.effect_5prime='intron (after cds)'
+                elif self.gene5prime.junction < exon.start and self.gene5prime.junction > self.transcript1.exons[n+1].end:
+                    self.effect_5prime='intron'
+
+                n += 1
+
+                #get sequence
+
                 if self.gene5prime.junction <= exon.start:
                     self.transcript_cdna_junction_5prime += (exon.end - exon.start + 1)
                 elif self.gene5prime.junction >= exon.end:
@@ -859,8 +915,28 @@ class FusionTranscript(object):
 
         self.cdna_5prime = self.transcript1.sequence[0:self.transcript_cdna_junction_5prime]
 
+        # get the 3prime transcript sequence and determine if junction is
+        # within intron
+
+        n = 0
+        n_max = len(self.transcript2.exons)
+
         if self.transcript2.strand=="+":
             for exon in self.transcript2.exons:
+
+                #is in intron?
+                if n==0 and self.gene3prime.junction < exon.start:
+                    self.effect_3prime='intron (before cds)'
+
+                if n==n_max and self.gene3prime.junction > exon.end:
+                    self.effect_3prime='intron (after cds)'
+                elif self.gene3prime.junction > exon.end and self.gene3prime.junction < self.transcript2.exons[n+1].start:
+                    self.effect_3prime='intron'
+
+                n += 1
+
+                #get sequence
+
                 if self.gene3prime.junction >= exon.end:
                     self.transcript_cdna_junction_3prime += (exon.end - exon.start + 1)
                 elif self.gene3prime.junction <= exon.start:
@@ -869,6 +945,20 @@ class FusionTranscript(object):
                     self.transcript_cdna_junction_3prime += (self.gene3prime.junction - exon.start)
         else:
             for exon in self.transcript2.exons:
+
+                #is in intron?
+                if n==0 and self.gene3prime.junction > exon.end:
+                    self.effect_3prime='intron (before cds)'
+
+                if n==n_max and self.gene3prime.junction < exon.start:
+                    self.effect_3prime='intron (after cds)'
+                elif self.gene3prime.junction < exon.start and self.gene3prime.junction > self.transcript2.exons[n+1].end:
+                    self.effect_3prime='intron'
+
+                n += 1
+
+                #get sequence
+
                 if self.gene3prime.junction <= exon.start:
                     self.transcript_cdna_junction_3prime += (exon.end - exon.start + 1)
                 elif self.gene3prime.junction >= exon.end:
@@ -890,37 +980,44 @@ class FusionTranscript(object):
         #find out if the junction on either gene is with in the 5' or 3' UTR,
         #or if it exactly at the beginning or end of the UTR
 
-        #the 5' utr
+        #the 5' gene
 
-        if self.transcript1.complete and \
-                self.transcript_cdna_junction_5prime < len(self.transcript1.five_prime_utr_sequence):
-            self.effect_5prime='5UTR'
-        elif self.transcript1.complete and \
-                self.transcript_cdna_junction_5prime == len(self.transcript1.five_prime_utr_sequence):
-            self.effect_5prime='5UTR (end)'
+        if self.effect_5prime.find('intron')==-1:
 
-        if self.transcript2.complete and \
-                self.transcript_cdna_junction_3prime < len(self.transcript2.five_prime_utr_sequence):
-            self.effect_3prime='5UTR'
-        elif self.transcript2.complete and \
-                self.transcript_cdna_junction_3prime == len(self.transcript2.five_prime_utr_sequence):
-            self.effect_3prime='5UTR (end)'
+            if self.transcript1.complete and \
+                    self.transcript_cdna_junction_5prime < len(self.transcript1.five_prime_utr_sequence):
+                self.effect_5prime='5UTR'
+            elif self.transcript1.complete and \
+                    self.transcript_cdna_junction_5prime == len(self.transcript1.five_prime_utr_sequence):
+                self.effect_5prime='5UTR (end)'
 
-        #the 3' utr
+            if self.transcript1.complete and \
+                    (len(self.transcript1)-self.transcript_cdna_junction_5prime) < len(self.transcript1.three_prime_utr_sequence):
+                self.effect_5prime='3UTR'
+            elif self.transcript1.complete and \
+                    (len(self.transcript1)-self.transcript_cdna_junction_5prime) == len(self.transcript1.three_prime_utr_sequence):
+                self.effect_5prime='3UTR (start)'
 
-        if self.transcript1.complete and \
-                (len(self.transcript1)-self.transcript_cdna_junction_5prime) < len(self.transcript1.three_prime_utr_sequence):
-            self.effect_5prime='3UTR'
-        elif self.transcript1.complete and \
-                (len(self.transcript1)-self.transcript_cdna_junction_5prime) == len(self.transcript1.three_prime_utr_sequence):
-            self.effect_5prime='3UTR (start)'
+        #the 3' gene
 
-        if self.transcript2.complete and \
-                (len(self.transcript2)-self.transcript_cdna_junction_3prime) < len(self.transcript2.three_prime_utr_sequence):
-            self.effect_3prime='3UTR'
-        elif self.transcript2.complete and \
-                (len(self.transcript2)-self.transcript_cdna_junction_3prime) == len(self.transcript2.three_prime_utr_sequence):
-            self.effect_3prime='3UTR (start)'
+        if self.effect_3prime.find('intron')==-1:
+
+            if self.transcript2.complete and \
+                    self.transcript_cdna_junction_3prime < len(self.transcript2.five_prime_utr_sequence):
+                self.effect_3prime='5UTR'
+            elif self.transcript2.complete and \
+                    self.transcript_cdna_junction_3prime == len(self.transcript2.five_prime_utr_sequence):
+                self.effect_3prime='5UTR (end)'
+
+            if self.transcript2.complete and \
+                    (len(self.transcript2)-self.transcript_cdna_junction_3prime) < len(self.transcript2.three_prime_utr_sequence):
+                self.effect_3prime='3UTR'
+            elif self.transcript2.complete and \
+                    (len(self.transcript2)-self.transcript_cdna_junction_3prime) == len(self.transcript2.three_prime_utr_sequence):
+                self.effect_3prime='3UTR (start)'
+
+    #def _check_if_in_intron(self):
+
 
     def predict_effect(self,db):
         """
@@ -936,42 +1033,122 @@ class FusionTranscript(object):
         #check if within CDS and if it occurs at the very beginning or end of CDS
 
         if self.transcript1.complete and (self.effect_5prime.find('UTR')==-1):
-            for cds in self.transcript1.coding_sequence_position_ranges:
-                if self.gene5prime.junction >= cds[0] and self.gene5prime.junction <= cds[1]:
-                    self.effect_5prime='CDS'
-                    break
 
-            if self.transcript1.strand=="+":
-                if self.gene5prime.junction==self.transcript1.coding_sequence_position_ranges[0][0]:
-                    self.effect_5prime='CDS (start)'
-                elif self.gene5prime.junction==self.transcript1.coding_sequence_position_ranges[-1][1]:
-                    self.effect_5prime='CDS (end)'
+            if self.effect_5prime.find('intron')!=-1:
+
+                #if in intron, is it between CDS regions?
+
+                n = 0
+                n_max = len(self.transcript1.exons)
+
+                for cds in self.transcript1.coding_sequence_position_ranges:
+
+                    if self.transcript1.strand=="+":
+                        if n==0 and self.gene5prime.junction < cds[0]:
+                            self.effect_5prime='intron (before cds)'
+                            break
+                        elif n==n_max and self.gene5prime.junction > cds[1]:
+                            self.effect_5prime='intron (after cds)'
+                            break
+                    else:
+                        if n==0 and self.gene5prime.junction > cds[1]:
+                            self.effect_5prime='intron (before cds)'
+                            break
+                        elif n==n_max and self.gene5prime.junction < cds[0]:
+                            self.effect_5prime='intron (after cds)'
+                            break
+
+
+                    if (n!=0) and \
+                            (n!=n_max) and \
+                            (
+                                self.gene5prime.junction < cds[0] or \
+                                self.gene5prime.junction > self.transcript1.coding_sequence_position_ranges[n+1][1]
+                            ):
+
+                        self.effect_5prime='intron (cds)'
+                        break
+
+                    n += 1
             else:
-                if self.gene5prime.junction==self.transcript1.coding_sequence_position_ranges[0][1]:
-                    self.effect_5prime='CDS (start)'
-                elif self.gene5prime.junction==self.transcript1.coding_sequence_position_ranges[-1][0]:
-                    self.effect_5prime='CDS (end)'
+                for cds in self.transcript1.coding_sequence_position_ranges:
+
+                    if self.gene5prime.junction >= cds[0] and self.gene5prime.junction <= cds[1]:
+                        self.effect_5prime='CDS'
+                        break
+
+                if self.transcript1.strand=="+":
+                    if self.gene5prime.junction==self.transcript1.coding_sequence_position_ranges[0][0]:
+                        self.effect_5prime='CDS (start)'
+                    elif self.gene5prime.junction==self.transcript1.coding_sequence_position_ranges[-1][1]:
+                        self.effect_5prime='CDS (end)'
+                else:
+                    if self.gene5prime.junction==self.transcript1.coding_sequence_position_ranges[0][1]:
+                        self.effect_5prime='CDS (start)'
+                    elif self.gene5prime.junction==self.transcript1.coding_sequence_position_ranges[-1][0]:
+                        self.effect_5prime='CDS (end)'
 
         if self.transcript2.complete and (self.effect_3prime.find('UTR')==-1):
-            for cds in self.transcript2.coding_sequence_position_ranges:
-                if self.gene3prime.junction >= cds[0] and self.gene3prime.junction <= cds[1]:
-                    self.effect_3prime='CDS'
-                    break
 
-            if self.transcript2.strand=="+":
-                if self.gene3prime.junction==self.transcript2.coding_sequence_position_ranges[0][0]:
-                    self.effect_3prime='CDS (start)'
-                elif self.gene3prime.junction==self.transcript2.coding_sequence_position_ranges[-1][1]:
-                    self.effect_3prime='CDS (end)'
+            if self.effect_3prime.find('intron')!=-1:
+
+                #if in intron, is it between CDS regions?
+
+                n = 0
+                n_max = len(self.transcript2.exons)
+
+                for cds in self.transcript2.coding_sequence_position_ranges:
+
+                    if self.transcript2.strand=="+":
+                        if n==0 and self.gene3prime.junction < cds[0]:
+                            self.effect_3prime='intron (before cds)'
+                            break
+                        elif n==n_max and self.gene3prime.junction > cds[1]:
+                            self.effect_3prime='intron (after cds)'
+                            break
+                    else:
+                        if n==0 and self.gene3prime.junction > cds[1]:
+                            self.effect_3prime='intron (before cds)'
+                            break
+                        elif n==n_max and self.gene3prime.junction < cds[0]:
+                            self.effect_3prime='intron (after cds)'
+                            break
+
+                    if (n!=0) and \
+                            (n!=n_max) and \
+                            (
+                                self.gene3prime.junction < cds[0] or \
+                                self.gene3prime.junction > self.transcript2.coding_sequence_position_ranges[n+1][1]
+                            ):
+
+                        self.effect_3prime='intron (cds)'
+                        break
+
+                    n += 1
+
             else:
-                if self.gene3prime.junction==self.transcript2.coding_sequence_position_ranges[0][1]:
-                    self.effect_3prime='CDS (start)'
-                elif self.gene3prime.junction==self.transcript2.coding_sequence_position_ranges[-1][0]:
-                    self.effect_3prime='CDS (end)'
+                for cds in self.transcript2.coding_sequence_position_ranges:
+                    if self.gene3prime.junction >= cds[0] and self.gene3prime.junction <= cds[1]:
+                        self.effect_3prime='CDS'
+                        break
+
+                if self.transcript2.strand=="+":
+                    if self.gene3prime.junction==self.transcript2.coding_sequence_position_ranges[0][0]:
+                        self.effect_3prime='CDS (start)'
+                    elif self.gene3prime.junction==self.transcript2.coding_sequence_position_ranges[-1][1]:
+                        self.effect_3prime='CDS (end)'
+                else:
+                    if self.gene3prime.junction==self.transcript2.coding_sequence_position_ranges[0][1]:
+                        self.effect_3prime='CDS (start)'
+                    elif self.gene3prime.junction==self.transcript2.coding_sequence_position_ranges[-1][0]:
+                        self.effect_3prime='CDS (end)'
+
+        #if self.name =='ENST00000354725-ENST00000288602':
+            #import pdb; pdb.set_trace()
 
         #get if has coding potential
 
-        self.has_coding_potential = utils.CODING_COMBINATIONS[(self.effect_5prime,self.effect_3prime)]
+        self.has_coding_potential = utils.CODING_COMBINATIONS[(self.effect_5prime,self.effect_3prime)]['protein_coding_potential']
 
         #check if not check if they don't have stop and/or start codons
 
@@ -984,6 +1161,12 @@ class FusionTranscript(object):
             self.has_coding_potential=False
         if not self.transcript2.contains_stop_codon:
             self.has_coding_potential=False
+
+        #append information to cdna fasta headers
+
+        self.cdna.description += "; 5' location: " + self.effect_5prime + \
+            "; 3' location: " + self.effect_3prime + \
+            "; Has protein coding potential: " + str(self.has_coding_potential)
 
         #if the fusion transcript has coding potential then
         #fetch its CDS and protein sequences and annotate it

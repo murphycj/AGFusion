@@ -146,15 +146,15 @@ def main():
         '--width',
         type=int,
         required=False,
-        default=20,
-        help='(Optional) Image width in inches (default 20).'
+        default=10,
+        help='(Optional) Image width in inches (default 10).'
     )
     parser.add_argument(
         '--height',
         type=int,
         required=False,
-        default=5,
-        help='(Optional) Image file height in inches (default 5).'
+        default=3,
+        help='(Optional) Image file height in inches (default 3).'
     )
     parser.add_argument(
         '--dpi',
