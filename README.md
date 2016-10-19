@@ -106,3 +106,7 @@ pip install agfusion
 # License
 
 MIT license
+
+# Citing AGFusion
+
+Manuscript under review. You can cite bioRiv for now: http://dx.doi.org/10.1101/080903
