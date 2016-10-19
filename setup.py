@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 README = open('README.md').read()
 
 setup(
-    version = 0.13,
+    version = 0.131,
     name='agfusion',
     packages = find_packages(),
     description = "Python package providing that can visualize different annotations of a gene fusion.",
