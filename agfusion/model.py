@@ -491,6 +491,14 @@ class Fusion():
                     transcript.cdna.seq = Seq.Seq(temp,generic_dna)
 
                 SeqIO.write(transcript.cdna,fout,"fasta")
+            else:
+                cdna = SeqRecord.SeqRecord(
+                    Seq.Seq("",generic_dna),
+                    id=transcript.name,
+                    name=transcript.name,
+                    description="No cDNA, fusion junction outside transcript(s) boundary"
+                )
+                SeqIO.write(cdna,fout,"fasta")
 
         fout.close()
 
@@ -973,7 +981,7 @@ class FusionTranscript(object):
             id=self.name,
             name=self.name,
             description="length=" + str(len(self.cdna_5prime+self.cdna_3prime)) + \
-                ", alternative transcript names: " + str(self.transcript1.name) + ', ' + \
+                 ', ' + \
                 str(self.transcript2.name)
         )
 
@@ -1143,30 +1151,37 @@ class FusionTranscript(object):
                     elif self.gene3prime.junction==self.transcript2.coding_sequence_position_ranges[-1][0]:
                         self.effect_3prime='CDS (end)'
 
-        #if self.name =='ENST00000354725-ENST00000288602':
-            #import pdb; pdb.set_trace()
-
         #get if has coding potential
 
         self.has_coding_potential = utils.CODING_COMBINATIONS[(self.effect_5prime,self.effect_3prime)]['protein_coding_potential']
 
         #check if not check if they don't have stop and/or start codons
 
+        reasons = []
+
         if not self.transcript1.contains_start_codon:
             self.has_coding_potential=False
+            reasons.append("no known 5' transcript start codon")
         if not self.transcript1.contains_stop_codon:
             self.has_coding_potential=False
+            reasons.append("no known 5' transcript stop codon")
 
         if not self.transcript2.contains_start_codon:
             self.has_coding_potential=False
+            reasons.append("no known 3' transcript start codon")
         if not self.transcript2.contains_stop_codon:
             self.has_coding_potential=False
+            reasons.append("no known 3' transcript stop codon")
 
         #append information to cdna fasta headers
 
         self.cdna.description += "; 5' location: " + self.effect_5prime + \
             "; 3' location: " + self.effect_3prime + \
             "; Has protein coding potential: " + str(self.has_coding_potential)
+
+        if not self.has_coding_potential:
+            self.cdna.description += "; Reason: " + ', '.join(reasons)
+
 
         #if the fusion transcript has coding potential then
         #fetch its CDS and protein sequences and annotate it
