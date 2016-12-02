@@ -182,7 +182,8 @@ class Fusion():
         if not os.path.exists(out_dir):
             os.mkdir(out_dir)
 
-    def _draw(self,fig='',name='',transcript=None,scale=0,fontsize=12,colors=None,rename=None):
+    def _draw(self,fig='',name='',transcript=None,scale=0,fontsize=12,
+            colors=None,rename=None,no_domain_labels=False):
         """
         Draw an individual figure
         """
@@ -230,13 +231,15 @@ class Fusion():
                 )
             )
 
-            ax.text(
-                domain_center,
-                0.35+vertical_offset,
-                domain_name,
-                horizontalalignment='center',
-                fontsize=fontsize
-            )
+            if not no_domain_labels:
+
+                ax.text(
+                    domain_center,
+                    0.35+vertical_offset,
+                    domain_name,
+                    horizontalalignment='center',
+                    fontsize=fontsize
+                )
 
         #add the junction
 
@@ -429,7 +432,7 @@ class Fusion():
 
     def save_images(
             self,out_dir='',file_type='png',fontsize=12,dpi=100,
-            colors={},rename={},width=8,height=2,scale=0):
+            colors={},rename={},width=8,height=2,scale=0,no_domain_labels=True):
         """
         Save images of all fusion isoforms and write to file
         """
@@ -452,7 +455,8 @@ class Fusion():
                 scale=scale,
                 fontsize=fontsize,
                 colors=colors,
-                rename=rename
+                rename=rename,
+                no_domain_labels=no_domain_labels
             )
 
             filename = os.path.join(out_dir, name + '.'  + file_type)

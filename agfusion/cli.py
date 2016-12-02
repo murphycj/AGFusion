@@ -189,6 +189,12 @@ def main():
         required=False,
         help='(Optional) Insert a * at the junction position for the cdna, cds, and protein sequences (default False).'
     )
+    parser.add_argument(
+        '--no_domain_labels',
+        action='store_true',
+        required=False,
+        help='(Optional) Do not label domains.'
+    )
 
     args = parser.parse_args()
 
@@ -262,7 +268,8 @@ def main():
         fontsize=args.fontsize,
         height=args.height,
         width=args.width,
-        dpi=args.dpi
+        dpi=args.dpi,
+        no_domain_labels=args.no_domain_labels
         )
 
 #    if args.WT:
