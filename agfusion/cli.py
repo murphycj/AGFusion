@@ -195,8 +195,17 @@ def main():
         required=False,
         help='(Optional) Do not label domains.'
     )
+    parser.add_argument(
+        '--version',
+        action='version',
+        version=agfusion.__version__
+    )
 
     args = parser.parse_args()
+
+    #if args.version:
+    #    print "Version: {%s}" % agfusion.__version__
+    #    sys.exit()
 
     if not os.path.exists(args.out):
         os.mkdir(args.out)

@@ -1,10 +1,20 @@
 import os
 from setuptools import setup, find_packages
+import re
+
+VERSIONFILE="agfusion/_version.py"
+verstrline = open(VERSIONFILE, "rt").read()
+VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
+mo = re.search(VSRE, verstrline, re.M)
+if mo:
+    verstr = mo.group(1)
+else:
+    raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
 README = open('README.md').read()
 
 setup(
-    version = 0.131,
+    version = verstr,
     name='agfusion',
     packages = find_packages(),
     description = "Python package providing that can visualize different annotations of a gene fusion.",
