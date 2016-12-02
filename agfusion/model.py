@@ -12,9 +12,12 @@ from agfusion import utils, exceptions
 import pandas
 from Bio import Seq, SeqIO, SeqRecord, SeqUtils
 from Bio.Alphabet import generic_dna,generic_protein
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import json
+
+#matplotlib.rcParams['interactive'] = False
 
 MIN_DOMAIN_LENGTH=5
 
@@ -182,7 +185,7 @@ class Fusion():
         if not os.path.exists(out_dir):
             os.mkdir(out_dir)
 
-    def _draw(self,fig='',name='',transcript=None,scale=0,fontsize=12,
+    def _draw(self,fig=None,name='',transcript=None,scale=0,fontsize=12,
             colors=None,rename=None,no_domain_labels=False):
         """
         Draw an individual figure
@@ -277,7 +280,9 @@ class Fusion():
             )
         )
 
-        ax.add_line(plt.Line2D(
+        #left marker
+
+        left_marker_line = ax.add_line(plt.Line2D(
             (
                 offset,
                 offset
@@ -286,7 +291,7 @@ class Fusion():
             color='black'
             )
         )
-        ax.text(
+        left_marker_text = ax.text(
             offset,
             0.15+vertical_offset,
             "0",
@@ -294,7 +299,9 @@ class Fusion():
             fontsize=fontsize
         )
 
-        ax.add_line(plt.Line2D(
+        #right marker
+
+        right_marker_line = ax.add_line(plt.Line2D(
             (
                 offset+protein_frame_length,
                 offset+protein_frame_length
@@ -303,7 +310,7 @@ class Fusion():
             color='black'
             )
         )
-        ax.text(
+        right_marker_text = ax.text(
             offset+protein_frame_length,
             0.15+vertical_offset,
             str(transcript.protein_length),
@@ -311,23 +318,101 @@ class Fusion():
             fontsize=fontsize
         )
 
-        ax.add_line(plt.Line2D(
-            (
-                (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset,
-                (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
-            ),
-            (0.25+vertical_offset,0.3+vertical_offset),
-            color='black'
-            )
-        )
+        #middle marker, loop until it does not overlap with right marker
 
-        ax.text(
-            (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset,
-            0.15+vertical_offset,
-            str(transcript.transcript_protein_junction_5prime),
-            horizontalalignment='center',
-            fontsize=fontsize
-        )
+        overlaps = True
+        line_offset = (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
+        text_offset = (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
+        junction_label_vertical_offset = 0.0
+
+        rr = fig.canvas.get_renderer()
+
+        right_marker_text_box = right_marker_text.get_window_extent(renderer=rr)
+        left_marker_text_box = left_marker_text.get_window_extent(renderer=rr)
+
+        while overlaps:
+
+            #middle_marker_line_1/2/3 are to draw angled line
+
+            middle_marker_line_1 = ax.add_line(plt.Line2D(
+                (
+                    (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset,
+                    (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
+                ),
+                (
+                    0.275+vertical_offset - junction_label_vertical_offset,
+                    0.3+vertical_offset
+                ),
+                color='black'
+                )
+            )
+
+            middle_marker_line_2 = ax.add_line(plt.Line2D(
+                (
+                    line_offset,
+                    (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
+                ),
+                (
+                    0.275+vertical_offset-junction_label_vertical_offset,
+                    0.275+vertical_offset-junction_label_vertical_offset
+                ),
+                color='black'
+                )
+            )
+
+            middle_marker_line_3 = ax.add_line(plt.Line2D(
+                (
+                    line_offset,
+                    line_offset
+                ),
+                (
+                    0.25+vertical_offset-junction_label_vertical_offset,
+                    0.275+vertical_offset-junction_label_vertical_offset
+                ),
+                color='black'
+                )
+            )
+
+            middle_marker_text = ax.text(
+                text_offset,
+                0.15+vertical_offset-junction_label_vertical_offset,
+                str(transcript.transcript_protein_junction_5prime),
+                horizontalalignment='center',
+                fontsize=fontsize
+            )
+
+            #detect if text overlaps
+
+            middle_marker_text_box = middle_marker_text.get_window_extent(renderer=rr)
+
+            #if overlaps then offset the junction text to the left
+
+            if (right_marker_text_box.fully_overlaps(middle_marker_text_box)) and (left_marker_text_box.fully_overlaps(middle_marker_text_box)):
+                junction_label_vertical_offset = junction_label_vertical_offset + 0.01
+
+                middle_marker_line_1.remove()
+                middle_marker_line_2.remove()
+                middle_marker_line_3.remove()
+                middle_marker_text.remove()
+
+            elif right_marker_text_box.fully_overlaps(middle_marker_text_box):
+                line_offset = line_offset - 0.01
+                text_offset = text_offset - 0.01
+
+                middle_marker_line_1.remove()
+                middle_marker_line_2.remove()
+                middle_marker_line_3.remove()
+                middle_marker_text.remove()
+            elif left_marker_text_box.fully_overlaps(middle_marker_text_box):
+                line_offset = line_offset + 0.01
+                text_offset = text_offset + 0.01
+
+                middle_marker_line_1.remove()
+                middle_marker_line_2.remove()
+                middle_marker_line_3.remove()
+                middle_marker_text.remove()
+            else:
+                overlaps=False
 
         #main protein frame
 
