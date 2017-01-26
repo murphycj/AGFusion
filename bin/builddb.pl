@@ -3,6 +3,11 @@ use Bio::EnsEMBL::Gene;
 use Getopt::ArgParse;
 use DBD::SQLite;
 use Parallel::ForkManager;
+use Term::ProgressBar;
+use Log::Log4perl qw(:easy);
+Log::Log4perl->easy_init($INFO);
+
+no warnings 'deprecated';
 
 sub check_database_tables {
   my $dbh = shift;
@@ -125,6 +130,8 @@ my $args = $ap->parse_args();
 
 #connect to database
 
+INFO "Connecting to Ensembl servers...";
+
 my $registry = 'Bio::EnsEMBL::Registry';
 
 $registry->load_registry_from_db(
@@ -140,32 +147,39 @@ if ($args->genome=='GRCm38') {
 
 my $dbh = DBI->connect("dbi:SQLite:dbname=" . $args->database,"","");
 
+INFO "Checking database tables...";
+
 check_database_tables($dbh,$args->genome,$args->release);
 
 #loop over all genes
 
+INFO "Fetching gene list from Ensembl...";
+
 my $genes_ref = $gene_adaptor->fetch_all();
 my @genes = @{$genes_ref};
-my $num_genes = scalar @genes;
 
 my @gene_chunks;
-push @gene_chunks, [ splice @genes, 0, 10 ] while @genes;
-@gene_chunks = @gene_chunks[0..10];
-
-$pm = new Parallel::ForkManager(20);
+push @gene_chunks, [ splice @genes, 0, 100 ] while @genes;
 
 my @results;
+my $counter = 0;
+
+INFO "Fetching gene annotation (will take a while)...";
+
+my $num_gene_chunks = scalar @gene_chunks;
+my $progress = Term::ProgressBar->new($num_gene_chunks);
+
+$pm = new Parallel::ForkManager($args->p);
 
 $pm -> run_on_finish ( # called BEFORE the first call to start()
     sub {
       my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_structure_reference) = @_;
 
-      #print ${$data_structure_reference} . " done!\n";
+      $progress->update($_);
+
       push(@results, @$data_structure_reference);
     }
   );
-
-#while ( my $gene = shift @genes ) {
 
 while ($chunk = shift @gene_chunks) {
 
@@ -174,18 +188,6 @@ while ($chunk = shift @gene_chunks) {
   my @results_tmp;
 
   while ($gene = shift @{$chunk}) {
-    #my $gstring = feature2string($gene);
-    my $external_name = $gene->external_name();
-    my $stable_id = $gene->stable_id();
-
-    #print $stable_id . "\n";
-
-    #insert ensembl gene id and
-
-    #my $stmt = qq(INSERT INTO GENE (NAME,SYMBOL)
-    #    VALUES ("$stable_id","$external_name"));
-    #my $rv = $dbh->do($stmt) or die $DBI::errstr;
-
 
     #loop over the transcripts and insert into the table which are canonical
     #and then insert into the table the protein information
@@ -208,6 +210,8 @@ while ($chunk = shift @gene_chunks) {
 $pm->wait_all_children;
 
 #add the data to the database
+
+INFO "Adding fetched data to database...";
 
 my $sth = $dbh->prepare(
   "INSERT INTO PFEATURES_" . $args->genome . "_" . $args->release
