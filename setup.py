@@ -23,7 +23,7 @@ setup(
     url='https://github.com/murphycj/AGFusion',
     long_description=README,
     include_package_data=True,
-    scripts=['bin/agfusion','bin/build_db'],
+    scripts=['bin/agfusion','bin/builddb.pl'],
     install_requires=[
         'pyensembl>=0.9.5',
         'matplotlib>=1.5.0',

@@ -8,61 +8,6 @@ import urllib
 import agfusion
 import pyensembl
 
-def build_db():
-
-    parser = argparse.ArgumentParser(
-        description='Build the SQLite3 database for a reference ' + \
-        'genomes by querying Biomart. The the database given by --database ' + \
-        'already exists then that portion will be overwritten.'
-    )
-    parser.add_argument(
-        '--database',
-        type=str,
-        required=True,
-        help='Path to the database file (e.g. agfusion.db)'
-    )
-    parser.add_argument(
-        '--genome',
-        type=str,
-        required=True,
-        help='GRCh38, GRCh37, or GRCm38'
-    )
-    parser.add_argument(
-        '--p',
-        type=int,
-        default=1,
-        help='(Optional) Number of processers to use to fetch data from Biomart (default 1).'
-    )
-
-    args = parser.parse_args()
-
-    db = agfusion.AGFusionDBBManager(args.database,args.genome)
-
-    if args.genome=='GRCm38':
-        pyensembl_data = pyensembl.EnsemblRelease(84,'mouse')
-    elif args.genome=='GRCh38':
-        pyensembl_data = pyensembl.EnsemblRelease(84,'human')
-    elif args.genome=='GRCh37':
-        pyensembl_data = pyensembl.EnsemblRelease(75,'human')
-    else:
-        db.logger.error(' You provided an incorrect reference genome. Use one of the following: GRCh38, GRCh37, or GRCm38')
-        sys.exit()
-
-    db.logger.info('Fetching data from Biomart...')
-
-    db.fetch_data(pyensembl_data,args.p)
-
-    db.logger.info('Retrieving PFAM domain name mapping file...')
-
-    pfam_file = os.path.join(os.path.dirname(args.database),'pdb_pfam_mapping.txt')
-    r = urllib.urlretrieve('ftp://ftp.ebi.ac.uk/pub/databases/Pfam//mappings/pdb_pfam_mapping.txt',pfam_file)
-
-    db.logger.info('Adding PFAM data to the database...')
-
-    db.add_pfam(pfam_file=pfam_file)
-
-    db.logger.info('Done!')
-
 def main():
 
     parser = argparse.ArgumentParser(description='Annotate Gene Fusion (AGFusion)')
@@ -112,6 +57,19 @@ def main():
         default=None,
         required=False,
         help='(Optional) The SQLite3 database. Defaults to using the database provided by the package.'
+    )
+    parser.add_argument(
+        '--protein_databases',
+        type=str,
+        required=False,
+        nargs='+',
+        default=['pfam','tmhmm'],
+        help='(Optional) Space-delimited list of one or more protein ' + \
+             'feature databases to include when visualizing proteins. ' + \
+             'Options are: pfam, tigrfam, prints, hmmpanther, ' + \
+             'blastprodom, gene3d, hamap, pirsf, ncoils, superfamily, seg, ' + \
+             'signalp, scanprosite, pfscan, tmhmm, and smart. ' + \
+             '(default includes pfam and tmhmm).'
     )
     parser.add_argument(
         '--colors',
@@ -203,10 +161,6 @@ def main():
 
     args = parser.parse_args()
 
-    #if args.version:
-    #    print "Version: {%s}" % agfusion.__version__
-    #    sys.exit()
-
     if not os.path.exists(args.out):
         os.mkdir(args.out)
 
@@ -237,7 +191,8 @@ def main():
         gene3prime=args.gene3prime,
         gene3primejunction=args.junction3prime,
         db=db,
-        pyensembl_data=pyensembl_data
+        pyensembl_data=pyensembl_data,
+        protein_databases=args.protein_databases
     )
 
     fusion.save_transcript_cdna(out_dir=args.out,middlestar=args.middlestar)
