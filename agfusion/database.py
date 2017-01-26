@@ -2,6 +2,7 @@ import sys
 import os
 import sqlite3
 import requests
+import logging
 
 class AGFusionDB(object):
     """
@@ -32,18 +33,6 @@ class AGFusionDB(object):
         )
         self.c = self.conn.cursor()
         self.conn.commit()
-
-    def _check_table(self,table):
-        """
-        Check if table exists
-        """
-
-        self.c.execute("SELECT * FROM sqlite_master WHERE name = \'" + table + "\' and type='table';")
-
-        if len(self.c.fetchall())==0:
-            return False
-        else:
-            return True
 
     def close(self):
         """

@@ -78,18 +78,21 @@ class Fusion():
             self,
             gene5prime=None,gene5primejunction=0,
             gene3prime=None,gene3primejunction=0,
-            db=None,pyensembl_data=None,
+            db=None,pyensembl_data=None,protein_databases=None,
             transcripts_5prime=None,transcripts_3prime=None):
 
         #get the reference genom
 
         if pyensembl_data.species.latin_name=='mus_musculus':
             self.genome='GRCm38'
+            self.release=85
         else:
             if pyensembl_data.release==75:
                 self.genome='GRCh37'
+                self.release=75
             else:
                 self.genome='GRCh38'
+                self.release=85
 
         self.gene5prime = _Gene(
             gene=gene5prime,
@@ -152,6 +155,8 @@ class Fusion():
                     gene3prime=self.gene3prime,
                     db=db,
                     genome=self.genome,
+                    release=self.release,
+                    protein_databases=protein_databases,
                     predict_effect=False
                 )
                 self.transcripts[name].effect='Outside transcript boundry'
@@ -165,6 +170,8 @@ class Fusion():
                     gene3prime=self.gene3prime,
                     db=db,
                     genome=self.genome,
+                    release=self.release,
+                    protein_databases=protein_databases,
                     predict_effect=False
                 )
                 self.transcripts[name].effect='Outside transcript boundry'
@@ -177,7 +184,9 @@ class Fusion():
                     gene5prime=self.gene5prime,
                     gene3prime=self.gene3prime,
                     db=db,
-                    genome=self.genome
+                    genome=self.genome,
+                    release=self.release,
+                    protein_databases=protein_databases,
                 )
 
     def _does_dir_exist(self,out_dir):
@@ -207,9 +216,12 @@ class Fusion():
 
         #plot domains
 
-        for domain in transcript.domains['pfam']:
+        for domain in transcript.domains:
 
-            domain_name = str(domain[1])
+            if domain[2]=='':
+                domain_name = str(domain[0])
+            else:
+                domain_name = str(domain[2])
 
             color = '#3385ff'
             if domain_name in colors:
@@ -218,8 +230,8 @@ class Fusion():
             if domain_name in rename:
                 domain_name = rename[domain_name]
 
-            domain_start = (int(domain[2])/float(normalize))*0.9 + offset
-            domain_end = (int(domain[3])/float(normalize))*0.9 + offset
+            domain_start = (int(domain[3])/float(normalize))*0.9 + offset
+            domain_end = (int(domain[4])/float(normalize))*0.9 + offset
             domain_center = (domain_end-domain_start)/2. + domain_start
 
             ax.add_patch(
@@ -695,12 +707,20 @@ class FusionTranscript(object):
     Generates the information needed for the gene fusion transctips
     """
 
-    def __init__(self,transcript1=None,transcript2=None,gene5prime=None,gene3prime=None,db=None,genome='',predict_effect=True):
+    def __init__(
+            self,
+            transcript1=None,transcript2=None,
+            gene5prime=None,gene3prime=None,
+            db=None,genome='',release=0,protein_databases=None,
+            predict_effect=True):
+
         self.transcript1=transcript1
         self.transcript2=transcript2
         self.gene5prime=gene5prime
         self.gene3prime=gene3prime
         self.genome=genome
+        self.release=release
+        self.protein_databases=protein_databases
 
         self.name=self.transcript1.id + '-' + self.transcript2.id
         self.gene_names = self.gene5prime.gene.name + '-' + self.gene3prime.gene.name
@@ -722,18 +742,6 @@ class FusionTranscript(object):
         self.domains={
             i:[] for i,j,k in utils.PROTEIN_DOMAIN
         }
-        self.transmembrane={
-            'transmembrane_domain':{
-                'transmembrane_domain_start':0,
-                'transmembrane_domain_end':0
-            }
-        }
-        self.complexity={
-            'low_complexity':{
-                'low_complexity_start':0,
-                'low_complexity_end':0
-            }
-        }
 
         self.transcript_protein_junction_5prime = None
         self.transcript_protein_junction_3prime = None
@@ -746,61 +754,57 @@ class FusionTranscript(object):
         if predict_effect:
             self.predict_effect(db)
 
-    def _fetch_domain_name(self,name,db):
-        """
-        Query the SQLite database to convert Pfam identifier to
-        Pfam name
-        """
-
-        db.c.execute(
-            'SELECT * FROM PFAMMAP WHERE pfam_acc==\"' + \
-            name + \
-            '\"'
-        )
-
-        new_name = db.c.fetchall()
-
-        if len(new_name)<1:
-            print 'No pfam name for %s' % name
-            return name
-        if len(new_name)>1:
-            import pdb; pdb.set_trace()
-        elif len(new_name)==1:
-            return new_name[0][1]
-
     def _annotate(self,db):
         """
         Annotate the gene fusion's protein using the protein annotaiton
         from its two genes
         """
 
-        db.c.execute(
-            'SELECT * FROM ' + self.genome + '_pfam WHERE ensembl_transcript_id==\"' + \
-            self.transcript1.id + \
-            '\"'
-        )
-
         fusion_domains=[]
+        domains=[]
 
-        domains = map(lambda x: list(x),db.c.fetchall())
+        for database in self.protein_databases:
+
+            db.c.execute(
+                'SELECT * FROM PFEATURES_' + self.genome + '_' + str(self.release) + ' WHERE TRANSCRIPT_ID==\"' + \
+                self.transcript1.id + \
+                '\" AND SOURCE=\"' + database + '\"'
+            )
+
+            domains += map(lambda x: list(x),db.c.fetchall())
 
         for d in domains:
-            if str(d[1])=='':
-                continue
 
-            d[0] = self.name
-            d[1] = self._fetch_domain_name(d[1],db)
-            d[2] = int(d[2])
-            d[3] = int(d[3])
+            pfeature_ID = d[2]
+            pfeature_description = d[3]
+            pfeature_short_description = d[4]
+            pfeature_start = int(d[5])
+            pfeature_end = int(d[6])
 
             try:
-                if self.transcript_protein_junction_5prime < d[2]:
+                if self.transcript_protein_junction_5prime < pfeature_start:
                     continue
-                elif self.transcript_protein_junction_5prime >= d[3]:
-                    fusion_domains.append(d)
-                elif (self.transcript_protein_junction_5prime - d[2]) >= MIN_DOMAIN_LENGTH:
-                    d[3] = self.transcript_protein_junction_5prime
-                    fusion_domains.append(d)
+                elif self.transcript_protein_junction_5prime >= pfeature_end:
+
+                    fusion_domains.append([
+                        pfeature_ID,
+                        pfeature_description,
+                        pfeature_short_description,
+                        pfeature_start,
+                        pfeature_end
+                    ])
+
+                elif (self.transcript_protein_junction_5prime - pfeature_start) >= MIN_DOMAIN_LENGTH:
+
+                    pfeature_end = self.transcript_protein_junction_5prime
+
+                    fusion_domains.append([
+                        pfeature_ID,
+                        pfeature_description,
+                        pfeature_short_description,
+                        pfeature_start,
+                        pfeature_end
+                    ])
             except:
                 import pdb; pdb.set_trace()
 
@@ -808,39 +812,58 @@ class FusionTranscript(object):
 
         if self.effect != 'out-of-frame':
 
-            db.c.execute(
-                'SELECT * FROM ' + self.genome + '_pfam WHERE ensembl_transcript_id==\"' + \
-                self.transcript2.id + \
-                '\"'
-            )
+            domains = []
 
-            domains = map(lambda x: list(x),db.c.fetchall())
+            for database in self.protein_databases:
+
+                db.c.execute(
+                    'SELECT * FROM PFEATURES_' + self.genome + '_' + str(self.release) + ' WHERE TRANSCRIPT_ID==\"' + \
+                    self.transcript2.id + \
+                    '\" AND SOURCE=\"' + database + '\"'
+                )
+
+                domains += map(lambda x: list(x),db.c.fetchall())
 
             for d in domains:
-                if str(d[1])=='':
-                    continue
 
-                d[0] = self.name
-                d[1] = self._fetch_domain_name(d[1],db)
-                d[2] = int(d[2])
-                d[3] = int(d[3])
+                pfeature_ID = d[2]
+                pfeature_description = d[3]
+                pfeature_short_description = d[4]
+                pfeature_start = int(d[5])
+                pfeature_end = int(d[6])
 
-                if self.transcript_protein_junction_3prime > d[3]:
+                if self.transcript_protein_junction_3prime > pfeature_end:
                     continue
-                elif self.transcript_protein_junction_3prime <= d[2]:
-                    d[2]=(d[2]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
-                    d[3]=(d[3]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
-                    fusion_domains.append(d)
+                elif self.transcript_protein_junction_3prime <= pfeature_start:
+
+                    pfeature_start=(pfeature_start-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
+                    pfeature_end=(pfeature_end-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
+
+                    fusion_domains.append([
+                        pfeature_ID,
+                        pfeature_description,
+                        pfeature_short_description,
+                        pfeature_start,
+                        pfeature_end
+                    ])
+
                 else:
-                    d[2]=self.transcript_protein_junction_5prime
-                    d[3]=(d[3]-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
-                    fusion_domains.append(d)
 
-                if d[3]<d[2]:
+                    pfeature_start=self.transcript_protein_junction_5prime
+                    pfeature_end=(pfeature_end-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
+
+                    fusion_domains.append([
+                        pfeature_ID,
+                        pfeature_description,
+                        pfeature_short_description,
+                        pfeature_start,
+                        pfeature_end
+                    ])
+
+                if pfeature_end < pfeature_start:
                     import pdb; pdb.set_trace()
 
-
-        self.domains['pfam'] = fusion_domains
+        self.domains = fusion_domains
 
     def _fetch_protein(self):
         """
