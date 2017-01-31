@@ -5,6 +5,8 @@ Docs are at http://pythonhosted.org/agfusion/
 
 # Example Usage
 
+### Basic Usage
+
 You just need to provide the two fusion gene partners (gene symbol or Ensembl ID), their predicted fusion junctions in genomic coordinates, and the genome build.
 
 Example usage from the command line:
@@ -23,6 +25,8 @@ Example output visualization of the domain structure of the DLG1-BRAF fusion:
 
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000132176-ENSMUST00000002487.png)
 
+### Plotting wild-type protein
+
 You can plot the wild-type proteins for each genewith --WT flag.
 
 ```
@@ -36,6 +40,8 @@ agfusion \
   --WT
 ```
 
+### Canonical gene isoforms
+
 By default AGFusion only plots the [canonical](http://useast.ensembl.org/Help/Glossary?id=346) gene isoforms, but you can tell AGFusion to include non-canonical isoform with the --noncanonical flag.
 
 ```
@@ -48,6 +54,8 @@ agfusion \
   --out DLG1-BRAF \
   --noncanonical
 ```
+
+### Domain names and colors
 
 You can change domain names and colors:
 
@@ -64,6 +72,8 @@ agfusion \
 ```
 
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000132176-ENSMUST00000002487-color.png)
+
+### Re-scaling protein length
 
 You can rescale the protein length so that images of two different fusions have appropriate relative lengths when plotted side by side:
 
