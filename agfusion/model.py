@@ -35,7 +35,9 @@ class _Gene():
         #search for ensembl gene id first
 
         if gene in pyensembl_data.gene_ids():
+
             self.gene = pyensembl_data.gene_by_id(gene)
+
         else:
 
             #search by gene symbol next
@@ -79,20 +81,21 @@ class Fusion():
             gene5prime=None,gene5primejunction=0,
             gene3prime=None,gene3primejunction=0,
             db=None,pyensembl_data=None,protein_databases=None,
+            noncanonical=False,
             transcripts_5prime=None,transcripts_3prime=None):
 
         #get the reference genom
 
         if pyensembl_data.species.latin_name=='mus_musculus':
             self.genome='GRCm38'
-            self.release=85
+            self.release=84
         else:
             if pyensembl_data.release==75:
                 self.genome='GRCh37'
                 self.release=75
             else:
                 self.genome='GRCh38'
-                self.release=85
+                self.release=84
 
         self.gene5prime = _Gene(
             gene=gene5prime,
@@ -112,23 +115,47 @@ class Fusion():
 
         self.name = self.gene5prime.gene.name + '-' + self.gene3prime.gene.name
 
-        self.domains={
-            i:{''} for i,j,k in utils.PROTEIN_DOMAIN
-        }
-        self.transmembrane={
-            'transmembrane_domain':{
-                'transmembrane_domain_start':0,
-                'transmembrane_domain_end':0
-            }
-        }
-        self.complexity={
-            'low_complexity':{
-                'low_complexity_start':0,
-                'low_complexity_end':0
-            }
-        }
+        # fetch which are canonical transcripts
 
-        #construct all the fusion transcript combinations
+        gene5prime_canonical = ''
+        gene3prime_canonical = ''
+
+        if not noncanonical:
+
+            db.c.execute(
+                'SELECT * FROM TRANSCRIPT_' +
+                self.genome +
+                '_' +
+                str(self.release) +
+                ' WHERE GENE_ID==\"' +
+                self.gene5prime.gene.gene_id +
+                '\"'
+            )
+            tmp = map(lambda x: list(x), db.c.fetchall())
+
+            if len(tmp)==1:
+                gene5prime_canonical = tmp[0][1]
+            elif len(tmp)>1:
+                print 'WARNING - more than one canonical transcripts found for ' + self.gene5prime.gene.gene_id
+
+            db.c.execute(
+                'SELECT * FROM TRANSCRIPT_' +
+                self.genome +
+                '_' +
+                str(self.release) +
+                ' WHERE GENE_ID==\"' +
+                self.gene3prime.gene.gene_id +
+                '\"'
+            )
+
+            tmp = map(lambda x: list(x), db.c.fetchall())
+
+            if len(tmp)==1:
+                gene3prime_canonical = tmp[0][1]
+            elif len(tmp)>1:
+                print 'WARNING - more than one canonical transcripts found for ' + self.gene3prime.gene.gene_id
+
+        # construct all the fusion transcript combinations
 
         self.transcripts = {}
 
@@ -138,12 +165,25 @@ class Fusion():
             transcript1 = combo[0]
             transcript2 = combo[1]
 
-            if transcripts_5prime is not None and transcript1.id not in transcripts_5prime:
-                continue
-            if transcripts_3prime is not None and transcript2.id not in transcripts_3prime:
+            if transcripts_5prime is not None \
+                    and transcript1.id not in transcripts_5prime:
+
                 continue
 
-            #skip if the junction is outside the range of either transcript
+            if transcripts_3prime is not None \
+                    and transcript2.id not in transcripts_3prime:
+
+                continue
+
+            if (transcript1.id != gene5prime_canonical and
+                    len(gene5prime_canonical) != 0):
+                continue
+
+            if (transcript2.id != gene3prime_canonical and
+                    len(gene3prime_canonical) != 0):
+                continue
+
+            # skip if the junction is outside the range of either transcript
 
             name = transcript1.id + '-' + transcript2.id
 

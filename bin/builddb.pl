@@ -19,8 +19,7 @@ sub check_database_tables {
   my $stmt = "CREATE TABLE if not exists "
       . "TRANSCRIPT_" . $genome . "_" . $release . " ("
       . "GENE_ID TEXT NOT NULL,"
-      . "TRANSCRIPT_ID TEXT NOT NULL,"
-      . "CANONICAL INTEGER)";
+      . "TRANSCRIPT_ID TEXT NOT NULL)";
 
   my $rv = $dbh->do($stmt);
 
@@ -135,7 +134,7 @@ INFO "Connecting to Ensembl servers...";
 my $registry = 'Bio::EnsEMBL::Registry';
 
 $registry->load_registry_from_db(
-    -host => 'ensembldb.ensembl.org', # alternatively 'useastdb.ensembl.org'
+    -host => 'useastdb.ensembl.org', # alternatively 'useastdb.ensembl.org'
     -user => 'anonymous'
 );
 
@@ -161,7 +160,8 @@ my @genes = @{$genes_ref};
 my @gene_chunks;
 push @gene_chunks, [ splice @genes, 0, 100 ] while @genes;
 
-my @results;
+my @results_canonical;
+my @results_pfeatures;
 my $counter = 0;
 
 INFO "Fetching gene annotation (will take a while)...";
@@ -173,11 +173,16 @@ $pm = new Parallel::ForkManager($args->p);
 
 $pm -> run_on_finish ( # called BEFORE the first call to start()
     sub {
-      my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_structure_reference) = @_;
+      my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_ref) = @_;
 
       $progress->update($_);
 
-      push(@results, @$data_structure_reference);
+      my @data_refs = @$data_ref;
+      my $tmp_results_pfeatures_ref = @data_refs[0];
+      my $tmp_results_canonical_ref = @data_refs[1];
+
+      push(@results_pfeatures, @$tmp_results_pfeatures_ref);
+      push(@results_canonical, @$tmp_results_canonical_ref);
     }
   );
 
@@ -185,7 +190,8 @@ while ($chunk = shift @gene_chunks) {
 
   my $pid = $pm->start and next;
 
-  my @results_tmp;
+  my @tmp_results_pfeatures;
+  my @tmp_results_canonical;
 
   while ($gene = shift @{$chunk}) {
 
@@ -195,15 +201,19 @@ while ($chunk = shift @gene_chunks) {
     my $transcripts = $gene->get_all_Transcripts();
 
     while ( my $transcript = shift @{$transcripts} ) {
+      if ($transcript->is_canonical()==1) {
+        #my @tmp = ($gene->stable_id(),$transcript->stable_id());
+        push @tmp_results_canonical, [$gene->stable_id(),$transcript->stable_id()];
+      }
 
-        #insert_canonical($transcript,$dbh,$args->genome,$args->release);
-
-        my @pfeatures = &fetch_protein_features($transcript,$dbh);
-        push @results_tmp, @pfeatures;
+      my @pfeatures = &fetch_protein_features($transcript,$dbh);
+      push @tmp_results_pfeatures, @pfeatures;
     }
   }
 
-  $pm->finish(0,\@results_tmp);
+  my @data = (\@tmp_results_pfeatures,\@tmp_results_canonical);
+
+  $pm->finish(0,\@data);
 
 }
 
@@ -214,10 +224,20 @@ $pm->wait_all_children;
 INFO "Adding fetched data to database...";
 
 my $sth = $dbh->prepare(
+  "INSERT INTO TRANSCRIPT_" . $args->genome . "_" . $args->release
+  . " (GENE_ID,TRANSCRIPT_ID) VALUES (?,?)"
+);
+
+foreach my $rec ( @results_canonical ) {
+  $sth->execute( @$rec );
+}
+
+
+my $sth = $dbh->prepare(
   "INSERT INTO PFEATURES_" . $args->genome . "_" . $args->release
   . " (TRANSCRIPT_ID,SOURCE,ID,DESCRIPTION,SHORTDESCRIPTION,START,END) VALUES (?,?,?,?,?,?,?)"
 );
 
-foreach my $rec ( @results ) {
+foreach my $rec ( @results_pfeatures ) {
   $sth->execute( @$rec );
 }

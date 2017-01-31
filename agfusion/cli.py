@@ -59,6 +59,13 @@ def main():
         help='(Optional) The SQLite3 database. Defaults to using the database provided by the package.'
     )
     parser.add_argument(
+        '--noncanonical',
+        action='store_true',
+        required=False,
+        default=False,
+        help='(Optional) Include non-canonical gene transcripts in the analysis (default False).'
+    )
+    parser.add_argument(
         '--protein_databases',
         type=str,
         required=False,
@@ -135,12 +142,12 @@ def main():
         default=None,
         help='(Optional) Set maximum width (in amino acids) of the figure to rescale the fusion (default: max length of fusion product)'
     )
-    #parser.add_argument(
-    #    '--WT',
-    #    action='store_true',
-    #    required=False,
-    #    help='(Optional) Include this to plot wild-type architechtures of the 5\' and 3\' genes'
-    #)
+    parser.add_argument(
+        '--WT',
+        action='store_true',
+        required=False,
+        help='(Optional) Include this to plot wild-type architechtures of the 5\' and 3\' genes'
+    )
     parser.add_argument(
         '--middlestar',
         action='store_true',
@@ -164,25 +171,34 @@ def main():
     if not os.path.exists(args.out):
         os.mkdir(args.out)
 
-    #if user does not specify a sqlite database then use the one provided
-    #by the package
+    # if user does not specify a sqlite database then use the one provided
+    # by the package
 
     if args.db is None:
         file_path = os.path.split(__file__)[0]
-        db = agfusion.AGFusionDB(os.path.join(file_path,'data','agfusion.db'))
+        db = agfusion.AGFusionDB(
+            os.path.join(
+                file_path,
+                'data',
+                'agfusion.db'
+            )
+        )
     else:
         db = agfusion.AGFusionDB(args.db)
 
-    #get the pyensembl data
+    # get the pyensembl data
 
-    if args.genome=='GRCm38':
-        pyensembl_data = pyensembl.EnsemblRelease(84,'mouse')
-    elif args.genome=='GRCh38':
-        pyensembl_data = pyensembl.EnsemblRelease(84,'human')
-    elif args.genome=='GRCh37':
-        pyensembl_data = pyensembl.EnsemblRelease(75,'human')
+    if args.genome == 'GRCm38':
+        pyensembl_data = pyensembl.EnsemblRelease(84, 'mouse')
+    elif args.genome == 'GRCh38':
+        pyensembl_data = pyensembl.EnsemblRelease(84, 'human')
+    elif args.genome == 'GRCh37':
+        pyensembl_data = pyensembl.EnsemblRelease(75, 'human')
     else:
-        db.logger.error(' You provided an incorrect reference genome. Use one of the following: GRCh38, GRCh37, or GRCm38')
+        db.logger.error(
+            'You provided an incorrect reference genome. '
+            'Use one of the following: GRCh38, GRCh37, or GRCm38'
+        )
         sys.exit()
 
     fusion = agfusion.Fusion(
@@ -192,12 +208,22 @@ def main():
         gene3primejunction=args.junction3prime,
         db=db,
         pyensembl_data=pyensembl_data,
-        protein_databases=args.protein_databases
+        protein_databases=args.protein_databases,
+        noncanonical=args.noncanonical
     )
 
-    fusion.save_transcript_cdna(out_dir=args.out,middlestar=args.middlestar)
-    fusion.save_transcript_cds(out_dir=args.out,middlestar=args.middlestar)
-    fusion.save_proteins(out_dir=args.out,middlestar=args.middlestar)
+    fusion.save_transcript_cdna(
+        out_dir=args.out,
+        middlestar=args.middlestar
+    )
+    fusion.save_transcript_cds(
+        out_dir=args.out,
+        middlestar=args.middlestar
+    )
+    fusion.save_proteins(
+        out_dir=args.out,
+        middlestar=args.middlestar
+    )
 
     colors={}
     rename = {}
