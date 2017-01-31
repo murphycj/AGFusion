@@ -23,6 +23,32 @@ Example output visualization of the domain structure of the DLG1-BRAF fusion:
 
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000132176-ENSMUST00000002487.png)
 
+You can plot the wild-type proteins for each genewith --WT flag.
+
+```
+agfusion \
+  --gene5prime ENSMUSG00000022770 \
+  --gene3prime ENSMUSG00000002413 \
+  --junction5prime 31684294 \
+  --junction3prime 39648486 \
+  --genome GRCm38 \
+  --out DLG1-BRAF \
+  --WT
+```
+
+By default AGFusion only plots the [canonical](http://useast.ensembl.org/Help/Glossary?id=346) gene isoforms, but you can tell AGFusion to include non-canonical isoform with the --noncanonical flag.
+
+```
+agfusion \
+  --gene5prime ENSMUSG00000022770 \
+  --gene3prime ENSMUSG00000002413 \
+  --junction5prime 31684294 \
+  --junction3prime 39648486 \
+  --genome GRCm38 \
+  --out DLG1-BRAF \
+  --noncanonical
+```
+
 You can change domain names and colors:
 
 ```
