@@ -22,6 +22,7 @@ class _Plot(object):
         self.fig = plt.figure(
             figsize=(self.width, self.height), dpi=self.dpi, frameon=False
         )
+        self.ax = self.fig.add_subplot(111)
 
     def save(self):
 
@@ -40,39 +41,35 @@ class PlotGene:
         pass
 
 
-class PlotProtein(_Plot):
+class _PlotProtein(_Plot):
 
-    def __init__(self, transcript=None, scale=0, colors=None, rename=None,
-                 no_domain_labels=False, *args, **kwargs):
-        super(PlotProtein, self).__init__(*args, **kwargs)
+    def __init__(self, transcript=None, scale=0, colors=None,
+                 rename=None, no_domain_labels=False, *args, **kwargs):
+        super(_PlotProtein, self).__init__(*args, **kwargs)
         self.scale = scale
         self.transcript = transcript
         self.colors = colors
         self.rename = rename
         self.no_domain_labels = no_domain_labels
 
-    def draw(self, transcript=None):
-        """
-        Draw an individual figure
-        """
-
-        ax = self.fig.add_subplot(111)
+    def _scale_protein(self,protein_length):
 
         # scale the protein
 
-        if self.scale < self.transcript.protein_length:
-            normalize = self.transcript.protein_length
+        if self.scale < protein_length:
+            self.normalize = protein_length
         else:
-            normalize = self.scale
+            self.normalize = self.scale
 
-        offset = 0.05 + (1.0 - float(self.transcript.protein_length)/normalize)*0.45
-        vertical_offset = 0.15
+        self.offset = 0.05 + (1.0 - float(protein_length)/self.normalize)*0.45
+        self.vertical_offset = 0.15
 
-        assert normalize >= self.transcript.protein_length, "length normalization should be >= protein length"
+        assert self.normalize >= protein_length, "length normalization should be >= protein length"
 
+    def _draw_domains(self, domains):
         # plot domains
 
-        for domain in self.transcript.domains:
+        for domain in domains:
 
             if domain[2] == '':
                 domain_name = str(domain[0])
@@ -86,15 +83,15 @@ class PlotProtein(_Plot):
             if domain_name in self.rename:
                 domain_name = rename[domain_name]
 
-            domain_start = (int(domain[3])/float(normalize))*0.9 + offset
-            domain_end = (int(domain[4])/float(normalize))*0.9 + offset
+            domain_start = (int(domain[3])/float(self.normalize))*0.9 + self.offset
+            domain_end = (int(domain[4])/float(self.normalize))*0.9 + self.offset
             domain_center = (domain_end-domain_start)/2. + domain_start
 
-            ax.add_patch(
+            self.ax.add_patch(
                 patches.Rectangle(
                     (
                         domain_start,
-                        0.45+vertical_offset,
+                        0.45+self.vertical_offset,
                     ),
                     domain_end-domain_start,
                     0.1,
@@ -104,64 +101,53 @@ class PlotProtein(_Plot):
 
             if not self.no_domain_labels:
 
-                ax.text(
+                self.ax.text(
                     domain_center,
-                    0.35+vertical_offset,
+                    0.35+self.vertical_offset,
                     domain_name,
                     horizontalalignment='center',
                     fontsize=self.fontsize
                 )
 
-        # add the junction
-
-        ax.add_line(plt.Line2D(
-            (
-                (self.transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset,
-                (self.transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
-            ),
-            (0.4+vertical_offset, 0.6+vertical_offset),
-            color='black'
-            )
-        )
-
+    def _draw_protein_length_markers(self, protein_length):
         # plot protein length markers
 
-        protein_frame_length = self.transcript.protein_length/float(normalize)*0.9
+        self.protein_frame_length = protein_length/float(self.normalize)*0.9
 
-        line_end = self.transcript.protein_length/float(normalize)*0.9 + offset
+        self.line_end = protein_length/float(self.normalize)*0.9 + self.offset
 
-        ax.text(
+        self.ax.text(
             0.5,
-            0.01+vertical_offset,
+            0.01+self.vertical_offset,
             "Amino acid position",
             horizontalalignment='center',
             fontsize=self.fontsize
         )
 
-        ax.add_line(plt.Line2D(
+        self.ax.add_line(plt.Line2D(
             (
-                offset,
-                offset+protein_frame_length
+                self.offset,
+                self.offset+self.protein_frame_length
             ),
-            (0.3+vertical_offset, 0.3+vertical_offset),
+            (0.3+self.vertical_offset, 0.3+self.vertical_offset),
             color='black'
             )
         )
 
         # left marker
 
-        left_marker_line = ax.add_line(plt.Line2D(
+        self.left_marker_line = self.ax.add_line(plt.Line2D(
             (
-                offset,
-                offset
+                self.offset,
+                self.offset
             ),
-            (0.25+vertical_offset, 0.3+vertical_offset),
+            (0.25+self.vertical_offset, 0.3+self.vertical_offset),
             color='black'
             )
         )
-        left_marker_text = ax.text(
-            offset,
-            0.15+vertical_offset,
+        self.left_marker_text = self.ax.text(
+            self.offset,
+            0.15+self.vertical_offset,
             "0",
             horizontalalignment='center',
             fontsize=self.fontsize
@@ -169,81 +155,128 @@ class PlotProtein(_Plot):
 
         # right marker
 
-        right_marker_line = ax.add_line(plt.Line2D(
+        self.right_marker_line = self.ax.add_line(plt.Line2D(
             (
-                offset+protein_frame_length,
-                offset+protein_frame_length
+                self.offset+self.protein_frame_length,
+                self.offset+self.protein_frame_length
             ),
-            (0.25+vertical_offset, 0.3+vertical_offset),
+            (0.25+self.vertical_offset, 0.3+self.vertical_offset),
             color='black'
             )
         )
-        right_marker_text = ax.text(
-            offset+protein_frame_length,
-            0.15+vertical_offset,
-            str(self.transcript.protein_length),
+        self.right_marker_text = self.ax.text(
+            self.offset+self.protein_frame_length,
+            0.15+self.vertical_offset,
+            str(protein_length),
             horizontalalignment='center',
             fontsize=self.fontsize
+        )
+
+    def _draw_main_body(self, name_symbols, name_isoform):
+        """
+        main protein frame
+        """
+
+        self.ax.add_patch(
+            patches.Rectangle(
+                (self.offset, 0.45+self.vertical_offset),
+                self.protein_frame_length,
+                0.1,
+                fill=False
+            )
+        )
+
+        self.ax.text(
+            0.5,
+            0.9,
+            name_symbols,
+            horizontalalignment='center',
+            fontsize=self.fontsize
+        )
+        self.ax.text(
+            0.5,
+            0.83,
+            name_isoform,
+            horizontalalignment='center',
+            fontsize=self.fontsize-3
+        )
+
+
+class PlotFusionProtein(_PlotProtein):
+    def __init__(self,*args, **kwargs):
+        super(PlotFusionProtein, self).__init__(*args, **kwargs)
+
+    def _draw_junction(self):
+        # add the junction
+
+        self.ax.add_line(plt.Line2D(
+            (
+                (self.transcript.transcript_protein_junction_5prime/float(self.normalize))*0.9 + self.offset,
+                (self.transcript.transcript_protein_junction_5prime/float(self.normalize))*0.9 + self.offset
+            ),
+            (0.4+self.vertical_offset, 0.6+self.vertical_offset),
+            color='black'
+            )
         )
 
         # middle marker, loop until it does not overlap with right marker
 
         overlaps = True
-        line_offset = (self.transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
-        text_offset = (self.transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
+        line_offset = (self.transcript.transcript_protein_junction_5prime/float(self.normalize))*0.9 + self.offset
+        text_offset = (self.transcript.transcript_protein_junction_5prime/float(self.normalize))*0.9 + self.offset
         junction_label_vertical_offset = 0.0
 
         rr = self.fig.canvas.get_renderer()
 
-        right_marker_text_box = right_marker_text.get_window_extent(renderer=rr)
-        left_marker_text_box = left_marker_text.get_window_extent(renderer=rr)
+        right_marker_text_box = self.right_marker_text.get_window_extent(renderer=rr)
+        left_marker_text_box = self.left_marker_text.get_window_extent(renderer=rr)
 
         while overlaps:
 
             # middle_marker_line_1/2/3 are to draw angled line
 
-            middle_marker_line_1 = ax.add_line(plt.Line2D(
+            middle_marker_line_1 = self.ax.add_line(plt.Line2D(
                 (
-                    (self.transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset,
-                    (self.transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
+                    (self.transcript.transcript_protein_junction_5prime/float(self.normalize))*0.9 + self.offset,
+                    (self.transcript.transcript_protein_junction_5prime/float(self.normalize))*0.9 + self.offset
                 ),
                 (
-                    0.275+vertical_offset - junction_label_vertical_offset,
-                    0.3+vertical_offset
+                    0.275+self.vertical_offset - junction_label_vertical_offset,
+                    0.3+self.vertical_offset
                 ),
                 color='black'
                 )
             )
 
-            middle_marker_line_2 = ax.add_line(plt.Line2D(
+            middle_marker_line_2 = self.ax.add_line(plt.Line2D(
                 (
                     line_offset,
-                    (self.transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
+                    (self.transcript.transcript_protein_junction_5prime/float(self.normalize))*0.9 + self.offset
                 ),
                 (
-                    0.275+vertical_offset-junction_label_vertical_offset,
-                    0.275+vertical_offset-junction_label_vertical_offset
+                    0.275+self.vertical_offset-junction_label_vertical_offset,
+                    0.275+self.vertical_offset-junction_label_vertical_offset
                 ),
                 color='black'
                 )
             )
 
-            middle_marker_line_3 = ax.add_line(plt.Line2D(
+            middle_marker_line_3 = self.ax.add_line(plt.Line2D(
                 (
                     line_offset,
                     line_offset
                 ),
                 (
-                    0.25+vertical_offset-junction_label_vertical_offset,
-                    0.275+vertical_offset-junction_label_vertical_offset
+                    0.25+self.vertical_offset-junction_label_vertical_offset,
+                    0.275+self.vertical_offset-junction_label_vertical_offset
                 ),
                 color='black'
                 )
             )
 
-            middle_marker_text = ax.text(
+            middle_marker_text = self.ax.text(
                 text_offset,
-                0.15+vertical_offset-junction_label_vertical_offset,
+                0.15+self.vertical_offset-junction_label_vertical_offset,
                 str(self.transcript.transcript_protein_junction_5prime),
                 horizontalalignment='center',
                 fontsize=self.fontsize
@@ -284,39 +317,37 @@ class PlotProtein(_Plot):
             else:
                 overlaps = False
 
-        # main protein frame
-
-        ax.add_patch(
-            patches.Rectangle(
-                (offset, 0.45+vertical_offset),
-                protein_frame_length,
-                0.1,
-                fill=False
-            )
-        )
+    def draw(self):
+        self._scale_protein(self.transcript.protein_length)
+        self._draw_domains(self.transcript.domains['fusion'])
+        self._draw_protein_length_markers(self.transcript.protein_length)
+        self._draw_junction()
 
         name_symbols = self.transcript.gene5prime.gene.gene_name + ' - ' + \
             self.transcript.gene3prime.gene.gene_name
         name_isoform = self.transcript.transcript1.id + ' - ' + \
             self.transcript.transcript2.id
+        self._draw_main_body(name_symbols, name_isoform)
 
-        ax.text(
-            0.5,
-            0.9,
-            name_symbols,
-            horizontalalignment='center',
-            fontsize=self.fontsize
+        self.ax.axis('off')
+        self.ax.set_xlim(0, 1)
+        self.ax.set_ylim(0, 1)
+
+
+class PlotWTProtein(_PlotProtein):
+    def __init__(self, ensembl_transcript, *args, **kwargs):
+        super(PlotWTProtein, self).__init__(*args, **kwargs)
+        self.ensembl_transcript = ensembl_transcript
+
+    def draw(self):
+        self._scale_protein(len(self.ensembl_transcript.coding_sequence)/3)
+        self._draw_domains(self.transcript.domains[self.ensembl_transcript.id])
+        self._draw_protein_length_markers(len(self.ensembl_transcript.coding_sequence)/3)
+        self._draw_main_body(
+            self.ensembl_transcript.gene.gene_name,
+            self.ensembl_transcript.id
         )
-        ax.text(
-            0.5,
-            0.83,
-            name_isoform,
-            horizontalalignment='center',
-            fontsize=self.fontsize-3
-        )
 
-        ax.axis('off')
-        ax.set_xlim(0, 1)
-        ax.set_ylim(0, 1)
-
-        length_normalize = None
+        self.ax.axis('off')
+        self.ax.set_xlim(0, 1)
+        self.ax.set_ylim(0, 1)

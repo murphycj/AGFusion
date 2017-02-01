@@ -259,5 +259,6 @@ def main():
         height=args.height,
         width=args.width,
         dpi=args.dpi,
-        no_domain_labels=args.no_domain_labels
+        no_domain_labels=args.no_domain_labels,
+        plot_WT=args.WT
         )

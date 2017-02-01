@@ -222,14 +222,9 @@ class Fusion():
                     protein_databases=protein_databases,
                 )
 
-    def _does_dir_exist(self, out_dir):
-
-        if not os.path.exists(out_dir):
-            os.mkdir(out_dir)
-
     def output_to_html(
-            self,fontsize=12,dpi=90,colors={},rename={},
-            width=8,height=2,scale=0,mpld3=None):
+            self, fontsize=12, dpi=90, colors={}, rename={},
+            width=8, height=2, scale=0, mpld3=None):
         """
         Write figures into html format for plotting in web tool rather
         than writing figures to file
@@ -245,7 +240,7 @@ class Fusion():
             if not transcript.has_coding_potential:
                 continue
 
-            fig = plt.figure(figsize=(width,height),dpi=dpi,frameon=False)
+            fig = plt.figure(figsize=(width, height), dpi=dpi, frameon=False)
 
             self._draw(
                 fig=fig,
@@ -272,14 +267,31 @@ class Fusion():
     def save_images(
             self, out_dir='', file_type='png', fontsize=12, dpi=100,
             colors={}, rename={}, width=8, height=2, scale=0,
-            no_domain_labels=True):
+            no_domain_labels=True, plot_WT=False):
         """
         Save images of all fusion isoforms and write to file
+        Also plot the wild type proteins if desired
         """
 
-        self._does_dir_exist(out_dir)
-
         assert file_type in ['png', 'pdf'], 'provided wrong file type'
+
+        if not os.path.exists(out_dir):
+            os.mkdir(out_dir)
+
+        if plot_WT:
+            gene5prime_WT = os.path.join(
+                out_dir,
+                self.gene5prime.gene.gene_name
+            )
+            gene3prime_WT = os.path.join(
+                out_dir,
+                self.gene3prime.gene.gene_name
+            )
+            if not os.path.exists(gene5prime_WT):
+                os.mkdir(gene5prime_WT)
+
+            if not os.path.exists(gene3prime_WT):
+                os.mkdir(gene3prime_WT)
 
         for name, transcript in self.transcripts.items():
 
@@ -288,7 +300,7 @@ class Fusion():
 
             filename = os.path.join(out_dir, name + '.' + file_type)
 
-            pplot = plot.PlotProtein(
+            pplot = plot.PlotFusionProtein(
                 filename=filename,
                 width=width,
                 height=height,
@@ -303,12 +315,51 @@ class Fusion():
             pplot.draw()
             pplot.save()
 
+            if plot_WT:
+
+                filename = os.path.join(gene5prime_WT, transcript.transcript1.id + '.' + file_type)
+
+                pplot = plot.PlotWTProtein(
+                    ensembl_transcript=transcript.transcript1,
+                    filename=filename,
+                    width=width,
+                    height=height,
+                    dpi=dpi,
+                    scale=scale,
+                    fontsize=fontsize,
+                    colors=colors,
+                    rename=rename,
+                    no_domain_labels=no_domain_labels,
+                    transcript=transcript
+                )
+                pplot.draw()
+                pplot.save()
+
+                filename = os.path.join(gene3prime_WT, transcript.transcript2.id + '.' + file_type)
+
+                pplot = plot.PlotWTProtein(
+                    ensembl_transcript=transcript.transcript2,
+                    filename=filename,
+                    width=width,
+                    height=height,
+                    dpi=dpi,
+                    scale=scale,
+                    fontsize=fontsize,
+                    colors=colors,
+                    rename=rename,
+                    no_domain_labels=no_domain_labels,
+                    transcript=transcript
+                )
+                pplot.draw()
+                pplot.save()
+
     def save_transcript_cdna(self, out_dir='.', middlestar=False):
         """
         Save the cDNA sequences for all fusion isoforms to a fasta file
         """
 
-        self._does_dir_exist(out_dir)
+        if not os.path.exists(out_dir):
+            os.mkdir(out_dir)
 
         fout = open(
             os.path.join(
@@ -344,7 +395,8 @@ class Fusion():
         Save the CDS sequences for all fusion isoforms to a fasta file
         """
 
-        self._does_dir_exist(out_dir)
+        if not os.path.exists(out_dir):
+            os.mkdir(out_dir)
 
         #check if any transcripts have coding potential
 
@@ -384,15 +436,16 @@ class Fusion():
         Save the protein sequences for all fusion isoforms to a fasta file
         """
 
-        self._does_dir_exist(out_dir)
+        if not os.path.exists(out_dir):
+            os.mkdir(out_dir)
 
-        #check if any transcripts have coding potential
+        # check if any transcripts have coding potential
 
-        n=0
+        n = 0
         for name, transcript in self.transcripts.items():
 
             if transcript.cds is not None:
-                n+=1
+                n += 1
 
         if n == 0:
             print 'Warning: the ' + self.name + ' fusion does not produce any protein coding transcripts. No proteins.fa file will be written'
@@ -475,6 +528,11 @@ class FusionTranscript(object):
         self.protein = None
         self.protein_length = None
         self.molecular_weight = None
+        self.domains = {
+            transcript1.id: [],
+            transcript2.id: [],
+            'fusion': []
+        }
 
         self.transcript_protein_junction_5prime = None
         self.transcript_protein_junction_3prime = None
@@ -615,9 +673,9 @@ class FusionTranscript(object):
                 if pfeature_end < pfeature_start:
                     import pdb; pdb.set_trace()
 
-        self.domains = fusion_domains
-        self.gene5prime.domains = gene5prime_domains
-        self.gene3prime.domains = gene3prime_domains
+        self.domains['fusion'] = fusion_domains
+        self.domains[self.transcript1.id] = gene5prime_domains
+        self.domains[self.transcript2.id] = gene3prime_domains
 
     def _fetch_protein(self):
         """

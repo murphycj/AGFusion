@@ -15,7 +15,11 @@ sub check_database_tables {
 
   #transcript table
 
-  my $stmt = "CREATE TABLE if not exists "
+  my $stmt = "DROP TABLE if exists "
+      . "TRANSCRIPT_" . $genome . "_" . $release;
+  my $rv = $dbh->do($stmt);
+
+  my $stmt = "CREATE TABLE "
       . "TRANSCRIPT_" . $genome . "_" . $release . " ("
       . "GENE_ID TEXT NOT NULL,"
       . "TRANSCRIPT_ID TEXT NOT NULL)";
@@ -28,7 +32,11 @@ sub check_database_tables {
 
   #protein features table
 
-  my $stmt = "CREATE TABLE if not exists "
+  my $stmt = "DROP TABLE if exists "
+      . "PFEATURES_" . $genome . "_" . $release;
+  my $rv = $dbh->do($stmt);
+
+  my $stmt = "CREATE TABLE "
       . "PFEATURES_" . $genome . "_" . $release . " ("
       . "TRANSCRIPT_ID TEXT,"
       . "SOURCE TEXT,"
@@ -205,6 +213,8 @@ $pm->wait_all_children;
 #add the data to the database
 
 INFO "Adding canonical transcript data to database...";
+
+my $rv = $dbh->do("PRAGMA synchronous = OFF");
 
 my $n = scalar @results_canonical;
 my $progress = Term::ProgressBar->new($n);
