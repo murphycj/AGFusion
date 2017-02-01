@@ -225,14 +225,14 @@ def main():
         middlestar=args.middlestar
     )
 
-    colors={}
+    colors = {}
     rename = {}
 
     if args.colors is not None:
         for i in args.colors:
             pair = i.split(':')
 
-            assert len(pair)==2," did not properly specify --colors"
+            assert len(pair) == 2, " did not properly specify --colors"
 
             if pair[0] in colors:
                 print "!!! WARNING - you specified colors for %s twice." % pair[0]
@@ -243,7 +243,7 @@ def main():
         for i in args.rename:
             pair = i.split(':')
 
-            assert len(pair)==2," did not properly specify --rename"
+            assert len(pair) == 2, " did not properly specify --rename"
 
             if pair[0] in rename:
                 print "!!! WARNING - you rename %s twice." % pair[0]
@@ -261,7 +261,3 @@ def main():
         dpi=args.dpi,
         no_domain_labels=args.no_domain_labels
         )
-
-#    if args.WT:
-#        gene5prime.save_image(args.out)
-#        gene3prime.save_image(args.out)

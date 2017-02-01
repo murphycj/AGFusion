@@ -1,25 +1,14 @@
+from agfusion import utils, exceptions, plot
+import pandas
+from Bio import Seq, SeqIO, SeqRecord, SeqUtils
+from Bio.Alphabet import generic_dna, generic_protein
+
 import itertools
 import os
 
-#this is so I can plot graphics on a headless server
+# matplotlib.rcParams['interactive'] = False
 
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot
-matplotlib.pyplot.ioff()
-
-from agfusion import utils, exceptions
-import pandas
-from Bio import Seq, SeqIO, SeqRecord, SeqUtils
-from Bio.Alphabet import generic_dna,generic_protein
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import json
-
-#matplotlib.rcParams['interactive'] = False
-
-MIN_DOMAIN_LENGTH=5
+MIN_DOMAIN_LENGTH = 5
 
 
 class _Gene():
@@ -28,11 +17,14 @@ class _Gene():
     wild-type genes or fusion gene.
     """
 
-    def __init__(self,gene=None,junction=0,pyensembl_data=None,genome='',gene5prime=False):
+    def __init__(self, gene=None, junction=0, pyensembl_data=None,
+                 genome='', gene5prime=False):
 
         gene = gene.upper()
 
-        #search for ensembl gene id first
+        self.domains = []
+
+        # search for ensembl gene id first
 
         if gene in pyensembl_data.gene_ids():
 
@@ -40,21 +32,21 @@ class _Gene():
 
         else:
 
-            #search by gene symbol next
+            # search by gene symbol next
 
-            if pyensembl_data.species.latin_name=='mus_musculus':
+            if pyensembl_data.species.latin_name == 'mus_musculus':
                 gene = gene.capitalize()
 
             if gene in pyensembl_data.gene_names():
                 temp = pyensembl_data.genes_by_name(gene)
 
-                if len(temp)>1:
+                if len(temp) > 1:
 
-                    #if too many ensembl gene IDs returned
+                    # if too many ensembl gene IDs returned
 
                     ids = map(lambda x: x.id, temp)
 
-                    raise exceptions.TooManyGenesException(gene,ids,genome)
+                    raise exceptions.TooManyGenesException(gene, ids, genome)
                 else:
                     self.gene = temp[0]
             else:
@@ -63,13 +55,14 @@ class _Gene():
                 else:
                     raise exceptions.GeneIDException3prime(gene)
 
-        self.junction=junction
+        self.junction = junction
 
         if self.junction < self.gene.start or self.junction > self.gene.end:
             if gene5prime:
                 raise exceptions.JunctionException5prime()
             else:
                 raise exceptions.JunctionException3prime()
+
 
 class Fusion():
     """
@@ -78,24 +71,24 @@ class Fusion():
 
     def __init__(
             self,
-            gene5prime=None,gene5primejunction=0,
-            gene3prime=None,gene3primejunction=0,
-            db=None,pyensembl_data=None,protein_databases=None,
+            gene5prime=None, gene5primejunction=0,
+            gene3prime=None, gene3primejunction=0,
+            db=None, pyensembl_data=None, protein_databases=None,
             noncanonical=False,
-            transcripts_5prime=None,transcripts_3prime=None):
+            transcripts_5prime=None, transcripts_3prime=None):
 
-        #get the reference genom
+        # get the reference genom
 
-        if pyensembl_data.species.latin_name=='mus_musculus':
-            self.genome='GRCm38'
-            self.release=84
+        if pyensembl_data.species.latin_name == 'mus_musculus':
+            self.genome = 'GRCm38'
+            self.release = 84
         else:
-            if pyensembl_data.release==75:
-                self.genome='GRCh37'
-                self.release=75
+            if pyensembl_data.release == 75:
+                self.genome = 'GRCh37'
+                self.release = 75
             else:
-                self.genome='GRCh38'
-                self.release=84
+                self.genome = 'GRCh38'
+                self.release = 84
 
         self.gene5prime = _Gene(
             gene=gene5prime,
@@ -133,9 +126,9 @@ class Fusion():
             )
             tmp = map(lambda x: list(x), db.c.fetchall())
 
-            if len(tmp)==1:
+            if len(tmp) == 1:
                 gene5prime_canonical = tmp[0][1]
-            elif len(tmp)>1:
+            elif len(tmp) > 1:
                 print 'WARNING - more than one canonical transcripts found for ' + self.gene5prime.gene.gene_id
 
             db.c.execute(
@@ -150,9 +143,9 @@ class Fusion():
 
             tmp = map(lambda x: list(x), db.c.fetchall())
 
-            if len(tmp)==1:
+            if len(tmp) == 1:
                 gene3prime_canonical = tmp[0][1]
-            elif len(tmp)>1:
+            elif len(tmp) > 1:
                 print 'WARNING - more than one canonical transcripts found for ' + self.gene3prime.gene.gene_id
 
         # construct all the fusion transcript combinations
@@ -199,8 +192,8 @@ class Fusion():
                     protein_databases=protein_databases,
                     predict_effect=False
                 )
-                self.transcripts[name].effect='Outside transcript boundry'
-                self.transcripts[name].has_coding_potential=False
+                self.transcripts[name].effect = 'Outside transcript boundry'
+                self.transcripts[name].has_coding_potential = False
 
             elif not transcript2.contains(transcript2.contig,self.gene3prime.junction,self.gene3prime.junction):
                 self.transcripts[name] = FusionTranscript(
@@ -229,266 +222,10 @@ class Fusion():
                     protein_databases=protein_databases,
                 )
 
-    def _does_dir_exist(self,out_dir):
+    def _does_dir_exist(self, out_dir):
 
         if not os.path.exists(out_dir):
             os.mkdir(out_dir)
-
-    def _draw(self,fig=None,name='',transcript=None,scale=0,fontsize=12,
-            colors=None,rename=None,no_domain_labels=False):
-        """
-        Draw an individual figure
-        """
-
-        ax = fig.add_subplot(111)
-
-        #scale the protein
-
-        if scale < transcript.protein_length:
-            normalize = transcript.protein_length
-        else:
-            normalize = scale
-
-        offset = 0.05 + (1.0 - float(transcript.protein_length)/normalize)*0.45
-        vertical_offset = 0.15
-
-        assert normalize >= transcript.protein_length, "length normalization should be >= protein length"
-
-        #plot domains
-
-        for domain in transcript.domains:
-
-            if domain[2]=='':
-                domain_name = str(domain[0])
-            else:
-                domain_name = str(domain[2])
-
-            color = '#3385ff'
-            if domain_name in colors:
-                color = colors[domain_name]
-
-            if domain_name in rename:
-                domain_name = rename[domain_name]
-
-            domain_start = (int(domain[3])/float(normalize))*0.9 + offset
-            domain_end = (int(domain[4])/float(normalize))*0.9 + offset
-            domain_center = (domain_end-domain_start)/2. + domain_start
-
-            ax.add_patch(
-                patches.Rectangle(
-                    (
-                        domain_start,
-                        0.45+vertical_offset,
-                    ),
-                    domain_end-domain_start,
-                    0.1,
-                    color=color
-                )
-            )
-
-            if not no_domain_labels:
-
-                ax.text(
-                    domain_center,
-                    0.35+vertical_offset,
-                    domain_name,
-                    horizontalalignment='center',
-                    fontsize=fontsize
-                )
-
-        #add the junction
-
-        ax.add_line(plt.Line2D(
-            (
-                (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset,
-                (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
-            ),
-            (0.4+vertical_offset,0.6+vertical_offset),
-            color='black'
-            )
-        )
-
-        #plot protein length markers
-
-        protein_frame_length=transcript.protein_length/float(normalize)*0.9
-
-        line_end = transcript.protein_length/float(normalize)*0.9 + offset
-
-        ax.text(
-            0.5,
-            0.01+vertical_offset,
-            "Amino acid position",
-            horizontalalignment='center',
-            fontsize=fontsize
-        )
-
-        ax.add_line(plt.Line2D(
-            (
-                offset,
-                offset+protein_frame_length
-            ),
-            (0.3+vertical_offset,0.3+vertical_offset),
-            color='black'
-            )
-        )
-
-        #left marker
-
-        left_marker_line = ax.add_line(plt.Line2D(
-            (
-                offset,
-                offset
-            ),
-            (0.25+vertical_offset,0.3+vertical_offset),
-            color='black'
-            )
-        )
-        left_marker_text = ax.text(
-            offset,
-            0.15+vertical_offset,
-            "0",
-            horizontalalignment='center',
-            fontsize=fontsize
-        )
-
-        #right marker
-
-        right_marker_line = ax.add_line(plt.Line2D(
-            (
-                offset+protein_frame_length,
-                offset+protein_frame_length
-            ),
-            (0.25+vertical_offset,0.3+vertical_offset),
-            color='black'
-            )
-        )
-        right_marker_text = ax.text(
-            offset+protein_frame_length,
-            0.15+vertical_offset,
-            str(transcript.protein_length),
-            horizontalalignment='center',
-            fontsize=fontsize
-        )
-
-        #middle marker, loop until it does not overlap with right marker
-
-        overlaps = True
-        line_offset = (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
-        text_offset = (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
-        junction_label_vertical_offset = 0.0
-
-        rr = fig.canvas.get_renderer()
-
-        right_marker_text_box = right_marker_text.get_window_extent(renderer=rr)
-        left_marker_text_box = left_marker_text.get_window_extent(renderer=rr)
-
-        while overlaps:
-
-            #middle_marker_line_1/2/3 are to draw angled line
-
-            middle_marker_line_1 = ax.add_line(plt.Line2D(
-                (
-                    (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset,
-                    (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
-                ),
-                (
-                    0.275+vertical_offset - junction_label_vertical_offset,
-                    0.3+vertical_offset
-                ),
-                color='black'
-                )
-            )
-
-            middle_marker_line_2 = ax.add_line(plt.Line2D(
-                (
-                    line_offset,
-                    (transcript.transcript_protein_junction_5prime/float(normalize))*0.9 + offset
-                ),
-                (
-                    0.275+vertical_offset-junction_label_vertical_offset,
-                    0.275+vertical_offset-junction_label_vertical_offset
-                ),
-                color='black'
-                )
-            )
-
-            middle_marker_line_3 = ax.add_line(plt.Line2D(
-                (
-                    line_offset,
-                    line_offset
-                ),
-                (
-                    0.25+vertical_offset-junction_label_vertical_offset,
-                    0.275+vertical_offset-junction_label_vertical_offset
-                ),
-                color='black'
-                )
-            )
-
-            middle_marker_text = ax.text(
-                text_offset,
-                0.15+vertical_offset-junction_label_vertical_offset,
-                str(transcript.transcript_protein_junction_5prime),
-                horizontalalignment='center',
-                fontsize=fontsize
-            )
-
-            #detect if text overlaps
-
-            middle_marker_text_box = middle_marker_text.get_window_extent(renderer=rr)
-
-            #if overlaps then offset the junction text to the left
-
-            if (right_marker_text_box.fully_overlaps(middle_marker_text_box)) and (left_marker_text_box.fully_overlaps(middle_marker_text_box)):
-                junction_label_vertical_offset = junction_label_vertical_offset + 0.01
-
-                middle_marker_line_1.remove()
-                middle_marker_line_2.remove()
-                middle_marker_line_3.remove()
-                middle_marker_text.remove()
-
-            elif right_marker_text_box.fully_overlaps(middle_marker_text_box):
-                line_offset = line_offset - 0.01
-                text_offset = text_offset - 0.01
-
-                middle_marker_line_1.remove()
-                middle_marker_line_2.remove()
-                middle_marker_line_3.remove()
-                middle_marker_text.remove()
-            elif left_marker_text_box.fully_overlaps(middle_marker_text_box):
-                line_offset = line_offset + 0.01
-                text_offset = text_offset + 0.01
-
-                middle_marker_line_1.remove()
-                middle_marker_line_2.remove()
-                middle_marker_line_3.remove()
-                middle_marker_text.remove()
-            else:
-                overlaps=False
-
-        #main protein frame
-
-        ax.add_patch(
-            patches.Rectangle(
-                (offset, 0.45+vertical_offset),
-                protein_frame_length,
-                0.1,
-                fill=False
-            )
-        )
-        ax.text(
-            0.5,
-            0.9,
-            name,
-            horizontalalignment='center',
-            fontsize=fontsize
-        )
-
-        ax.axis('off')
-        ax.set_xlim(0,1)
-        ax.set_ylim(0,1)
-
-        length_normalize = None
 
     def output_to_html(
             self,fontsize=12,dpi=90,colors={},rename={},
@@ -532,82 +269,41 @@ class Fusion():
 
         return dict_of_plots, plot_key
 
-    def save_image(
-            self,transcript='',out_dir='',file_type='png',fontsize=12,
-            dpi=100,colors={},rename={},width=8,height=2,scale=0):
-        """
-        Save the image for a particular fusion isoform
-        """
-
-        self._does_dir_exist(out_dir)
-
-        transcript = self.transcripts[transcript]
-
-        fig = plt.figure(figsize=(width,height),dpi=dpi,frameon=False)
-
-        self._draw(
-            fig=fig,
-            name=transcript.name,
-            transcript=transcript,
-            scale=scale,
-            fontsize=fontsize,
-            colors=colors,
-            rename=rename
-        )
-
-        filename = os.path.join(out_dir,transcript.name + '.' + file_type)
-
-        fig.savefig(
-            filename,
-            dpi=dpi,
-            bbox_inches='tight'
-        )
-        plt.close(fig)
-        plt.clf()
-
-        return filename
-
     def save_images(
-            self,out_dir='',file_type='png',fontsize=12,dpi=100,
-            colors={},rename={},width=8,height=2,scale=0,no_domain_labels=True):
+            self, out_dir='', file_type='png', fontsize=12, dpi=100,
+            colors={}, rename={}, width=8, height=2, scale=0,
+            no_domain_labels=True):
         """
         Save images of all fusion isoforms and write to file
         """
 
         self._does_dir_exist(out_dir)
 
-        assert file_type in ['png','pdf'], 'provided wrong file type'
+        assert file_type in ['png', 'pdf'], 'provided wrong file type'
 
         for name, transcript in self.transcripts.items():
 
             if not transcript.has_coding_potential:
                 continue
 
-            fig = plt.figure(figsize=(width,height),dpi=dpi,frameon=False)
+            filename = os.path.join(out_dir, name + '.' + file_type)
 
-            self._draw(
-                fig=fig,
-                name=name,
-                transcript=transcript,
+            pplot = plot.PlotProtein(
+                filename=filename,
+                width=width,
+                height=height,
+                dpi=dpi,
                 scale=scale,
                 fontsize=fontsize,
                 colors=colors,
                 rename=rename,
-                no_domain_labels=no_domain_labels
+                no_domain_labels=no_domain_labels,
+                transcript=transcript
             )
+            pplot.draw()
+            pplot.save()
 
-            filename = os.path.join(out_dir, name + '.'  + file_type)
-
-            fig.savefig(
-                filename,
-                dpi=dpi,
-                bbox_inches='tight'
-            )
-            plt.close(fig)
-            plt.clf()
-
-
-    def save_transcript_cdna(self,out_dir='.',middlestar=False):
+    def save_transcript_cdna(self, out_dir='.', middlestar=False):
         """
         Save the cDNA sequences for all fusion isoforms to a fasta file
         """
@@ -643,7 +339,7 @@ class Fusion():
 
         fout.close()
 
-    def save_transcript_cds(self,out_dir='.',middlestar=False):
+    def save_transcript_cds(self, out_dir='.', middlestar=False):
         """
         Save the CDS sequences for all fusion isoforms to a fasta file
         """
@@ -683,7 +379,7 @@ class Fusion():
 
         fout.close()
 
-    def save_proteins(self,out_dir='.',middlestar=False):
+    def save_proteins(self, out_dir='.', middlestar=False):
         """
         Save the protein sequences for all fusion isoforms to a fasta file
         """
@@ -742,6 +438,7 @@ class Fusion():
 #                    import pdb; pdb.set_trace()
 #        fout.close()
 
+
 class FusionTranscript(object):
     """
     Generates the information needed for the gene fusion transctips
@@ -749,77 +446,84 @@ class FusionTranscript(object):
 
     def __init__(
             self,
-            transcript1=None,transcript2=None,
-            gene5prime=None,gene3prime=None,
-            db=None,genome='',release=0,protein_databases=None,
+            transcript1=None, transcript2=None,
+            gene5prime=None, gene3prime=None,
+            db=None, genome='', release=0, protein_databases=None,
             predict_effect=True):
 
-        self.transcript1=transcript1
-        self.transcript2=transcript2
-        self.gene5prime=gene5prime
-        self.gene3prime=gene3prime
-        self.genome=genome
-        self.release=release
-        self.protein_databases=protein_databases
+        self.transcript1 = transcript1
+        self.transcript2 = transcript2
+        self.gene5prime = gene5prime
+        self.gene3prime = gene3prime
+        self.genome = genome
+        self.release = release
+        self.protein_databases = protein_databases
 
-        self.name=self.transcript1.id + '-' + self.transcript2.id
+        self.name = self.transcript1.id + '-' + self.transcript2.id
         self.gene_names = self.gene5prime.gene.name + '-' + self.gene3prime.gene.name
 
-        self.cds=None
+        self.cds = None
         self.transcript_cds_junction_5prime = None
         self.transcript_cds_junction_3prime = None
 
-        self.cdna=None
-        self.cdna_5prime=''
-        self.cdna_3prime=''
+        self.cdna = None
+        self.cdna_5prime = ''
+        self.cdna_3prime = ''
         self.transcript_cdna_junction_5prime = None
         self.transcript_cdna_junction_3prime = None
 
-        self.protein=None
-        self.protein_length=None
-        self.molecular_weight=None
-
-        self.domains={
-            i:[] for i,j,k in utils.PROTEIN_DOMAIN
-        }
+        self.protein = None
+        self.protein_length = None
+        self.molecular_weight = None
 
         self.transcript_protein_junction_5prime = None
         self.transcript_protein_junction_3prime = None
 
-        self.effect_5prime='exon'
-        self.effect_3prime='exon'
-        self.effect=''
-        self.has_coding_potential=False
+        self.effect_5prime = 'exon'
+        self.effect_3prime = 'exon'
+        self.effect = ''
+        self.has_coding_potential = False
 
         if predict_effect:
             self.predict_effect(db)
 
-    def _annotate(self,db):
+    def _annotate(self, db):
         """
         Annotate the gene fusion's protein using the protein annotaiton
         from its two genes
         """
 
-        fusion_domains=[]
-        domains=[]
+        fusion_domains = []
+        gene5prime_domains = []
+        gene3prime_domains = []
+
+        tmp_domains = []
 
         for database in self.protein_databases:
 
             db.c.execute(
-                'SELECT * FROM PFEATURES_' + self.genome + '_' + str(self.release) + ' WHERE TRANSCRIPT_ID==\"' + \
-                self.transcript1.id + \
+                'SELECT * FROM PFEATURES_' + self.genome + '_' + str(self.release) + ' WHERE TRANSCRIPT_ID==\"' +
+                self.transcript1.id +
                 '\" AND SOURCE=\"' + database + '\"'
             )
 
-            domains += map(lambda x: list(x),db.c.fetchall())
+            tmp_domains += map(lambda x: list(x), db.c.fetchall())
 
-        for d in domains:
+        for d in tmp_domains:
 
             pfeature_ID = d[2]
             pfeature_description = d[3]
             pfeature_short_description = d[4]
             pfeature_start = int(d[5])
             pfeature_end = int(d[6])
+
+            gene5prime_domains.append([
+                pfeature_ID,
+                pfeature_description,
+                pfeature_short_description,
+                pfeature_start,
+                pfeature_end
+            ])
 
             try:
                 if self.transcript_protein_junction_5prime < pfeature_start:
@@ -848,11 +552,11 @@ class FusionTranscript(object):
             except:
                 import pdb; pdb.set_trace()
 
-        #only find the 3' gene partner's domains if the fusion is in-frame
+        # only find the 3' gene partner's domains if the fusion is in-frame
 
         if self.effect != 'out-of-frame':
 
-            domains = []
+            tmp_domains = []
 
             for database in self.protein_databases:
 
@@ -862,9 +566,9 @@ class FusionTranscript(object):
                     '\" AND SOURCE=\"' + database + '\"'
                 )
 
-                domains += map(lambda x: list(x),db.c.fetchall())
+                tmp_domains += map(lambda x: list(x), db.c.fetchall())
 
-            for d in domains:
+            for d in tmp_domains:
 
                 pfeature_ID = d[2]
                 pfeature_description = d[3]
@@ -872,12 +576,20 @@ class FusionTranscript(object):
                 pfeature_start = int(d[5])
                 pfeature_end = int(d[6])
 
+                gene3prime_domains.append([
+                    pfeature_ID,
+                    pfeature_description,
+                    pfeature_short_description,
+                    pfeature_start,
+                    pfeature_end
+                ])
+
                 if self.transcript_protein_junction_3prime > pfeature_end:
                     continue
                 elif self.transcript_protein_junction_3prime <= pfeature_start:
 
-                    pfeature_start=(pfeature_start-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
-                    pfeature_end=(pfeature_end-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
+                    pfeature_start = (pfeature_start-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
+                    pfeature_end = (pfeature_end-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
 
                     fusion_domains.append([
                         pfeature_ID,
@@ -889,8 +601,8 @@ class FusionTranscript(object):
 
                 else:
 
-                    pfeature_start=self.transcript_protein_junction_5prime
-                    pfeature_end=(pfeature_end-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
+                    pfeature_start = self.transcript_protein_junction_5prime
+                    pfeature_end = (pfeature_end-self.transcript_protein_junction_3prime) + self.transcript_protein_junction_5prime
 
                     fusion_domains.append([
                         pfeature_ID,
@@ -904,6 +616,8 @@ class FusionTranscript(object):
                     import pdb; pdb.set_trace()
 
         self.domains = fusion_domains
+        self.gene5prime.domains = gene5prime_domains
+        self.gene3prime.domains = gene3prime_domains
 
     def _fetch_protein(self):
         """
@@ -921,21 +635,21 @@ class FusionTranscript(object):
             self.effect='in-frame'
             self.transcript_protein_junction_3prime = int(self.transcript_cds_junction_3prime/3.)
         elif round((len(self.cds_5prime)/3. % 1) + (len(self.cds_3prime)/3. % 1),2) == 1.0:
-            self.effect='in-frame (with mutation)'
+            self.effect = 'in-frame (with mutation)'
             self.transcript_protein_junction_3prime = int(self.transcript_cds_junction_3prime/3.)
         else:
-            self.effect='out-of-frame'
+            self.effect = 'out-of-frame'
 
         #translate CDS into protein and remove everything after the stop codon
 
         protein_seq = self.cds.seq.translate()
         protein_seq = protein_seq[0:protein_seq.find('*')]
 
-        #predict molecular weight
+        # predict molecular weight
 
         self.molecular_weight = SeqUtils.molecular_weight(protein_seq)/1000.
 
-        #convert to a sequence record
+        # convert to a sequence record
 
         self.protein_length = len(protein_seq)
 
@@ -1176,10 +890,9 @@ class FusionTranscript(object):
                     (len(self.transcript2)-self.transcript_cdna_junction_3prime) == len(self.transcript2.three_prime_utr_sequence):
                 self.effect_3prime='3UTR (start)'
 
-    #def _check_if_in_intron(self):
+    # def _check_if_in_intron(self):
 
-
-    def predict_effect(self,db):
+    def predict_effect(self, db):
         """
         For all gene isoform combinations predict the effect of the fusion
         (e.g. in-frame, out-of-frame, etc...). Then if it has coding potential
@@ -1303,11 +1016,11 @@ class FusionTranscript(object):
                     elif self.gene3prime.junction==self.transcript2.coding_sequence_position_ranges[-1][0]:
                         self.effect_3prime='CDS (end)'
 
-        #get if has coding potential
+        # get if has coding potential
 
         self.has_coding_potential = utils.CODING_COMBINATIONS[(self.effect_5prime,self.effect_3prime)]['protein_coding_potential']
 
-        #check if not check if they don't have stop and/or start codons
+        # check if not check if they don't have stop and/or start codons
 
         reasons = []
 
@@ -1325,7 +1038,7 @@ class FusionTranscript(object):
             self.has_coding_potential=False
             reasons.append("no known 3' transcript stop codon")
 
-        #append information to cdna fasta headers
+        # append information to cdna fasta headers
 
         self.cdna.description += "; 5' location: " + self.effect_5prime + \
             "; 3' location: " + self.effect_3prime + \
@@ -1334,9 +1047,8 @@ class FusionTranscript(object):
         if not self.has_coding_potential:
             self.cdna.description += "; Reason: " + ', '.join(reasons)
 
-
-        #if the fusion transcript has coding potential then
-        #fetch its CDS and protein sequences and annotate it
+        # if the fusion transcript has coding potential then
+        # fetch its CDS and protein sequences and annotate it
 
         if self.has_coding_potential:
             self._fetch_transcript_cds()

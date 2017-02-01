@@ -1,4 +1,3 @@
-use Bio::EnsEMBL::Registry;
 use Bio::EnsEMBL::Gene;
 use Getopt::ArgParse;
 use DBD::SQLite;
@@ -44,23 +43,6 @@ sub check_database_tables {
   if($rv < 0){
      print $DBI::errstr;
   }
-}
-
-sub insert_canonical {
-
-  my $transcript = shift;
-  my $dbh = shift;
-  my $genome = shift;
-  my $release = shift;
-
-  my $canonical = $transcript->is_canonical();
-  my $transcript_id = $transcript->stable_id();
-
-  my $stmt = "INSERT INTO "
-      . "TRANSCRIPT_" . $genome . "_" . $release
-      . " (GENE_ID,TRANSCRIPT_ID,CANONICAL)"
-      . " VALUES (" . $stable_id . "," . $transcript_id . "," . $canonical . ")";
-  my $rv = $dbh->do($stmt) or die $DBI::errstr;
 }
 
 sub fetch_protein_features {
@@ -201,12 +183,13 @@ while ($chunk = shift @gene_chunks) {
     my $transcripts = $gene->get_all_Transcripts();
 
     while ( my $transcript = shift @{$transcripts} ) {
+
       if ($transcript->is_canonical()==1) {
-        #my @tmp = ($gene->stable_id(),$transcript->stable_id());
         push @tmp_results_canonical, [$gene->stable_id(),$transcript->stable_id()];
       }
 
       my @pfeatures = &fetch_protein_features($transcript,$dbh);
+
       push @tmp_results_pfeatures, @pfeatures;
     }
   }
@@ -221,7 +204,10 @@ $pm->wait_all_children;
 
 #add the data to the database
 
-INFO "Adding fetched data to database...";
+INFO "Adding canonical transcript data to database...";
+
+my $n = scalar @results_canonical;
+my $progress = Term::ProgressBar->new($n);
 
 my $sth = $dbh->prepare(
   "INSERT INTO TRANSCRIPT_" . $args->genome . "_" . $args->release
@@ -230,8 +216,13 @@ my $sth = $dbh->prepare(
 
 foreach my $rec ( @results_canonical ) {
   $sth->execute( @$rec );
+  $progress->update($_);
 }
 
+INFO "Adding protein annotation data to database...";
+
+my $n = scalar @results_pfeatures;
+my $progress = Term::ProgressBar->new($n);
 
 my $sth = $dbh->prepare(
   "INSERT INTO PFEATURES_" . $args->genome . "_" . $args->release
@@ -240,4 +231,5 @@ my $sth = $dbh->prepare(
 
 foreach my $rec ( @results_pfeatures ) {
   $sth->execute( @$rec );
+  $progress->update($_);
 }
