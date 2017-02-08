@@ -11,9 +11,11 @@ matplotlib.pyplot.ioff()
 
 
 class _Plot(object):
-    def __init__(self, filename='', height=0, width=0, dpi=0, fontsize=12):
+    def __init__(self, filename='', height=0, width=0, dpi=0, fontsize=12,
+                 scale=0):
 
         self.filename = filename
+        self.scale = scale
         self.width = width
         self.height = height
         self.dpi = dpi
@@ -35,36 +37,275 @@ class _Plot(object):
         plt.close(self.fig)
         plt.clf()
 
+    def _scale(self, seq_length):
+        """
+        scale the sequence (protein or DNA)
+        """
 
-class PlotGene:
-    def __init__(self):
+        if self.scale < seq_length:
+            self.normalize = seq_length
+        else:
+            self.normalize = self.scale
+
+        self.offset = 0.05 + (1.0 - float(seq_length)/self.normalize)*0.45
+        self.vertical_offset = 0.15
+
+        assert self.normalize >= seq_length, "length normalization should be >= protein length"
+
+
+class _PlotExons(_Plot):
+    def __init__(self, *args, **kwargs):
+        super(_PlotExons, self).__init__(*args, **kwargs)
+
+    def _draw_exons(self):
         pass
+
+    def draw(self):
+        pass
+
+
+class PlotWTExons(_PlotExons):
+    def __init__(self, ensembl_transcript, *args, **kwargs):
+        super(PlotWTExons, self).__init__(*args, **kwargs)
+        self.ensembl_transcript = ensembl_transcript
+
+    def _draw_main_body(self, name_symbols, name_isoform):
+        """
+        main protein frame
+        """
+
+        length = (self.ensembl_transcript.end-self.ensembl_transcript.start)/float(self.normalize)*0.9
+
+        self.ax.add_line(plt.Line2D(
+            (
+                self.offset,
+                self.offset+length
+            ),
+            (0.5, 0.5),
+            color='black'
+            )
+        )
+
+        self.ax.text(
+            0.5,
+            0.9,
+            name_symbols,
+            horizontalalignment='center',
+            fontsize=self.fontsize
+        )
+        self.ax.text(
+            0.5,
+            0.83,
+            name_isoform,
+            horizontalalignment='center',
+            fontsize=self.fontsize-3
+        )
+
+    def _draw_exons(self):
+        for exon in self.ensembl_transcript.exon_intervals:
+
+            if self.ensembl_transcript.strand == '+':
+                start = exon[0] - self.ensembl_transcript.start
+                end = exon[1] - self.ensembl_transcript.start
+            else:
+
+                # this is so the transcription direction is not plotted
+                # in reverse for genes on minus strand
+
+                start = -(exon[1] - self.ensembl_transcript.end)
+                end = -(exon[0] - self.ensembl_transcript.end)
+
+            exon_start = (int(start)/float(self.normalize))*0.9 + self.offset
+            exon_end = (int(end)/float(self.normalize))*0.9 + self.offset
+            exon_center = (exon_end-exon_start)/2. + exon_start
+
+            self.ax.add_patch(
+                patches.Rectangle(
+                    (
+                        exon_start,
+                        0.45,
+                    ),
+                    exon_end-exon_start,
+                    0.1,
+                    color="black"
+                )
+            )
+
+
+    def draw(self):
+        self._scale(self.ensembl_transcript.end-self.ensembl_transcript.start)
+        self._draw_exons()
+        self._draw_main_body(
+            self.ensembl_transcript.gene.gene_name,
+            self.ensembl_transcript.id
+        )
+        self.ax.axis('off')
+        self.ax.set_xlim(0, 1)
+        self.ax.set_ylim(0, 1)
+
+
+class PlotFusionExons(_PlotExons):
+    def __init__(self, transcript, *args, **kwargs):
+        super(PlotFusionExons, self).__init__(*args, **kwargs)
+        self.transcript = transcript
+
+    def _draw_exons(self):
+        for exon in self.transcript.gene5prime_exon_intervals:
+
+            if self.transcript.transcript1.strand == '+':
+                start = exon[0] - self.transcript.transcript1.start
+                end = exon[1] - self.transcript.transcript1.start
+            else:
+
+                # this is so the transcription direction is not plotted
+                # in reverse for genes on minus strand
+
+                start = -(exon[1] - self.transcript.transcript1.end)
+                end = -(exon[0] - self.transcript.transcript1.end)
+
+            exon_start = (int(start)/float(self.normalize))*0.9 + self.offset
+            exon_end = (int(end)/float(self.normalize))*0.9 + self.offset
+            exon_center = (exon_end-exon_start)/2. + exon_start
+
+            self.ax.add_patch(
+                patches.Rectangle(
+                    (
+                        exon_start,
+                        0.45,
+                    ),
+                    exon_end-exon_start,
+                    0.1,
+                    color="black"
+                )
+            )
+
+        if self.transcript.transcript1.strand == '+':
+            distance_to_add = self.transcript.gene5prime.junction - self.transcript.transcript1.start
+        else:
+            distance_to_add = self.transcript.transcript1.end - self.transcript.gene5prime.junction
+
+
+        for exon in self.transcript.gene3prime_exon_intervals:
+
+            if self.transcript.transcript2.strand == '+':
+                start = exon[0] - self.transcript.transcript2.start + distance_to_add
+                end = exon[1] - self.transcript.transcript2.start + distance_to_add
+            else:
+
+                # this is so the transcription direction is not plotted
+                # in reverse for genes on minus strand
+
+                start = (self.transcript.gene3prime.junction - exon[1]) + distance_to_add
+                end = (self.transcript.gene3prime.junction - exon[0]) + distance_to_add
+
+            exon_start = (int(start)/float(self.normalize))*0.9 + self.offset
+            exon_end = (int(end)/float(self.normalize))*0.9 + self.offset
+            exon_center = (exon_end-exon_start)/2. + exon_start
+
+            print exon_start,exon_end
+
+            self.ax.add_patch(
+                patches.Rectangle(
+                    (
+                        exon_start,
+                        0.45,
+                    ),
+                    exon_end-exon_start,
+                    0.1,
+                    color="red"
+                )
+            )
+
+    def _draw_main_body(self, name_symbols, name_isoform, length):
+        """
+        main protein frame
+        """
+
+        gene5prime_length = 0
+        gene3prime_length = 0
+
+        if self.transcript.transcript1.strand == '+':
+            gene5prime_length = (self.transcript.gene5prime.junction - self.transcript.transcript1.start)/float(self.normalize)*0.9
+        else:
+            gene5prime_length = (self.transcript.transcript1.end - self.transcript.gene5prime.junction)/float(self.normalize)*0.9
+
+        if self.transcript.transcript2.strand == '+':
+            gene3prime_length = (self.transcript.transcript2.end - self.transcript.gene3prime.junction)/float(self.normalize)*0.9
+        else:
+            gene3prime_length = (self.transcript.gene3prime.junction - self.transcript.transcript2.start)/float(self.normalize)*0.9
+
+        self.ax.add_line(plt.Line2D(
+            (
+                self.offset,
+                self.offset+gene5prime_length
+            ),
+            (0.5, 0.5),
+            color='black'
+            )
+        )
+        self.ax.add_line(plt.Line2D(
+            (
+                self.offset+gene5prime_length,
+                self.offset+gene5prime_length+gene3prime_length
+            ),
+            (0.5, 0.5),
+            color='red'
+            )
+        )
+
+        self.ax.text(
+            0.5,
+            0.9,
+            name_symbols,
+            horizontalalignment='center',
+            fontsize=self.fontsize
+        )
+        self.ax.text(
+            0.5,
+            0.83,
+            name_isoform,
+            horizontalalignment='center',
+            fontsize=self.fontsize-3
+        )
+
+    def draw(self):
+
+        length = 0
+
+        if self.transcript.transcript1.strand == '+':
+            length += self.transcript.gene5prime.junction - self.transcript.transcript1.start
+        else:
+            length += self.transcript.transcript1.end - self.transcript.gene5prime.junction
+
+        if self.transcript.transcript2.strand == '+':
+            length += self.transcript.transcript2.end - self.transcript.gene3prime.junction
+        else:
+            length += self.transcript.gene3prime.junction - self.transcript.transcript2.start
+
+
+        self._scale(length)
+        self._draw_exons()
+        self._draw_main_body(
+            self.transcript.transcript1.gene.gene_name + '-' +
+            self.transcript.transcript2.gene.gene_name,
+            self.transcript.transcript1.id + '-' +
+            self.transcript.transcript2.id,
+            length
+        )
+        self.ax.axis('off')
+        self.ax.set_xlim(0, 1)
+        self.ax.set_ylim(0, 1)
 
 
 class _PlotProtein(_Plot):
 
-    def __init__(self, transcript=None, scale=0, colors=None,
+    def __init__(self, transcript=None, colors=None,
                  rename=None, no_domain_labels=False, *args, **kwargs):
         super(_PlotProtein, self).__init__(*args, **kwargs)
-        self.scale = scale
         self.transcript = transcript
         self.colors = colors
         self.rename = rename
         self.no_domain_labels = no_domain_labels
-
-    def _scale_protein(self,protein_length):
-
-        # scale the protein
-
-        if self.scale < protein_length:
-            self.normalize = protein_length
-        else:
-            self.normalize = self.scale
-
-        self.offset = 0.05 + (1.0 - float(protein_length)/self.normalize)*0.45
-        self.vertical_offset = 0.15
-
-        assert self.normalize >= protein_length, "length normalization should be >= protein length"
 
     def _draw_domains(self, domains):
         # plot domains
@@ -203,7 +444,7 @@ class _PlotProtein(_Plot):
 
 
 class PlotFusionProtein(_PlotProtein):
-    def __init__(self,*args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(PlotFusionProtein, self).__init__(*args, **kwargs)
 
     def _draw_junction(self):
@@ -318,7 +559,7 @@ class PlotFusionProtein(_PlotProtein):
                 overlaps = False
 
     def draw(self):
-        self._scale_protein(self.transcript.protein_length)
+        self._scale(self.transcript.protein_length)
         self._draw_domains(self.transcript.domains['fusion'])
         self._draw_protein_length_markers(self.transcript.protein_length)
         self._draw_junction()
@@ -340,7 +581,7 @@ class PlotWTProtein(_PlotProtein):
         self.ensembl_transcript = ensembl_transcript
 
     def draw(self):
-        self._scale_protein(len(self.ensembl_transcript.coding_sequence)/3)
+        self._scale(len(self.ensembl_transcript.coding_sequence)/3)
         self._draw_domains(self.transcript.domains[self.ensembl_transcript.id])
         self._draw_protein_length_markers(len(self.ensembl_transcript.coding_sequence)/3)
         self._draw_main_body(

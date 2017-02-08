@@ -315,9 +315,67 @@ class Fusion():
             pplot.draw()
             pplot.save()
 
+            filename = os.path.join(
+                out_dir,
+                name + '.exon.' + file_type
+            )
+
+            pplot = plot.PlotFusionExons(
+                transcript=transcript,
+                filename=filename,
+                width=width,
+                height=height,
+                dpi=dpi,
+                scale=scale,
+                fontsize=fontsize
+            )
+            pplot.draw()
+            pplot.save()
+
             if plot_WT:
 
-                filename = os.path.join(gene5prime_WT, transcript.transcript1.id + '.' + file_type)
+                # plot exons
+
+                filename = os.path.join(
+                    gene5prime_WT,
+                    transcript.transcript1.id + '.exon.' + file_type
+                )
+
+                pplot = plot.PlotWTExons(
+                    ensembl_transcript=transcript.transcript1,
+                    filename=filename,
+                    width=width,
+                    height=height,
+                    dpi=dpi,
+                    scale=scale,
+                    fontsize=fontsize
+                )
+                pplot.draw()
+                pplot.save()
+
+                filename = os.path.join(
+                    gene3prime_WT,
+                    transcript.transcript2.id + '.exon.' + file_type
+                )
+
+                pplot = plot.PlotWTExons(
+                    ensembl_transcript=transcript.transcript2,
+                    filename=filename,
+                    width=width,
+                    height=height,
+                    dpi=dpi,
+                    scale=scale,
+                    fontsize=fontsize
+                )
+                pplot.draw()
+                pplot.save()
+
+                # plot proteins
+
+                filename = os.path.join(
+                    gene5prime_WT,
+                    transcript.transcript1.id + '.' + file_type
+                )
 
                 pplot = plot.PlotWTProtein(
                     ensembl_transcript=transcript.transcript1,
@@ -335,7 +393,10 @@ class Fusion():
                 pplot.draw()
                 pplot.save()
 
-                filename = os.path.join(gene3prime_WT, transcript.transcript2.id + '.' + file_type)
+                filename = os.path.join(
+                    gene3prime_WT,
+                    transcript.transcript2.id + '.' + file_type
+                )
 
                 pplot = plot.PlotWTProtein(
                     ensembl_transcript=transcript.transcript2,
@@ -518,12 +579,16 @@ class FusionTranscript(object):
         self.cds = None
         self.transcript_cds_junction_5prime = None
         self.transcript_cds_junction_3prime = None
+        self.gene5prime_cds_intervals = []
+        self.gene3prime_cds_intervals = []
 
         self.cdna = None
         self.cdna_5prime = ''
         self.cdna_3prime = ''
         self.transcript_cdna_junction_5prime = None
         self.transcript_cdna_junction_3prime = None
+        self.gene5prime_exon_intervals = []
+        self.gene3prime_exon_intervals = []
 
         self.protein = None
         self.protein_length = None
@@ -799,51 +864,69 @@ class FusionTranscript(object):
         n = 0
         n_max = len(self.transcript1.exons)
 
-        if self.transcript1.strand=="+":
+        if self.transcript1.strand == "+":
             for exon in self.transcript1.exons:
 
-                #is in intron?
-                if n==0 and self.gene5prime.junction < exon.start:
-                    self.effect_5prime='intron (before cds)'
+                # is in intron?
 
-                if n==n_max and self.gene5prime.junction > exon.end:
-                    self.effect_5prime='intron (after cds)'
+                if n == 0 and self.gene5prime.junction < exon.start:
+                    self.effect_5prime = 'intron (before cds)'
+
+                if n == n_max and self.gene5prime.junction > exon.end:
+                    self.effect_5prime = 'intron (after cds)'
                 elif self.gene5prime.junction > exon.end and self.gene5prime.junction < self.transcript1.exons[n+1].start:
-                    self.effect_5prime='intron'
+                    self.effect_5prime = 'intron'
 
                 n += 1
 
-                #get sequence
+                # get sequence
 
                 if self.gene5prime.junction >= exon.end:
                     self.transcript_cdna_junction_5prime += (exon.end - exon.start + 1)
+                    self.gene5prime_exon_intervals.append([
+                        exon.start,
+                        exon.end
+                    ])
                 elif self.gene5prime.junction <= exon.start:
                     break
                 else:
-                    self.transcript_cdna_junction_5prime+=(self.gene5prime.junction - exon.start + 1)
+                    self.transcript_cdna_junction_5prime += (self.gene5prime.junction - exon.start + 1)
+                    self.gene5prime_exon_intervals.append([
+                        exon.start,
+                        self.gene5prime.junction
+                    ])
                     break
         else:
             for exon in self.transcript1.exons:
 
-                #is in intron?
-                if n==0 and self.gene5prime.junction > exon.end:
-                    self.effect_5prime='intron (before cds)'
+                # is in intron?
 
-                if n==n_max and self.gene5prime.junction < exon.start:
-                    self.effect_5prime='intron (after cds)'
+                if n == 0 and self.gene5prime.junction > exon.end:
+                    self.effect_5prime = 'intron (before cds)'
+
+                if n == n_max and self.gene5prime.junction < exon.start:
+                    self.effect_5prime = 'intron (after cds)'
                 elif self.gene5prime.junction < exon.start and self.gene5prime.junction > self.transcript1.exons[n+1].end:
-                    self.effect_5prime='intron'
+                    self.effect_5prime = 'intron'
 
                 n += 1
 
-                #get sequence
+                # get sequence
 
                 if self.gene5prime.junction <= exon.start:
                     self.transcript_cdna_junction_5prime += (exon.end - exon.start + 1)
+                    self.gene5prime_exon_intervals.append([
+                        exon.start,
+                        exon.end
+                    ])
                 elif self.gene5prime.junction >= exon.end:
                     break
                 else:
                     self.transcript_cdna_junction_5prime += (exon.end - self.gene5prime.junction + 1)
+                    self.gene5prime_exon_intervals.append([
+                        self.gene5prime.junction,
+                        exon.end
+                    ])
 
         self.cdna_5prime = self.transcript1.sequence[0:self.transcript_cdna_junction_5prime]
 
@@ -853,21 +936,39 @@ class FusionTranscript(object):
         n = 0
         n_max = len(self.transcript2.exons)
 
-        if self.transcript2.strand=="+":
+        if self.transcript2.strand == "+":
+
+            # get the exons in the fusion
+
+            for exon in self.transcript2.exons:
+                if self.gene3prime.junction >= exon.end:
+                    continue
+                elif self.gene3prime.junction <= exon.start:
+                    self.gene3prime_exon_intervals.append([
+                        exon.start,
+                        exon.end
+                    ])
+                else:
+                    self.gene3prime_exon_intervals.append([
+                        self.gene3prime.junction,
+                        exon.end
+                    ])
+
             for exon in self.transcript2.exons:
 
-                #is in intron?
-                if n==0 and self.gene3prime.junction < exon.start:
-                    self.effect_3prime='intron (before cds)'
+                # is in intron?
 
-                if n==n_max and self.gene3prime.junction > exon.end:
-                    self.effect_3prime='intron (after cds)'
+                if n == 0 and self.gene3prime.junction < exon.start:
+                    self.effect_3prime = 'intron (before cds)'
+
+                if n == n_max and self.gene3prime.junction > exon.end:
+                    self.effect_3prime = 'intron (after cds)'
                 elif self.gene3prime.junction > exon.end and self.gene3prime.junction < self.transcript2.exons[n+1].start:
-                    self.effect_3prime='intron'
+                    self.effect_3prime = 'intron'
 
                 n += 1
 
-                #get sequence
+                # get sequence
 
                 if self.gene3prime.junction >= exon.end:
                     self.transcript_cdna_junction_3prime += (exon.end - exon.start + 1)
@@ -876,20 +977,38 @@ class FusionTranscript(object):
                 else:
                     self.transcript_cdna_junction_3prime += (self.gene3prime.junction - exon.start)
         else:
+
+            # get the exons in the fusion
+
+            for exon in self.transcript2.exons:
+                if self.gene3prime.junction <= exon.start:
+                    continue
+                elif self.gene3prime.junction >= exon.end:
+                    self.gene3prime_exon_intervals.append([
+                        exon.start,
+                        exon.end
+                    ])
+                else:
+                    self.gene3prime_exon_intervals.append([
+                        exon.start,
+                        self.gene3prime.junction
+                    ])
+
             for exon in self.transcript2.exons:
 
-                #is in intron?
-                if n==0 and self.gene3prime.junction > exon.end:
-                    self.effect_3prime='intron (before cds)'
+                # is in intron?
 
-                if n==n_max and self.gene3prime.junction < exon.start:
-                    self.effect_3prime='intron (after cds)'
+                if n == 0 and self.gene3prime.junction > exon.end:
+                    self.effect_3prime = 'intron (before cds)'
+
+                if n == n_max and self.gene3prime.junction < exon.start:
+                    self.effect_3prime = 'intron (after cds)'
                 elif self.gene3prime.junction < exon.start and self.gene3prime.junction > self.transcript2.exons[n+1].end:
-                    self.effect_3prime='intron'
+                    self.effect_3prime = 'intron'
 
                 n += 1
 
-                #get sequence
+                # get sequence
 
                 if self.gene3prime.junction <= exon.start:
                     self.transcript_cdna_junction_3prime += (exon.end - exon.start + 1)
@@ -898,23 +1017,26 @@ class FusionTranscript(object):
                 else:
                     self.transcript_cdna_junction_3prime += (exon.end - self.gene3prime.junction)
 
-        self.cdna_3prime = self.transcript2.sequence[self.transcript_cdna_junction_3prime::]
+        self.cdna_3prime = self.transcript2.sequence[
+            self.transcript_cdna_junction_3prime::
+        ]
 
         self.cdna = SeqRecord.SeqRecord(
-            Seq.Seq(self.cdna_5prime+self.cdna_3prime,generic_dna),
+            Seq.Seq(self.cdna_5prime+self.cdna_3prime, generic_dna),
             id=self.name,
             name=self.name,
-            description="length=" + str(len(self.cdna_5prime+self.cdna_3prime)) + \
-                 ', ' + \
-                str(self.transcript2.name)
+            description="length=" +
+                        str(len(self.cdna_5prime+self.cdna_3prime)) +
+                        ', ' +
+                        str(self.transcript2.name)
         )
 
-        #find out if the junction on either gene is with in the 5' or 3' UTR,
-        #or if it exactly at the beginning or end of the UTR
+        # find out if the junction on either gene is with in the 5' or 3' UTR,
+        # or if it exactly at the beginning or end of the UTR
 
-        #the 5' gene
+        # the 5' gene
 
-        if self.effect_5prime.find('intron')==-1:
+        if self.effect_5prime.find('intron') == -1:
 
             if self.transcript1.complete and \
                     self.transcript_cdna_junction_5prime < len(self.transcript1.five_prime_utr_sequence):

@@ -27,7 +27,7 @@ Example output visualization of the domain structure of the DLG1-BRAF fusion:
 
 ### Plotting wild-type protein
 
-You can plot the wild-type proteins for each genewith --WT flag.
+You can additionally plot the wild-type proteins for each gene with --WT flag.
 
 ```
 agfusion \
