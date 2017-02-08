@@ -202,8 +202,6 @@ class PlotFusionExons(_PlotExons):
             exon_end = (int(end)/float(self.normalize))*0.9 + self.offset
             exon_center = (exon_end-exon_start)/2. + exon_start
 
-            print exon_start,exon_end
-
             self.ax.add_patch(
                 patches.Rectangle(
                     (
@@ -319,10 +317,10 @@ class _PlotProtein(_Plot):
 
             color = '#3385ff'
             if domain_name in self.colors:
-                color = colors[domain_name]
+                color = self.colors[domain_name]
 
             if domain_name in self.rename:
-                domain_name = rename[domain_name]
+                domain_name = self.rename[domain_name]
 
             domain_start = (int(domain[3])/float(self.normalize))*0.9 + self.offset
             domain_end = (int(domain[4])/float(self.normalize))*0.9 + self.offset
