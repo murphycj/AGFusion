@@ -57,11 +57,82 @@ class _PlotExons(_Plot):
     def __init__(self, *args, **kwargs):
         super(_PlotExons, self).__init__(*args, **kwargs)
 
-    def _draw_exons(self):
-        pass
+    def _draw_length_markers(self, basepair_length):
+        # plot protein length markers
 
-    def draw(self):
-        pass
+        self.basepair_length = basepair_length/float(self.normalize)*0.9
+
+        self.line_end = basepair_length/float(self.normalize)*0.9 + self.offset
+
+        self.ax.text(
+            0.5,
+            0.1,
+            "Base pair position (kbp)",
+            horizontalalignment='center',
+            fontsize=self.fontsize
+        )
+
+        self.ax.add_line(plt.Line2D(
+            (
+                self.offset,
+                self.offset+self.basepair_length
+            ),
+            (0.2+self.vertical_offset, 0.2+self.vertical_offset),
+            color='black'
+            )
+        )
+
+        # left marker
+
+        self.left_marker_line = self.ax.add_line(plt.Line2D(
+            (
+                self.offset,
+                self.offset
+            ),
+            (0.15+self.vertical_offset, 0.2+self.vertical_offset),
+            color='black'
+            )
+        )
+        self.left_marker_text = self.ax.text(
+            self.offset,
+            0.05+self.vertical_offset,
+            "0",
+            horizontalalignment='center',
+            fontsize=self.fontsize
+        )
+
+        # draw markers for increments of 1000 base pairs
+
+        for i in range(1, basepair_length+1):
+            if (i % 10000) == 0:
+                self.left_marker_line = self.ax.add_line(plt.Line2D(
+                    (
+                        self.offset+(i/float(self.normalize)*0.9),
+                        self.offset+(i/float(self.normalize)*0.9)
+                    ),
+                    (0.175+self.vertical_offset, 0.2+self.vertical_offset),
+                    color='black'
+                    )
+                )
+
+        # right marker
+
+        self.right_marker_line = self.ax.add_line(plt.Line2D(
+            (
+                self.offset+self.basepair_length,
+                self.offset+self.basepair_length
+            ),
+            (0.15+self.vertical_offset, 0.2+self.vertical_offset),
+            color='black'
+            )
+        )
+        self.right_marker_text = self.ax.text(
+            self.offset+self.basepair_length,
+            0.05+self.vertical_offset,
+            str(basepair_length/1000),
+            horizontalalignment='center',
+            fontsize=self.fontsize
+        )
 
 
 class PlotWTExons(_PlotExons):
@@ -135,6 +206,7 @@ class PlotWTExons(_PlotExons):
     def draw(self):
         self._scale(self.ensembl_transcript.end-self.ensembl_transcript.start)
         self._draw_exons()
+        self._draw_length_markers(self.ensembl_transcript.end-self.ensembl_transcript.start)
         self._draw_main_body(
             self.ensembl_transcript.gene.gene_name,
             self.ensembl_transcript.id
@@ -148,6 +220,27 @@ class PlotFusionExons(_PlotExons):
     def __init__(self, transcript, *args, **kwargs):
         super(PlotFusionExons, self).__init__(*args, **kwargs)
         self.transcript = transcript
+
+    def _draw_fusion_junction(self, junction_location):
+
+        junction_location_norm = junction_location/float(self.normalize)*0.9
+
+        self.ax.add_line(plt.Line2D(
+            (
+                self.offset+junction_location_norm,
+                self.offset+junction_location_norm
+            ),
+            (0.15+self.vertical_offset, 0.2+self.vertical_offset),
+            color='black'
+            )
+        )
+        self.right_marker_text = self.ax.text(
+            self.offset+junction_location_norm,
+            0.05+self.vertical_offset,
+            str(junction_location/1000),
+            horizontalalignment='center',
+            fontsize=self.fontsize
+        )
 
     def _draw_exons(self):
         for exon in self.transcript.gene5prime_exon_intervals:
@@ -180,23 +273,28 @@ class PlotFusionExons(_PlotExons):
             )
 
         if self.transcript.transcript1.strand == '+':
-            distance_to_add = self.transcript.gene5prime.junction - self.transcript.transcript1.start
+            distance_to_add = self.transcript.gene5prime.junction - \
+                self.transcript.transcript1.start
         else:
-            distance_to_add = self.transcript.transcript1.end - self.transcript.gene5prime.junction
-
+            distance_to_add = self.transcript.transcript1.end - \
+                self.transcript.gene5prime.junction
 
         for exon in self.transcript.gene3prime_exon_intervals:
 
             if self.transcript.transcript2.strand == '+':
-                start = exon[0] - self.transcript.transcript2.start + distance_to_add
-                end = exon[1] - self.transcript.transcript2.start + distance_to_add
+                start = exon[0] - self.transcript.transcript2.start + \
+                    distance_to_add
+                end = exon[1] - self.transcript.transcript2.start + \
+                    distance_to_add
             else:
 
                 # this is so the transcription direction is not plotted
                 # in reverse for genes on minus strand
 
-                start = (self.transcript.gene3prime.junction - exon[1]) + distance_to_add
-                end = (self.transcript.gene3prime.junction - exon[0]) + distance_to_add
+                start = (self.transcript.gene3prime.junction - exon[1]) + \
+                    distance_to_add
+                end = (self.transcript.gene3prime.junction - exon[0]) + \
+                    distance_to_add
 
             exon_start = (int(start)/float(self.normalize))*0.9 + self.offset
             exon_end = (int(end)/float(self.normalize))*0.9 + self.offset
@@ -223,14 +321,22 @@ class PlotFusionExons(_PlotExons):
         gene3prime_length = 0
 
         if self.transcript.transcript1.strand == '+':
-            gene5prime_length = (self.transcript.gene5prime.junction - self.transcript.transcript1.start)/float(self.normalize)*0.9
+            gene5prime_length = (self.transcript.gene5prime.junction -
+                                 self.transcript.transcript1.start) \
+                                 / float(self.normalize)*0.9
         else:
-            gene5prime_length = (self.transcript.transcript1.end - self.transcript.gene5prime.junction)/float(self.normalize)*0.9
+            gene5prime_length = (self.transcript.transcript1.end -
+                                 self.transcript.gene5prime.junction) \
+                                 / float(self.normalize)*0.9
 
         if self.transcript.transcript2.strand == '+':
-            gene3prime_length = (self.transcript.transcript2.end - self.transcript.gene3prime.junction)/float(self.normalize)*0.9
+            gene3prime_length = (self.transcript.transcript2.end -
+                                 self.transcript.gene3prime.junction) \
+                                 / float(self.normalize)*0.9
         else:
-            gene3prime_length = (self.transcript.gene3prime.junction - self.transcript.transcript2.start)/float(self.normalize)*0.9
+            gene3prime_length = (self.transcript.gene3prime.junction -
+                                 self.transcript.transcript2.start) \
+                                 / float(self.normalize)*0.9
 
         self.ax.add_line(plt.Line2D(
             (
@@ -268,27 +374,30 @@ class PlotFusionExons(_PlotExons):
 
     def draw(self):
 
-        length = 0
-
         if self.transcript.transcript1.strand == '+':
-            length += self.transcript.gene5prime.junction - self.transcript.transcript1.start
+            gene5prime_length = self.transcript.gene5prime.junction - \
+                self.transcript.transcript1.start
         else:
-            length += self.transcript.transcript1.end - self.transcript.gene5prime.junction
+            gene5prime_length = self.transcript.transcript1.end - \
+                self.transcript.gene5prime.junction
 
         if self.transcript.transcript2.strand == '+':
-            length += self.transcript.transcript2.end - self.transcript.gene3prime.junction
+            gene3prime_length = self.transcript.transcript2.end - \
+                self.transcript.gene3prime.junction
         else:
-            length += self.transcript.gene3prime.junction - self.transcript.transcript2.start
+            gene3prime_length = self.transcript.gene3prime.junction - \
+                self.transcript.transcript2.start
 
-
-        self._scale(length)
+        self._scale(gene5prime_length+gene3prime_length)
         self._draw_exons()
+        self._draw_length_markers(gene5prime_length+gene3prime_length)
+        self._draw_fusion_junction(gene5prime_length)
         self._draw_main_body(
             self.transcript.transcript1.gene.gene_name + '-' +
             self.transcript.transcript2.gene.gene_name,
             self.transcript.transcript1.id + '-' +
             self.transcript.transcript2.id,
-            length
+            gene5prime_length+gene3prime_length
         )
         self.ax.axis('off')
         self.ax.set_xlim(0, 1)
@@ -391,6 +500,20 @@ class _PlotProtein(_Plot):
             horizontalalignment='center',
             fontsize=self.fontsize
         )
+
+        # draw markers for increments of 100 amino acids
+
+        for i in range(1, protein_length+1):
+            if (i % 100) == 0:
+                self.left_marker_line = self.ax.add_line(plt.Line2D(
+                    (
+                        self.offset+(i/float(self.normalize)*0.9),
+                        self.offset+(i/float(self.normalize)*0.9)
+                    ),
+                    (0.275+self.vertical_offset, 0.3+self.vertical_offset),
+                    color='black'
+                    )
+                )
 
         # right marker
 
