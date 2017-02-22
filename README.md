@@ -3,7 +3,7 @@ For a given gene fusion, AGFusion will predict the cDNA, CDS, and protein sequen
 
 Docs are at http://pythonhosted.org/agfusion/
 
-# Example Usage
+# Examples
 
 ### Basic Usage
 
@@ -100,6 +100,12 @@ agfusion \
 
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000132176-ENSMUST00000002487-scale.png)
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000120187-ENSMUST00000086074.png)
+
+# Advanced Usage
+
+### Building your own database
+
+You need to have mysql and the MySQLdb python package installed.
 
 # Installation
 

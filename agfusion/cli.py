@@ -8,9 +8,57 @@ import urllib
 import agfusion
 import pyensembl
 
+
+def builddb():
+
+    parser = argparse.ArgumentParser(
+        description='Build the SQLite3 database for a reference ' +
+        'genomes by querying Biomart. The the database given by --database ' +
+        'already exists then that portion will be overwritten.'
+    )
+    parser.add_argument(
+        '--database',
+        type=str,
+        required=True,
+        help='Path to the database file (e.g. agfusion.db)'
+    )
+    parser.add_argument(
+        '--build',
+        type=str,
+        required=True,
+        help='homo_sapiens_core_84_38 (for GRCh38), ' +
+        'homo_sapiens_core_75_37 (for GRCh37), or ' +
+        'mus_musculus_core_75_38 (for GRCm38)'
+    )
+    parser.add_argument(
+        '--server',
+        type=str,
+        required=False,
+        default='ensembldb.ensembl.org',
+        help='(optional) Ensembl server (default ensembldb.ensembl.org)'
+    )
+    args = parser.parse_args()
+
+    db = agfusion.AGFusionDBBManager(args.database, args.build, args.server)
+
+    db.logger.info('Fetching alternative gene names...')
+
+    #db.fetch_gene_names()
+
+    db.logger.info('Fetching transcript tables...')
+
+    db.fetch_transcript_table()
+
+    db.logger.info('Fetching protein annotation data...')
+
+    db.fetch_protein_annotation()
+
+
 def main():
 
-    parser = argparse.ArgumentParser(description='Annotate Gene Fusion (AGFusion)')
+    parser = argparse.ArgumentParser(
+        description='Annotate Gene Fusion (AGFusion)'
+    )
     parser.add_argument(
         '--gene5prime',
         type=str,
@@ -27,16 +75,16 @@ def main():
         '--junction5prime',
         type=int,
         required=True,
-        help='Genomic location of predicted fuins for the 5\' gene partner. ' + \
-             'The 1-based position that is the last nucleotide included in ' + \
+        help='Genomic location of predicted fuins for the 5\' gene partner. ' +
+             'The 1-based position that is the last nucleotide included in ' +
              'the fusion before the junction.'
     )
     parser.add_argument(
         '--junction3prime',
         type=int,
         required=True,
-        help='Genomic location of predicted fuins for the 3\' gene partner. ' + \
-             'The 1-based position that is the first nucleotide included in ' + \
+        help='Genomic location of predicted fuins for the 3\' gene partner. ' +
+             'The 1-based position that is the first nucleotide included in ' +
              'the fusion after the junction.'
     )
     parser.add_argument(
@@ -56,26 +104,28 @@ def main():
         type=str,
         default=None,
         required=False,
-        help='(Optional) The SQLite3 database. Defaults to using the database provided by the package.'
+        help='(Optional) The SQLite3 database. Defaults to using the ' +
+             'database provided by the package.'
     )
     parser.add_argument(
         '--noncanonical',
         action='store_true',
         required=False,
         default=False,
-        help='(Optional) Include non-canonical gene transcripts in the analysis (default False).'
+        help='(Optional) Include non-canonical gene transcripts ' +
+             'in the analysis (default False).'
     )
     parser.add_argument(
         '--protein_databases',
         type=str,
         required=False,
         nargs='+',
-        default=['pfam','tmhmm'],
-        help='(Optional) Space-delimited list of one or more protein ' + \
-             'feature databases to include when visualizing proteins. ' + \
-             'Options are: pfam, tigrfam, prints, hmmpanther, ' + \
-             'blastprodom, gene3d, hamap, pirsf, ncoils, superfamily, seg, ' + \
-             'signalp, scanprosite, pfscan, tmhmm, and smart. ' + \
+        default=['pfam', 'tmhmm'],
+        help='(Optional) Space-delimited list of one or more protein ' +
+             'feature databases to include when visualizing proteins. ' +
+             'Options are: pfam, tigrfam, prints, hmmpanther, ' +
+             'blastprodom, gene3d, hamap, pirsf, ncoils, superfamily, seg, ' +
+             'signalp, scanprosite, pfscan, tmhmm, and smart. ' +
              '(default includes pfam and tmhmm).'
     )
     parser.add_argument(
@@ -84,10 +134,10 @@ def main():
         required=False,
         nargs='+',
         default=None,
-        help='(Optional) Space-delimited list of domain name and color to ' + \
-            'specify certain colors for domains. Format --color domain_name:color' + \
-            ' (e.g. --color Pkinase_Tyr:blue I-set:#006600). ' + \
-            'Can use specific color names for hex representation. Default ' + \
+        help='(Optional) Space-delimited list of domain name and color to ' +
+            'specify certain colors for domains. Format --color domain_name:color' +
+            ' (e.g. --color Pkinase_Tyr:blue I-set:#006600). ' +
+            'Can use specific color names for hex representation. Default ' +
             'blue for everything.'
     )
     parser.add_argument(
@@ -96,8 +146,8 @@ def main():
         required=False,
         nargs='+',
         default=None,
-        help='(Optional) Space-delimited list of domain name and new name to ' + \
-            'rename particular domains. Format --rename domain_name:new_domain_name' + \
+        help='(Optional) Space-delimited list of domain name and new name to ' +
+            'rename particular domains. Format --rename domain_name:new_domain_name' +
             ' (e.g. --rename Pkinase_Tyr:Kinase).'
     )
     parser.add_argument(

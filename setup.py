@@ -2,7 +2,7 @@ import os
 from setuptools import setup, find_packages
 import re
 
-VERSIONFILE="agfusion/_version.py"
+VERSIONFILE = "agfusion/_version.py"
 verstrline = open(VERSIONFILE, "rt").read()
 VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
 mo = re.search(VSRE, verstrline, re.M)
@@ -14,16 +14,16 @@ else:
 README = open('README.md').read()
 
 setup(
-    version = verstr,
+    version=verstr,
     name='agfusion',
-    packages = find_packages(),
-    description = "Python package providing that can visualize different annotations of a gene fusion.",
+    packages=find_packages(),
+    description="Python package providing that can visualize different annotations of a gene fusion.",
     author='Charles Murphy',
     license='MIT',
     url='https://github.com/murphycj/AGFusion',
     long_description=README,
     include_package_data=True,
-    scripts=['bin/agfusion','bin/builddb.pl'],
+    scripts=['bin/agfusion', 'bin/agfusion_builddb'],
     install_requires=[
         'pyensembl>=0.9.5',
         'matplotlib>=1.5.0',
