@@ -28,7 +28,7 @@ def builddb():
         required=True,
         help='homo_sapiens_core_84_38 (for GRCh38), ' +
         'homo_sapiens_core_75_37 (for GRCh37), or ' +
-        'mus_musculus_core_75_38 (for GRCm38)'
+        'mus_musculus_core_84_38 (for GRCm38)'
     )
     parser.add_argument(
         '--server',
@@ -43,7 +43,7 @@ def builddb():
 
     db.logger.info('Fetching alternative gene names...')
 
-    #db.fetch_gene_names()
+    db.fetch_gene_names()
 
     db.logger.info('Fetching transcript tables...')
 
@@ -97,7 +97,7 @@ def main():
         '--genome',
         type=str,
         required=True,
-        help='GRCh38, GRCh37, or GRCm38'
+        help='GRCh38 (or homo_sapiens_core_84_38), GRCh37 (or homo_sapiens_core_75_37), or GRCm38 (or mus_musculus_core_84_38)'
     )
     parser.add_argument(
         '--db',
@@ -120,13 +120,13 @@ def main():
         type=str,
         required=False,
         nargs='+',
-        default=['pfam', 'tmhmm'],
+        default=['Pfam', 'transmembrane'],
         help='(Optional) Space-delimited list of one or more protein ' +
              'feature databases to include when visualizing proteins. ' +
-             'Options are: pfam, tigrfam, prints, hmmpanther, ' +
-             'blastprodom, gene3d, hamap, pirsf, ncoils, superfamily, seg, ' +
-             'signalp, scanprosite, pfscan, tmhmm, and smart. ' +
-             '(default includes pfam and tmhmm).'
+             'Options are: Pfam, Smart, Superfamily, TIGRfam, Prosite_profiles, ' +
+             'transmembrane, low_complexity, coiled_coil, Prints ' +
+             'PIRSF, and signal_peptide ' +
+             '(default includes Pfam and transmembrane).'
     )
     parser.add_argument(
         '--colors',
@@ -238,12 +238,15 @@ def main():
 
     # get the pyensembl data
 
-    if args.genome == 'GRCm38':
+    if args.genome == 'GRCm38' or args.genome == 'mus_musculus_core_84_38':
         pyensembl_data = pyensembl.EnsemblRelease(84, 'mouse')
-    elif args.genome == 'GRCh38':
+        db.build = 'mus_musculus_core_84_38'
+    elif args.genome == 'GRCh38' or args.genome == 'homo_sapiens_core_84_38':
         pyensembl_data = pyensembl.EnsemblRelease(84, 'human')
-    elif args.genome == 'GRCh37':
+        db.build = 'homo_sapiens_core_84_38'
+    elif args.genome == 'GRCh37' or args.genome == 'homo_sapiens_core_75_37':
         pyensembl_data = pyensembl.EnsemblRelease(75, 'human')
+        db.build = 'homo_sapiens_core_75_37'
     else:
         db.logger.error(
             'You provided an incorrect reference genome. '

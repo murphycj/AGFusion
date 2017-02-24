@@ -5,6 +5,13 @@ import requests
 import logging
 
 
+PROTEIN_ANNOTATIONS = [
+    'Pfam', 'Smart', 'Superfamily', 'TIGRfam', 'Prosite_profiles',
+    'transmembrane', 'low_complexity', 'coiled_coil', 'Prints',
+    'PIRSF', 'signal_peptide'
+]
+
+
 class AGFusionDB(object):
     """
     Class to handle methods around interacting with the AGFusion SQLite3
@@ -31,12 +38,6 @@ class AGFusionDB(object):
 
         assert os.path.exists(self.database), "database does not exist!"
 
-        #self.conn = sqlite3.connect(
-        #    self.database
-        #)
-        #self.c = self.conn.cursor()
-        #self.conn.commit()
-
         self.sqlite3_db = sqlite3.connect(
             os.path.abspath(self.database)
         )
@@ -46,6 +47,8 @@ class AGFusionDB(object):
         self.logger.info(
             'Connected to the database ' + os.path.abspath(self.database)
         )
+
+        self.build = ''
 
     def close(self):
         """
@@ -107,12 +110,16 @@ class AGFusionDBBManager(AGFusionDB):
         )
         self.sqlite3_db.commit()
 
-        #transcript table
+        # transcript table
 
-        self.sqlite3_cursor.execute('drop table if exists ' + self.build + '_transcript')
+        self.sqlite3_cursor.execute(
+            'drop table if exists ' +
+            self.build + '_transcript'
+        )
 
         sqlite3_command = "CREATE TABLE " + self.build + "_transcript (" + \
             "transcript_id text," + \
+            "gene_id text," + \
             "transcript_stable_id text," + \
             "refseq_id text," + \
             "translation_id text);"
@@ -124,8 +131,30 @@ class AGFusionDBBManager(AGFusionDB):
         )
         self.sqlite3_db.commit()
 
-    def fetch_refseq(self):
-        pass
+        # protein annotation tables
+
+        for protein_annotation in PROTEIN_ANNOTATIONS:
+            self.sqlite3_cursor.execute(
+                'drop table if exists ' +
+                self.build + '_' + protein_annotation
+            )
+
+            sqlite3_command = "CREATE TABLE " + self.build + "_" + \
+                protein_annotation + " (" + \
+                "translation_id text," + \
+                "stable_id text," + \
+                "hit_name text," + \
+                "seq_start integer," + \
+                "seq_end integer," + \
+                "hit_description text);"
+
+            self.logger.info('SQLite - ' + sqlite3_command)
+
+            self.sqlite3_cursor.execute(
+                sqlite3_command
+            )
+            self.sqlite3_db.commit()
+
 
     def fetch_gene_names(self):
 
@@ -133,8 +162,7 @@ class AGFusionDBBManager(AGFusionDB):
 
         # fetch all gene stable ids
 
-        mysql_command = "SELECT gene.gene_id, gene.stable_id, " + \
-            "gene.canonical_transcript_id FROM gene;"
+        mysql_command = "SELECT gene.gene_id, gene.stable_id, gene.canonical_transcript_id FROM gene;"
 
         self.logger.info('MySQL - ' + mysql_command)
 
@@ -151,14 +179,7 @@ class AGFusionDBBManager(AGFusionDB):
 
         # fetch entrez IDS
 
-        mysql_command = "SELECT gene.gene_id, xref.dbprimary_acc " + \
-            "FROM gene, object_xref, xref,external_db " + \
-            "WHERE gene.gene_id = object_xref.ensembl_id " + \
-            "AND object_xref.ensembl_object_type = 'Gene' " + \
-            "AND object_xref.xref_id = xref.xref_id " + \
-            "AND xref.external_db_id = external_db.external_db_id " + \
-            "AND external_db.db_name = 'EntrezGene';"
-
+        mysql_command = "SELECT gene.gene_id, xref.dbprimary_acc FROM gene, object_xref, xref,external_db WHERE gene.gene_id = object_xref.ensembl_id AND object_xref.ensembl_object_type = 'Gene' AND object_xref.xref_id = xref.xref_id AND xref.external_db_id = external_db.external_db_id AND external_db.db_name = 'EntrezGene';"
         self.logger.info('MySQL - ' + mysql_command)
 
         self.ensembl_cursor.execute(mysql_command)
@@ -178,16 +199,7 @@ class AGFusionDBBManager(AGFusionDB):
             )
             sys.exit()
 
-        mysql_command = \
-            """ \
-            SELECT gene.gene_id, xref.display_label \
-            FROM gene, object_xref, xref,external_db \
-            WHERE gene.gene_id = object_xref.ensembl_id \
-            AND object_xref.ensembl_object_type = 'Gene' \
-            AND object_xref.xref_id = xref.xref_id \
-            AND xref.external_db_id = external_db.external_db_id \
-            AND external_db.db_name = '""" + gene_name_db + """'; \
-            """
+        mysql_command = """SELECT gene.gene_id, xref.display_label FROM gene, object_xref, xref,external_db WHERE gene.gene_id = object_xref.ensembl_id AND object_xref.ensembl_object_type = 'Gene' AND object_xref.xref_id = xref.xref_id AND xref.external_db_id = external_db.external_db_id AND external_db.db_name = '""" + gene_name_db + """';"""
 
         self.logger.info('MySQL - ' + mysql_command)
 
@@ -218,51 +230,85 @@ class AGFusionDBBManager(AGFusionDB):
         self.sqlite3_db.commit()
 
     def fetch_transcript_table(self):
-        mysql_command = "SELECT transcript.transcript_id, transcript.stable_id, translation.translation_id FROM transcript, translation WHERE transcript.transcript_id = translation.transcript_id;"
 
+        # Fetch all transcripts
+
+        mysql_command = "SELECT transcript.transcript_id, transcript.gene_id, transcript.stable_id FROM transcript;"
         self.logger.info('MySQL - ' + mysql_command)
-
         self.ensembl_cursor.execute(
             mysql_command
         )
         transcripts = {}
         for transcript in self.ensembl_cursor.fetchall():
             transcripts[transcript[0]] = {
-                'transcript_stable_id': transcript[1],
-                'translation_id': transcript[2],
+                'gene_id': transcript[1],
+                'transcript_stable_id': transcript[2],
+                'translation_id': '',
                 'refseq_id': ''
             }
+
+        # Fetch all transcripts with tranlstions
+
+        mysql_command = "SELECT transcript.transcript_id, translation.translation_id FROM transcript, translation WHERE transcript.transcript_id = translation.transcript_id;"
+        self.logger.info('MySQL - ' + mysql_command)
+        self.ensembl_cursor.execute(
+            mysql_command
+        )
+        for transcript in self.ensembl_cursor.fetchall():
+            transcripts[transcript[0]]['translation_id'] = transcript[1]
+
+        # fetch RefSeq IDS
 
         mysql_command = "SELECT transcript.transcript_id, xref.display_label FROM transcript, object_xref, xref, external_db WHERE transcript.transcript_id = object_xref.ensembl_id AND object_xref.ensembl_object_type = \'Transcript\' AND object_xref.xref_id = xref.xref_id AND xref.external_db_id = external_db.external_db_id AND external_db.db_name = \'RefSeq_mRNA\';"
         self.logger.info('MySQL - ' + mysql_command)
         self.ensembl_cursor.execute(
             mysql_command
         )
-
         for transcript in self.ensembl_cursor.fetchall():
             transcripts[transcript[0]]['refseq_id'] = transcript[1]
 
         transcripts = [
             [
                 i,
+                transcripts[i]['gene_id'],
                 transcripts[i]['transcript_stable_id'],
-                transcripts[i]['translation_id'],
-                transcripts[i]['refseq_id']
+                transcripts[i]['refseq_id'],
+                transcripts[i]['translation_id']
             ] for i in transcripts.keys()
         ]
 
         self.logger.info(
             'SQLite - INSERT INTO ' +
-            self.build + '_transcript VALUES (transcript_id,transcript_stable_id,refseq_id,translation_id)'
+            self.build + '_transcript VALUES (transcript_id,gene_id,transcript_stable_id,refseq_id,translation_id)'
         )
 
         self.sqlite3_cursor.executemany(
-            'INSERT INTO ' + self.build + '_transcript VALUES (?,?,?,?)', transcripts
+            'INSERT INTO ' + self.build + '_transcript VALUES (?,?,?,?,?)', transcripts
         )
 
         self.sqlite3_db.commit()
 
-
     def fetch_protein_annotation(self):
 
-        for protein_annotation in ['PFAM','SMART','Superfamily','TIGR','HAMAP','ProSite']
+        for protein_annotation in PROTEIN_ANNOTATIONS:
+            mysql_command = "SELECT translation.translation_id, translation.stable_id, protein_feature.hit_name, protein_feature.seq_start, protein_feature.seq_end, protein_feature.hit_description FROM analysis, analysis_description, protein_feature, translation WHERE protein_feature.translation_id = translation.translation_id AND protein_feature.analysis_id = analysis.analysis_id AND analysis.analysis_id = analysis_description.analysis_id AND analysis.db = \'" + protein_annotation + "\';"
+
+            self.logger.info('MySQL - ' + mysql_command)
+
+            self.ensembl_cursor.execute(
+                mysql_command
+            )
+
+            data = self.ensembl_cursor.fetchall()
+
+            self.logger.info(
+                'SQLite - INSERT INTO ' +
+                self.build + '_' + protein_annotation + ' VALUES (translation_id,stable_id,hit_name,seq_start,seq_end,hit_description)'
+            )
+
+            self.sqlite3_cursor.executemany(
+                'INSERT INTO ' + self.build +
+                '_' + protein_annotation + ' VALUES (?,?,?,?,?,?)', data
+            )
+
+            self.sqlite3_db.commit()

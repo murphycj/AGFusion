@@ -419,10 +419,10 @@ class _PlotProtein(_Plot):
 
         for domain in domains:
 
-            if domain[2] == '':
+            if domain[1] == '':
                 domain_name = str(domain[0])
             else:
-                domain_name = str(domain[2])
+                domain_name = str(domain[1])
 
             color = '#3385ff'
             if domain_name in self.colors:
@@ -431,8 +431,8 @@ class _PlotProtein(_Plot):
             if domain_name in self.rename:
                 domain_name = self.rename[domain_name]
 
-            domain_start = (int(domain[3])/float(self.normalize))*0.9 + self.offset
-            domain_end = (int(domain[4])/float(self.normalize))*0.9 + self.offset
+            domain_start = (int(domain[2])/float(self.normalize))*0.9 + self.offset
+            domain_end = (int(domain[3])/float(self.normalize))*0.9 + self.offset
             domain_center = (domain_end-domain_start)/2. + domain_start
 
             self.ax.add_patch(
