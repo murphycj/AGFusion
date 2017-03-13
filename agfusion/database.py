@@ -11,8 +11,7 @@ PROTEIN_ANNOTATIONS = [
     'PIRSF', 'signal_peptide'
 ]
 
-
-class AGFusionDB(object):
+class AGFusionDB():
     """
     Class to handle methods around interacting with the AGFusion SQLite3
     database
@@ -58,7 +57,7 @@ class AGFusionDB(object):
         self.conn.close()
 
 
-class AGFusionDBBManager(AGFusionDB):
+class AGFusionDBBManager():
     """
     Class to handle methods managing the SQLite3 database
 
@@ -68,7 +67,19 @@ class AGFusionDBBManager(AGFusionDB):
 
     def __init__(self, database, build, server):
 
-        super(AGFusionDBBManager, self).__init__(database)
+        self.database = os.path.abspath(database)
+        self.fastas = {}
+
+        self.logger = logging.getLogger('AGFusion')
+        self.logger.setLevel(logging.INFO)
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.INFO)
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+        ch.setFormatter(formatter)
+        self.logger.addHandler(ch)
+
         self.build = build
         self.server = server
 
@@ -78,6 +89,16 @@ class AGFusionDBBManager(AGFusionDB):
             self.logger.info(
                 "Created the database " + os.path.abspath(self.database)
             )
+
+        self.sqlite3_db = sqlite3.connect(
+            os.path.abspath(self.database)
+        )
+        self.sqlite3_cursor = self.sqlite3_db.cursor()
+        self.sqlite3_db.commit()
+
+        self.logger.info(
+            'Connected to the database ' + os.path.abspath(self.database)
+        )
 
         import MySQLdb
 

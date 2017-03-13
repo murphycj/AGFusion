@@ -4,6 +4,8 @@ import sys
 import argparse
 import logging
 import urllib
+import gzip
+import shutil
 
 import agfusion
 import pyensembl
@@ -132,23 +134,17 @@ def main():
         '--colors',
         type=str,
         required=False,
-        nargs='+',
         default=None,
-        help='(Optional) Space-delimited list of domain name and color to ' +
-            'specify certain colors for domains. Format --color domain_name:color' +
-            ' (e.g. --color Pkinase_Tyr:blue I-set:#006600). ' +
-            'Can use specific color names for hex representation. Default ' +
-            'blue for everything.'
+        action='append',
+        help='(Optional) Re-color a domain. Provide the original name of the domain then your color (semi-colon delimited, all in quotes). Can specify --recolor multiples for each domain. (e.g. --color \"Pkinase_Tyr:blue\" --color \"I-set:#006600\").'
     )
     parser.add_argument(
         '--rename',
         type=str,
         required=False,
-        nargs='+',
         default=None,
-        help='(Optional) Space-delimited list of domain name and new name to ' +
-            'rename particular domains. Format --rename domain_name:new_domain_name' +
-            ' (e.g. --rename Pkinase_Tyr:Kinase).'
+        action='append',
+        help='(Optional) Rename a domain. Provide the original name of the domain then your new name (semi-colon delimited, all in quotes). Can specify --rename multiples for each domain. (e.g. --rename \"Pkinase_Tyr:Kinase\").'
     )
     parser.add_argument(
         '--type',
@@ -225,13 +221,14 @@ def main():
     # by the package
 
     if args.db is None:
-        file_path = os.path.split(__file__)[0]
+        file_path = os.path.join(
+            os.path.split(__file__)[0],
+            'data',
+            'agfusion.db'
+        )
+
         db = agfusion.AGFusionDB(
-            os.path.join(
-                file_path,
-                'data',
-                'agfusion.db'
-            )
+            file_path
         )
     else:
         db = agfusion.AGFusionDB(args.db)
@@ -283,7 +280,7 @@ def main():
 
     if args.colors is not None:
         for i in args.colors:
-            pair = i.split(':')
+            pair = i.split(';')
 
             assert len(pair) == 2, " did not properly specify --colors"
 
@@ -294,7 +291,7 @@ def main():
 
     if args.rename is not None:
         for i in args.rename:
-            pair = i.split(':')
+            pair = i.split(';')
 
             assert len(pair) == 2, " did not properly specify --rename"
 

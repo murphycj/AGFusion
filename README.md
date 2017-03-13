@@ -21,9 +21,13 @@ agfusion \
   --out DLG1-BRAF
 ```
 
-Example output visualization of the domain structure of the DLG1-BRAF fusion:
+The protein domain structure of the DLG1-BRAF fusion:
 
-![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000132176-ENSMUST00000002487.png)
+![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000064477-ENSMUST00000002487.png)
+
+The exon structure of the DLG1-BRAF fusion:
+
+![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000064477-ENSMUST00000002487.exon.png)
 
 ### Plotting wild-type protein
 
@@ -71,35 +75,41 @@ agfusion \
   --rename Pkinase_Tyr:Kinase L27_1:L27
 ```
 
-![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000132176-ENSMUST00000002487-color.png)
+![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000064477-ENSMUST00000002487-recolorRename.png)
 
 ### Re-scaling protein length
 
 You can rescale the protein length so that images of two different fusions have appropriate relative lengths when plotted side by side:
 
 ```
-agfusion \
+../bin/agfusion \
   --gene5prime ENSMUSG00000022770 \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
   --junction3prime 39648486 \
   --genome GRCm38 \
   --out DLG1-BRAF \
+  --colors "Serine-threonine/tyrosine-protein kinase catalytic domain;red" \
+  --colors "L27_1;blue" \
+  --rename "Serine-threonine/tyrosine-protein kinase catalytic domain;Kinase" \
+  --rename "L27_1;L27" \
   --scale 2000
-
-agfusion \
+../bin/agfusion \
   --gene5prime FGFR2 \
   --gene3prime DNM3 \
   --junction5prime 130167703 \
   --junction3prime 162019992 \
   --genome GRCm38 \
   --out FGFR2-DNM3 \
+  --rename "Immunoglobulin I-set;I-set" \
+  --rename "Dynamin GTPase effector;Dynamin" \
+  --rename "Serine-threonine/tyrosine-protein kinase catalytic domain;Kinase" \
+  --colors "Serine-threonine/tyrosine-protein kinase catalytic domain;red" \
   --scale 2000
-
 ```
 
-![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000132176-ENSMUST00000002487-scale.png)
-![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000120187-ENSMUST00000086074.png)
+![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000064477-ENSMUST00000002487-rescale.png)
+![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000122054-ENSMUST00000070330-rescale.png)
 
 # Advanced Usage
 
