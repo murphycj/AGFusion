@@ -37,6 +37,7 @@ setup(
     packages=find_packages(),
     description="Python package providing that can visualize different annotations of a gene fusion.",
     author='Charles Murphy',
+    author_email='murphy.charlesj@gmail.com',
     license='MIT',
     url='https://github.com/murphycj/AGFusion',
     long_description=README,
