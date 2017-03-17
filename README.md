@@ -6,8 +6,9 @@ Docs are at http://pythonhosted.org/agfusion/
 ## Table of Contents
 
 - [Examples](#Examples)
-  * [Basic Usage](#Basic Usage)
-  * [Plotting wild-type protein](#Plotting wild-type protein)
+  * [Basic Usage](#Basic-Usage)
+  * [Plotting wild-type protein](#Plotting-wild-type-protein)
+  * [Canonical gene isoforms](#Canonical-gene-isoforms)
 
 
 ## Examples
