@@ -7,8 +7,14 @@ Docs are at http://pythonhosted.org/agfusion/
 
 - [Examples](#Examples)
   * [Basic Usage](#Basic-Usage)
-  * [Plotting wild-type protein](#Plotting-wild-type-protein)
+  * [Plotting wild-type protein and exon structure](#Plotting-wild-type-protein)
   * [Canonical gene isoforms](#Canonical-gene-isoforms)
+  * [Domain names and colors](#Domain-names-and-colors)
+  * [Re-scaling protein length](#Re-scaling-protein-length)
+- [Installation](#Installation)
+- [Dependencies](#Dependencies)
+- [License](#License)
+- [Citing AGFusion](#Citing-AGFusion)
 
 
 ## Examples
@@ -37,7 +43,7 @@ The exon structure of the DLG1-BRAF fusion:
 
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000064477-ENSMUST00000002487.exon.png)
 
-### Plotting wild-type protein
+### Plotting wild-type protein and exon structure
 
 You can additionally plot the wild-type proteins for each gene with --WT flag.
 
@@ -125,7 +131,7 @@ agfusion \
 
 ### Building your own database
 
-You need to have mysql and the MySQLdb python package installed.
+Under construction...
 
 # Installation
 
