@@ -10,7 +10,7 @@ Docs are at http://pythonhosted.org/agfusion/
   * [Plotting wild-type protein](#Plotting wild-type protein)
 
 
-# Examples
+## Examples
 
 ### Basic Usage
 
