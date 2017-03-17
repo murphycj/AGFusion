@@ -1,10 +1,12 @@
+import itertools
+import os
+import re
+import sys
+
 from agfusion import utils, exceptions, plot
 import pandas
 from Bio import Seq, SeqIO, SeqRecord, SeqUtils
 from Bio.Alphabet import generic_dna, generic_protein
-
-import itertools
-import os
 
 # matplotlib.rcParams['interactive'] = False
 
@@ -18,25 +20,115 @@ class _Gene():
     """
 
     def __init__(self, gene=None, junction=0, pyensembl_data=None,
-                 genome='', gene5prime=False, db=None):
+                 genome='', gene5prime=False, db=None, noncanonical=False):
 
-        gene = gene.upper()
+        gene_found = False
+        provided_transcript = False # indicates user if user provided transcript
 
         self.domains = []
-        self.transcript_ids = {}
+        self.transcripts = {} # stores transcripts and their DB keys
 
-        # search for ensembl gene id first
+        # find the appropriate Ensembl gene ID
 
-        if gene in pyensembl_data.gene_ids():
+        if re.findall('^NM_',gene) or re.findall('^NR_',gene):
 
-            self.gene = pyensembl_data.gene_by_id(gene)
+            # if it is RefSeq ID
 
-        else:
+            sqlite3_command = "SELECT * FROM " + db.build + "_transcript WHERE refseq_id==\"" + gene + "\""
+            db.logger.debug('SQLite - ' + sqlite3_command)
+            db.sqlite3_cursor.execute(
+                sqlite3_command
+            )
+            tmp = db.sqlite3_cursor.fetchall()
 
-            # search by gene symbol next
+            if len(tmp)==1:
+                self.transcripts[tmp[0][2]] = tmp[0][0]
+                db.logger.debug('Found RefSeq entry for %s' % gene)
+                gene_found = True
+                provided_transcript = True
+
+                #fetch the gene
+
+                sqlite3_command = "SELECT * FROM " + db.build + " WHERE gene_id==\"" + tmp[0][1] + "\""
+                db.logger.debug('SQLite - ' + sqlite3_command)
+                db.sqlite3_cursor.execute(
+                    sqlite3_command
+                )
+                tmp = db.sqlite3_cursor.fetchall()
+                self.gene = pyensembl_data.gene_by_id(tmp[0][1])
+
+            elif len(tmp)>1:
+                db.logger.error('Found too many RefSeq entries for %s!' % gene)
+                for i in tmp:
+                    db.logger.error(i)
+                sys.exit()
+            else:
+                db.logger.debug('Found no RefSeq entry for %s' % gene)
+
+        if gene.isdigit() and not gene_found:
+
+            # if it is an entrez gene ID
+
+            sqlite3_command = "SELECT * FROM " + db.build + " WHERE entrez_id==\"" + gene + "\""
+            db.logger.debug('SQLite - ' + sqlite3_command)
+            db.sqlite3_cursor.execute(
+                sqlite3_command
+            )
+            tmp = db.sqlite3_cursor.fetchall()
+
+            if len(tmp)==1:
+                self.gene = pyensembl_data.gene_by_id(tmp[0][1])
+                db.logger.debug('Found Entrez gene ID entry for %s: %s' % (gene,self.gene.id))
+                gene_found = True
+            elif len(tmp)>1:
+                db.logger.error('Found too many Entrez gene ID entries for %s!' % gene)
+                for i in tmp:
+                    db.logger.error(i)
+                sys.exit()
+            else:
+                db.logger.debug('Found no Entrez gene ID entry for %s' % gene)
+
+        if re.findall('(^ENS.*G)', gene.upper()) and not gene_found:
+
+            # if it is ensembl gene id
+
+            if gene in pyensembl_data.gene_ids():
+                self.gene = pyensembl_data.gene_by_id(gene.upper())
+                db.logger.debug('Found Enrez gene ID entry for %s: %s' % (gene,self.gene.id))
+                gene_found = True
+            else:
+                db.logger.debug('Cannot find Ensembl gene id %s in database!' % gene)
+
+        if re.findall('(^ENS.*T)', gene.upper()) and not gene_found:
+
+            # if it is ensembl transcript id
+
+            if gene in pyensembl_data.transcript_ids():
+                transcript = pyensembl_data.transcript_by_id(gene.upper())
+                self.gene = transcript.gene
+
+                db.logger.debug('Found Ensembl transcript entry for %s: %s' % (gene,self.gene.id))
+                gene_found = True
+                provided_transcript = True
+            else:
+                db.logger.debug('Found no Ensembl transcript entry for %s' % gene)
+
+            sqlite3_command = "SELECT * FROM " + db.build + "_transcript WHERE transcript_stable_id==\"" + gene + "\""
+            db.logger.debug('SQLite - ' + sqlite3_command)
+            db.sqlite3_cursor.execute(
+                sqlite3_command
+            )
+            tmp = db.sqlite3_cursor.fetchall()
+            self.transcripts[tmp[0][2]] = tmp[0][0]
+
+        if not gene_found:
+
+            # else check if it is a gene symbol
 
             if pyensembl_data.species.latin_name == 'mus_musculus':
                 gene = gene.capitalize()
+            else:
+                gene = gene.upper()
 
             if gene in pyensembl_data.gene_names():
                 temp = pyensembl_data.genes_by_name(gene)
@@ -50,11 +142,19 @@ class _Gene():
                     raise exceptions.TooManyGenesException(gene, ids, genome)
                 else:
                     self.gene = temp[0]
+                    gene_found = True
+                    db.logger.debug('Found gene symbol entry for %s: %s' % (gene,self.gene.id))
             else:
-                if gene5prime:
-                    raise exceptions.GeneIDException5prime(gene)
-                else:
-                    raise exceptions.GeneIDException3prime(gene)
+                db.logger.debug('Found no gene symbol entry for %s' % gene)
+
+
+        # if gene has not been identified yet
+
+        if not gene_found:
+            db.logger.error('Could not match %s to any ID in Ensembl, gene symbols, RefSeq, or Entrez gene ID!' % gene)
+            sys.exit()
+
+        # else continue with processing
 
         self.junction = junction
 
@@ -73,30 +173,40 @@ class _Gene():
         )
         tmp = db.sqlite3_cursor.fetchall()
 
-        self.entrez_id = tmp[0][2]
         self.gene_id = tmp[0][0]
+        self.entrez_id = tmp[0][2]
+        self.canonical_transcript_id = tmp[0][4]
 
-        sqlite3_command = "SELECT * FROM " + db.build + "_transcript WHERE transcript_id==\"" + tmp[0][4] + "\""
-        db.logger.debug('SQLite - ' + sqlite3_command)
-        db.sqlite3_cursor.execute(
-            sqlite3_command
-        )
-        tmp = db.sqlite3_cursor.fetchall()
+        # get the transcripts that will be processed and annotated
 
-        self.canonical_transcript_id = tmp[0][2]
+        if not noncanonical and not provided_transcript:
 
-        # fetch transcript ids
+            sqlite3_command = "SELECT * FROM " + db.build + "_transcript WHERE transcript_id==\"" + self.canonical_transcript_id + "\""
+            db.logger.debug('SQLite - ' + sqlite3_command)
+            db.sqlite3_cursor.execute(
+                sqlite3_command
+            )
+            tmp = db.sqlite3_cursor.fetchall()
 
-        sqlite3_command = "SELECT * FROM " + db.build + "_transcript WHERE gene_id==\"" + self.gene_id + "\""
-        db.logger.debug('SQLite - ' + sqlite3_command)
-        db.sqlite3_cursor.execute(
-            sqlite3_command
-        )
-        tmp = db.sqlite3_cursor.fetchall()
+            self.transcripts[tmp[0][2]] = tmp[0][0]
+        elif not noncanonical and provided_transcript:
+            pass
+        else:
 
-        for transcript in tmp:
-            self.transcript_ids[transcript[2]] = transcript[0]
+            if provided_transcript and noncanonical:
+                db.logger.warn("You provided a transcript ID as well as specified --noncanonical flag. Will process all the gene's transcripts.")
 
+            # fetch transcript ids
+
+            sqlite3_command = "SELECT * FROM " + db.build + "_transcript WHERE gene_id==\"" + self.gene_id + "\""
+            db.logger.debug('SQLite - ' + sqlite3_command)
+            db.sqlite3_cursor.execute(
+                sqlite3_command
+            )
+            tmp = db.sqlite3_cursor.fetchall()
+
+            for transcript in tmp:
+                self.transcripts[transcript[2]] = transcript[0]
 
 class Fusion():
     """
@@ -118,7 +228,8 @@ class Fusion():
             junction=gene5primejunction,
             pyensembl_data=pyensembl_data,
             gene5prime=True,
-            db=db
+            db=db,
+            noncanonical=noncanonical
         )
 
         self.gene3prime = _Gene(
@@ -126,7 +237,8 @@ class Fusion():
             junction=gene3primejunction,
             pyensembl_data=pyensembl_data,
             gene5prime=False,
-            db=db
+            db=db,
+            noncanonical=noncanonical
         )
 
         self.name = self.gene5prime.gene.name + '-' + self.gene3prime.gene.name
@@ -141,10 +253,10 @@ class Fusion():
         self.transcripts = {}
 
         for combo in list(itertools.product(
-                        self.gene5prime.gene.transcripts,
-                        self.gene3prime.gene.transcripts)):
-            transcript1 = combo[0]
-            transcript2 = combo[1]
+                        self.gene5prime.transcripts.keys(),
+                        self.gene3prime.transcripts.keys())):
+            transcript1 = pyensembl_data.transcript_by_id(combo[0])
+            transcript2 = pyensembl_data.transcript_by_id(combo[1])
 
             if transcripts_5prime is not None \
                     and transcript1.id not in transcripts_5prime:
@@ -154,14 +266,6 @@ class Fusion():
             if transcripts_3prime is not None \
                     and transcript2.id not in transcripts_3prime:
 
-                continue
-
-            if (not noncanonical) and \
-                    (transcript1.id != self.gene5prime.canonical_transcript_id):
-                continue
-
-            if (not noncanonical) and \
-                    (transcript2.id != self.gene3prime.canonical_transcript_id):
                 continue
 
             # skip if the junction is outside the range of either transcript

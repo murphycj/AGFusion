@@ -7,7 +7,7 @@ Docs are at http://pythonhosted.org/agfusion/
 
 ### Basic Usage
 
-You just need to provide the two fusion gene partners (gene symbol or Ensembl ID), their predicted fusion junctions in genomic coordinates, and the genome build.
+You just need to provide the two fusion gene partners (gene symbol, Ensembl ID, or Entrez gene ID), their predicted fusion junctions in genomic coordinates, and the genome build. You can also specify certain transcripts with Ensembl transcript ID or RefSeq ID
 
 Example usage from the command line:
 
@@ -71,8 +71,10 @@ agfusion \
   --junction3prime 39648486 \
   --genome GRCm38 \
   --out DLG1-BRAF \
-  --colors Pkinase_Tyr:red L27_1:#00cc00 \
-  --rename Pkinase_Tyr:Kinase L27_1:L27
+  --colors "Serine-threonine/tyrosine-protein kinase catalytic domain;red" \
+  --colors "L27_1;#00cc00" \
+  --rename "Serine-threonine/tyrosine-protein kinase catalytic domain;Kinase" \
+  --rename "L27_1;L27"
 ```
 
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000064477-ENSMUST00000002487-recolorRename.png)
