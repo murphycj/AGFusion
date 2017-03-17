@@ -34,7 +34,7 @@ class _Gene():
 
             # if it is RefSeq ID
 
-            sqlite3_command = "SELECT * FROM " + db.build + "_transcript WHERE refseq_id==\"" + gene + "\""
+            sqlite3_command = "SELECT * FROM " + db.build + "_refseq WHERE refseq_id==\"" + gene + "\""
             db.logger.debug('SQLite - ' + sqlite3_command)
             db.sqlite3_cursor.execute(
                 sqlite3_command
@@ -42,20 +42,15 @@ class _Gene():
             tmp = db.sqlite3_cursor.fetchall()
 
             if len(tmp)==1:
-                self.transcripts[tmp[0][2]] = tmp[0][0]
+                self.transcripts[tmp[0][1]] = tmp[0][0]
                 db.logger.debug('Found RefSeq entry for %s' % gene)
                 gene_found = True
                 provided_transcript = True
 
                 #fetch the gene
 
-                sqlite3_command = "SELECT * FROM " + db.build + " WHERE gene_id==\"" + tmp[0][1] + "\""
-                db.logger.debug('SQLite - ' + sqlite3_command)
-                db.sqlite3_cursor.execute(
-                    sqlite3_command
-                )
-                tmp = db.sqlite3_cursor.fetchall()
-                self.gene = pyensembl_data.gene_by_id(tmp[0][1])
+                transcript = pyensembl_data.transcript_by_id(tmp[0][1])
+                self.gene = transcript.gene
 
             elif len(tmp)>1:
                 db.logger.error('Found too many RefSeq entries for %s!' % gene)
@@ -181,13 +176,14 @@ class _Gene():
 
         if not noncanonical and not provided_transcript:
 
+            # if only want the canonical and did not specify a certain transcript
+
             sqlite3_command = "SELECT * FROM " + db.build + "_transcript WHERE transcript_id==\"" + self.canonical_transcript_id + "\""
             db.logger.debug('SQLite - ' + sqlite3_command)
             db.sqlite3_cursor.execute(
                 sqlite3_command
             )
             tmp = db.sqlite3_cursor.fetchall()
-
             self.transcripts[tmp[0][2]] = tmp[0][0]
         elif not noncanonical and provided_transcript:
             pass
@@ -714,14 +710,14 @@ class FusionTranscript(object):
         self.db.sqlite3_cursor.execute(
             sqlite3_command
         )
-        gene5prime_translation_id = self.db.sqlite3_cursor.fetchall()[0][4]
+        gene5prime_translation_id = self.db.sqlite3_cursor.fetchall()[0][3]
 
         sqlite3_command = "SELECT * FROM " + self.db.build + "_transcript WHERE transcript_stable_id==\"" + self.transcript2.id + "\""
         self.db.logger.debug('SQLite - ' + sqlite3_command)
         self.db.sqlite3_cursor.execute(
             sqlite3_command
         )
-        gene3prime_translation_id = self.db.sqlite3_cursor.fetchall()[0][4]
+        gene3prime_translation_id = self.db.sqlite3_cursor.fetchall()[0][3]
 
         for protein_database in self.protein_databases:
 

@@ -142,8 +142,26 @@ class AGFusionDBBManager():
             "transcript_id text," + \
             "gene_id text," + \
             "transcript_stable_id text," + \
-            "refseq_id text," + \
             "translation_id text);"
+
+        self.logger.info('SQLite - ' + sqlite3_command)
+
+        self.sqlite3_cursor.execute(
+            sqlite3_command
+        )
+        self.sqlite3_db.commit()
+
+        # refseq table
+
+        self.sqlite3_cursor.execute(
+            'drop table if exists ' +
+            self.build + '_refseq'
+        )
+
+        sqlite3_command = "CREATE TABLE " + self.build + "_refseq (" + \
+            "transcript_id text," + \
+            "transcript_stable_id text," + \
+            "refseq_id text);"
 
         self.logger.info('SQLite - ' + sqlite3_command)
 
@@ -264,8 +282,7 @@ class AGFusionDBBManager():
             transcripts[transcript[0]] = {
                 'gene_id': transcript[1],
                 'transcript_stable_id': transcript[2],
-                'translation_id': '',
-                'refseq_id': ''
+                'translation_id': ''
             }
 
         # Fetch all transcripts with tranlstions
@@ -278,33 +295,51 @@ class AGFusionDBBManager():
         for transcript in self.ensembl_cursor.fetchall():
             transcripts[transcript[0]]['translation_id'] = transcript[1]
 
-        # fetch RefSeq IDS
-
-        mysql_command = "SELECT transcript.transcript_id, xref.display_label FROM transcript, object_xref, xref, external_db WHERE transcript.transcript_id = object_xref.ensembl_id AND object_xref.ensembl_object_type = \'Transcript\' AND object_xref.xref_id = xref.xref_id AND xref.external_db_id = external_db.external_db_id AND external_db.db_name = \'RefSeq_mRNA\';"
-        self.logger.info('MySQL - ' + mysql_command)
-        self.ensembl_cursor.execute(
-            mysql_command
-        )
-        for transcript in self.ensembl_cursor.fetchall():
-            transcripts[transcript[0]]['refseq_id'] = transcript[1]
-
         transcripts = [
             [
                 i,
                 transcripts[i]['gene_id'],
                 transcripts[i]['transcript_stable_id'],
-                transcripts[i]['refseq_id'],
                 transcripts[i]['translation_id']
             ] for i in transcripts.keys()
         ]
 
         self.logger.info(
             'SQLite - INSERT INTO ' +
-            self.build + '_transcript VALUES (transcript_id,gene_id,transcript_stable_id,refseq_id,translation_id)'
+            self.build + '_transcript VALUES (transcript_id,gene_id,transcript_stable_id,translation_id)'
         )
 
         self.sqlite3_cursor.executemany(
-            'INSERT INTO ' + self.build + '_transcript VALUES (?,?,?,?,?)', transcripts
+            'INSERT INTO ' + self.build + '_transcript VALUES (?,?,?,?)', transcripts
+        )
+
+        self.sqlite3_db.commit()
+
+    def fetch_refseq_table(self):
+
+        # fetch RefSeq IDS
+
+        mysql_command = "SELECT transcript.transcript_id, transcript.stable_id, xref.display_label FROM transcript, object_xref, xref, external_db WHERE transcript.transcript_id = object_xref.ensembl_id AND object_xref.ensembl_object_type = \'Transcript\' AND object_xref.xref_id = xref.xref_id AND xref.external_db_id = external_db.external_db_id AND external_db.db_name = \'RefSeq_mRNA\';"
+        self.logger.info('MySQL - ' + mysql_command)
+        self.ensembl_cursor.execute(
+            mysql_command
+        )
+
+        refseqs = [
+            [
+                i[0],
+                i[1],
+                i[2]
+            ] for i in self.ensembl_cursor.fetchall()
+        ]
+
+        self.logger.info(
+            'SQLite - INSERT INTO ' +
+            self.build + '_refseq VALUES (transcript_id,transcript_stable_id,refseq_id)'
+        )
+
+        self.sqlite3_cursor.executemany(
+            'INSERT INTO ' + self.build + '_refseq VALUES (?,?,?)', refseqs
         )
 
         self.sqlite3_db.commit()

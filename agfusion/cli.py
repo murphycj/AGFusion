@@ -51,6 +51,8 @@ def builddb():
 
     db.fetch_transcript_table()
 
+    db.fetch_refseq_table()
+
     db.logger.info('Fetching protein annotation data...')
 
     db.fetch_protein_annotation()

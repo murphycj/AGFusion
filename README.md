@@ -135,21 +135,21 @@ Under construction...
 
 # Installation
 
-First you need to install pyensembl (and the other dependencies listed at the bottom of this readme) and download the reference genome you will use by running one of the following.
+First you need to install pyensembl (and the other dependencies listed at the bottom) and download the reference genome you will use by running one of the following.
 
-For GRCh38:
+For GRCh38/hg38:
 
 ```
 pyensembl install --release 84 --species homo_sapiens
 ```
 
-For GRCh37:
+For GRCh37/hg19:
 
 ```
 pyensembl install --release 75 --species homo_sapiens
 ```
 
-For GRCm38:
+For GRCm38/mm10:
 
 ```
 pyensembl install --release 84 --species mus_musculus
