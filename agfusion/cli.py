@@ -10,212 +10,7 @@ import shutil
 import agfusion
 import pyensembl
 
-
-def builddb():
-
-    parser = argparse.ArgumentParser(
-        description='Build the SQLite3 database for a reference ' +
-        'genomes by querying Biomart. The the database given by --database ' +
-        'already exists then that portion will be overwritten.'
-    )
-    parser.add_argument(
-        '--database',
-        type=str,
-        required=True,
-        help='Path to the database file (e.g. agfusion.db)'
-    )
-    parser.add_argument(
-        '--build',
-        type=str,
-        required=True,
-        help='homo_sapiens_core_84_38 (for GRCh38), ' +
-        'homo_sapiens_core_75_37 (for GRCh37), or ' +
-        'mus_musculus_core_84_38 (for GRCm38)'
-    )
-    parser.add_argument(
-        '--server',
-        type=str,
-        required=False,
-        default='ensembldb.ensembl.org',
-        help='(optional) Ensembl server (default ensembldb.ensembl.org)'
-    )
-    args = parser.parse_args()
-
-    db = agfusion.AGFusionDBBManager(args.database, args.build, args.server)
-
-    db.logger.info('Fetching alternative gene names...')
-
-    db.fetch_gene_names()
-
-    db.logger.info('Fetching transcript tables...')
-
-    db.fetch_transcript_table()
-
-    db.fetch_refseq_table()
-
-    db.logger.info('Fetching protein annotation data...')
-
-    db.fetch_protein_annotation()
-
-
-def main():
-
-    parser = argparse.ArgumentParser(
-        description='Annotate Gene Fusion (AGFusion)'
-    )
-    parser.add_argument(
-        '--gene5prime',
-        type=str,
-        required=True,
-        help='5\' gene partner'
-    )
-    parser.add_argument(
-        '--gene3prime',
-        type=str,
-        required=True,
-        help='3\' gene partner'
-    )
-    parser.add_argument(
-        '--junction5prime',
-        type=int,
-        required=True,
-        help='Genomic location of predicted fuins for the 5\' gene partner. ' +
-             'The 1-based position that is the last nucleotide included in ' +
-             'the fusion before the junction.'
-    )
-    parser.add_argument(
-        '--junction3prime',
-        type=int,
-        required=True,
-        help='Genomic location of predicted fuins for the 3\' gene partner. ' +
-             'The 1-based position that is the first nucleotide included in ' +
-             'the fusion after the junction.'
-    )
-    parser.add_argument(
-        '--out',
-        type=str,
-        required=True,
-        help='Directory to save results'
-    )
-    parser.add_argument(
-        '--genome',
-        type=str,
-        required=True,
-        help='GRCh38 (or homo_sapiens_core_84_38), GRCh37 (or homo_sapiens_core_75_37), or GRCm38 (or mus_musculus_core_84_38)'
-    )
-    parser.add_argument(
-        '--db',
-        type=str,
-        default=None,
-        required=False,
-        help='(Optional) The SQLite3 database. Defaults to using the ' +
-             'database provided by the package.'
-    )
-    parser.add_argument(
-        '--noncanonical',
-        action='store_true',
-        required=False,
-        default=False,
-        help='(Optional) Include non-canonical gene transcripts ' +
-             'in the analysis (default False).'
-    )
-    parser.add_argument(
-        '--protein_databases',
-        type=str,
-        required=False,
-        nargs='+',
-        default=['Pfam', 'transmembrane'],
-        help='(Optional) Space-delimited list of one or more protein ' +
-             'feature databases to include when visualizing proteins. ' +
-             'Options are: Pfam, Smart, Superfamily, TIGRfam, Prosite_profiles, ' +
-             'transmembrane, low_complexity, coiled_coil, Prints ' +
-             'PIRSF, and signal_peptide ' +
-             '(default includes Pfam and transmembrane).'
-    )
-    parser.add_argument(
-        '--colors',
-        type=str,
-        required=False,
-        default=None,
-        action='append',
-        help='(Optional) Re-color a domain. Provide the original name of the domain then your color (semi-colon delimited, all in quotes). Can specify --recolor multiples for each domain. (e.g. --color \"Pkinase_Tyr:blue\" --color \"I-set:#006600\").'
-    )
-    parser.add_argument(
-        '--rename',
-        type=str,
-        required=False,
-        default=None,
-        action='append',
-        help='(Optional) Rename a domain. Provide the original name of the domain then your new name (semi-colon delimited, all in quotes). Can specify --rename multiples for each domain. (e.g. --rename \"Pkinase_Tyr:Kinase\").'
-    )
-    parser.add_argument(
-        '--type',
-        type=str,
-        required=False,
-        default='png',
-        help='(Optional) Image file type (png, jpeg, pdf). Default: png'
-    )
-    parser.add_argument(
-        '--width',
-        type=int,
-        required=False,
-        default=10,
-        help='(Optional) Image width in inches (default 10).'
-    )
-    parser.add_argument(
-        '--height',
-        type=int,
-        required=False,
-        default=3,
-        help='(Optional) Image file height in inches (default 3).'
-    )
-    parser.add_argument(
-        '--dpi',
-        type=int,
-        required=False,
-        default=None,
-        help='(Optional) Dots per inch.'
-    )
-    parser.add_argument(
-        '--fontsize',
-        type=int,
-        required=False,
-        default=12,
-        help='(Optional) Fontsize (default 12).'
-    )
-    parser.add_argument(
-        '--scale',
-        type=int,
-        required=False,
-        default=None,
-        help='(Optional) Set maximum width (in amino acids) of the figure to rescale the fusion (default: max length of fusion product)'
-    )
-    parser.add_argument(
-        '--WT',
-        action='store_true',
-        required=False,
-        help='(Optional) Include this to plot wild-type architechtures of the 5\' and 3\' genes'
-    )
-    parser.add_argument(
-        '--middlestar',
-        action='store_true',
-        required=False,
-        help='(Optional) Insert a * at the junction position for the cdna, cds, and protein sequences (default False).'
-    )
-    parser.add_argument(
-        '--no_domain_labels',
-        action='store_true',
-        required=False,
-        help='(Optional) Do not label domains.'
-    )
-    parser.add_argument(
-        '--version',
-        action='version',
-        version=agfusion.__version__
-    )
-
-    args = parser.parse_args()
-
+def annotate(args):
     if not os.path.exists(args.out):
         os.mkdir(args.out)
 
@@ -314,3 +109,236 @@ def main():
         no_domain_labels=args.no_domain_labels,
         plot_WT=args.WT
         )
+
+def builddb(args):
+
+    db = agfusion.AGFusionDBBManager(args.database, args.build, args.server)
+
+    db.logger.info('Fetching alternative gene names...')
+
+    db.fetch_gene_names()
+
+    db.logger.info('Fetching transcript tables...')
+
+    db.fetch_transcript_table()
+
+    db.fetch_refseq_table()
+
+    db.logger.info('Fetching protein annotation data...')
+
+    db.fetch_protein_annotation()
+
+def add_common_flags(parser):
+    parser.add_argument(
+        '--out',
+        type=str,
+        required=True,
+        help='Directory to save results'
+    )
+    parser.add_argument(
+        '--genome',
+        type=str,
+        required=True,
+        help='GRCh38 (or homo_sapiens_core_84_38), GRCh37 (or homo_sapiens_core_75_37), or GRCm38 (or mus_musculus_core_84_38)'
+    )
+    parser.add_argument(
+        '--db',
+        type=str,
+        default=None,
+        required=False,
+        help='(Optional) The SQLite3 database. Defaults to using the ' +
+             'database provided by the package.'
+    )
+    parser.add_argument(
+        '--noncanonical',
+        action='store_true',
+        required=False,
+        default=False,
+        help='(Optional) Include non-canonical gene transcripts ' +
+             'in the analysis (default False).'
+    )
+    parser.add_argument(
+        '--protein_databases',
+        type=str,
+        required=False,
+        nargs='+',
+        default=['Pfam', 'transmembrane'],
+        help='(Optional) Space-delimited list of one or more protein ' +
+             'feature databases to include when visualizing proteins. ' +
+             'Options are: Pfam, Smart, Superfamily, TIGRfam, Prosite_profiles, ' +
+             'transmembrane, low_complexity, coiled_coil, Prints ' +
+             'PIRSF, and signal_peptide ' +
+             '(default includes Pfam and transmembrane).'
+    )
+    parser.add_argument(
+        '--colors',
+        type=str,
+        required=False,
+        default=None,
+        action='append',
+        help='(Optional) Re-color a domain. Provide the original name of the domain then your color (semi-colon delimited, all in quotes). Can specify --recolor multiples for each domain. (e.g. --color \"Pkinase_Tyr:blue\" --color \"I-set:#006600\").'
+    )
+    parser.add_argument(
+        '--rename',
+        type=str,
+        required=False,
+        default=None,
+        action='append',
+        help='(Optional) Rename a domain. Provide the original name of the domain then your new name (semi-colon delimited, all in quotes). Can specify --rename multiples for each domain. (e.g. --rename \"Pkinase_Tyr:Kinase\").'
+    )
+    parser.add_argument(
+        '--type',
+        type=str,
+        required=False,
+        default='png',
+        help='(Optional) Image file type (png, jpeg, pdf). Default: png'
+    )
+    parser.add_argument(
+        '--width',
+        type=int,
+        required=False,
+        default=10,
+        help='(Optional) Image width in inches (default 10).'
+    )
+    parser.add_argument(
+        '--height',
+        type=int,
+        required=False,
+        default=3,
+        help='(Optional) Image file height in inches (default 3).'
+    )
+    parser.add_argument(
+        '--dpi',
+        type=int,
+        required=False,
+        default=None,
+        help='(Optional) Dots per inch.'
+    )
+    parser.add_argument(
+        '--fontsize',
+        type=int,
+        required=False,
+        default=12,
+        help='(Optional) Fontsize (default 12).'
+    )
+    parser.add_argument(
+        '--WT',
+        action='store_true',
+        required=False,
+        help='(Optional) Include this to plot wild-type architechtures of the 5\' and 3\' genes'
+    )
+    parser.add_argument(
+        '--middlestar',
+        action='store_true',
+        required=False,
+        help='(Optional) Insert a * at the junction position for the cdna, cds, and protein sequences (default False).'
+    )
+    parser.add_argument(
+        '--no_domain_labels',
+        action='store_true',
+        required=False,
+        help='(Optional) Do not label domains.'
+    )
+    parser.add_argument(
+        '--version',
+        action='version',
+        version=agfusion.__version__
+    )
+
+def main():
+
+    parser = argparse.ArgumentParser(
+        description='Annotate Gene Fusion (AGFusion)'
+    )
+    subparsers = parser.add_subparsers(help='commands',dest="subparser_name")
+
+    annotate_parser = subparsers.add_parser('annotate', help='Annotate and visualize a single fusion.')
+    annotate_parser.add_argument(
+        '--gene5prime',
+        type=str,
+        required=True,
+        help='5\' gene partner'
+    )
+    annotate_parser.add_argument(
+        '--gene3prime',
+        type=str,
+        required=True,
+        help='3\' gene partner'
+    )
+    annotate_parser.add_argument(
+        '--junction5prime',
+        type=int,
+        required=True,
+        help='Genomic location of predicted fuins for the 5\' gene partner. ' +
+             'The 1-based position that is the last nucleotide included in ' +
+             'the fusion before the junction.'
+    )
+    annotate_parser.add_argument(
+        '--junction3prime',
+        type=int,
+        required=True,
+        help='Genomic location of predicted fuins for the 3\' gene partner. ' +
+             'The 1-based position that is the first nucleotide included in ' +
+             'the fusion after the junction.'
+    )
+    add_common_flags(annotate_parser)
+    annotate_parser.add_argument(
+        '--scale',
+        type=int,
+        required=False,
+        default=None,
+        help='(Optional) Set maximum width (in amino acids) of the figure to rescale the fusion (default: max length of fusion product)'
+    )
+
+    # batch file parser
+
+    batch_parser = subparsers.add_parser('batch', help='Annotate fusions from an output file from a fusion finding algorithm.')
+    batch_parser.add_argument(
+        '--file',
+        type=str,
+        required=True,
+        help='Output file from fusion-finding algorithm.'
+    )
+    batch_parser.add_argument(
+        '--algorithm',
+        type=str,
+        required=True,
+        help='The fusion-finding algorithm. Can be one of the following: ' +
+             'bellerphontes, breakfusion, chimerascan, ericscript, ' +
+             'fusioncatcher, fusionhunter, fusionmap, jaffa, mapsplice, ' +
+             'nfuse, soapfuse, or tophatfusion.'
+    )
+    add_common_flags(batch_parser)
+
+    # download database parser
+
+    database_parser = subparsers.add_parser('database', help='Download database for a reference genome.')
+    database_parser.add_argument(
+        '--database',
+        type=str,
+        required=True,
+        help='Path to the database file (e.g. agfusion.db)'
+    )
+    database_parser.add_argument(
+        '--build',
+        type=str,
+        required=True,
+        help='homo_sapiens_core_84_38 (for GRCh38), ' +
+        'homo_sapiens_core_75_37 (for GRCh37), or ' +
+        'mus_musculus_core_84_38 (for GRCm38)'
+    )
+    database_parser.add_argument(
+        '--server',
+        type=str,
+        required=False,
+        default='ensembldb.ensembl.org',
+        help='(optional) Ensembl server (default ensembldb.ensembl.org)'
+    )
+    args = parser.parse_args()
+
+    if args.subparser_name == 'annotate':
+        annotate(args)
+    elif args.subparser_name == 'batch':
+        pass
+    elif args.subparser_name == 'database':
+        builddb(args)
