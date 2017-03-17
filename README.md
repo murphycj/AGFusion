@@ -3,6 +3,13 @@ For a given gene fusion, AGFusion will predict the cDNA, CDS, and protein sequen
 
 Docs are at http://pythonhosted.org/agfusion/
 
+## Table of Contents
+
+- [Examples](#Examples)
+  * [Basic Usage](#Basic Usage)
+  * [Plotting wild-type protein](#Plotting wild-type protein)
+
+
 # Examples
 
 ### Basic Usage
@@ -84,7 +91,7 @@ agfusion \
 You can rescale the protein length so that images of two different fusions have appropriate relative lengths when plotted side by side:
 
 ```
-../bin/agfusion \
+agfusion \
   --gene5prime ENSMUSG00000022770 \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
@@ -96,7 +103,7 @@ You can rescale the protein length so that images of two different fusions have 
   --rename "Serine-threonine/tyrosine-protein kinase catalytic domain;Kinase" \
   --rename "L27_1;L27" \
   --scale 2000
-../bin/agfusion \
+agfusion \
   --gene5prime FGFR2 \
   --gene3prime DNM3 \
   --junction5prime 130167703 \
