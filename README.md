@@ -27,7 +27,7 @@ You just need to provide the two fusion gene partners (gene symbol, Ensembl ID, 
 Example usage from the command line:
 
 ```
-agfusion \
+agfusion annotate \
   --gene5prime ENSMUSG00000022770 \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
@@ -64,7 +64,7 @@ SIELLARSLPKIHRSASEPSLNRAGFQTEDFSLYACASPKTPIQAGGYGEFAAFK
 You can additionally plot the wild-type proteins for each gene with --WT flag.
 
 ```
-agfusion \
+agfusion annotate \
   --gene5prime ENSMUSG00000022770 \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
@@ -79,7 +79,7 @@ agfusion \
 By default AGFusion only plots the [canonical](http://useast.ensembl.org/Help/Glossary?id=346) gene isoforms, but you can tell AGFusion to include non-canonical isoform with the --noncanonical flag.
 
 ```
-agfusion \
+agfusion annotate \
   --gene5prime ENSMUSG00000022770 \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
@@ -102,7 +102,7 @@ Under construction...
 You can change domain names and colors:
 
 ```
-agfusion \
+agfusion annotate \
   --gene5prime ENSMUSG00000022770 \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
@@ -122,7 +122,7 @@ agfusion \
 You can rescale the protein length so that images of two different fusions have appropriate relative lengths when plotted side by side:
 
 ```
-agfusion \
+agfusion annotate \
   --gene5prime ENSMUSG00000022770 \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
@@ -134,7 +134,7 @@ agfusion \
   --rename "Serine-threonine/tyrosine-protein kinase catalytic domain;Kinase" \
   --rename "L27_1;L27" \
   --scale 2000
-agfusion \
+agfusion annotate \
   --gene5prime FGFR2 \
   --gene3prime DNM3 \
   --junction5prime 130167703 \

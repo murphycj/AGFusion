@@ -71,26 +71,20 @@ def builddb(args):
 
 def add_common_flags(parser):
     parser.add_argument(
+        '-o',
         '--out',
         type=str,
         required=True,
         help='Directory to save results'
     )
     parser.add_argument(
+        '-g',
         '--genome',
         type=str,
         required=True,
         help='Pick one of the following: GRCh38 (for hg38), ' +
              'GRCh37 (for hg19), or GRCm38 (for mm10). Or enter ' +
              'the Ensembl MySQL database name (e.g. homo_sapiens_core_84_38 for GRCm38).'
-    )
-    parser.add_argument(
-        '--db',
-        type=str,
-        default=None,
-        required=False,
-        help='(Optional) The SQLite3 database. Defaults to using the ' +
-             'database provided by the package.'
     )
     parser.add_argument(
         '--noncanonical',
@@ -137,6 +131,7 @@ def add_common_flags(parser):
         help='(Optional) Image file type (png, jpeg, pdf). Default: png'
     )
     parser.add_argument(
+        '-w',
         '--width',
         type=int,
         required=False,
@@ -144,6 +139,7 @@ def add_common_flags(parser):
         help='(Optional) Image width in inches (default 10).'
     )
     parser.add_argument(
+        '-ht',
         '--height',
         type=int,
         required=False,
@@ -183,6 +179,15 @@ def add_common_flags(parser):
         help='(Optional) Do not label domains.'
     )
     parser.add_argument(
+        '--db',
+        type=str,
+        default=None,
+        required=False,
+        help='(Optional) The SQLite3 database. Defaults to using the ' +
+             'database provided by the package.'
+    )
+    parser.add_argument(
+        '-v',
         '--version',
         action='version',
         version=agfusion.__version__
@@ -197,18 +202,21 @@ def main():
 
     annotate_parser = subparsers.add_parser('annotate', help='Annotate and visualize a single fusion.')
     annotate_parser.add_argument(
+        '-g5',
         '--gene5prime',
         type=str,
         required=True,
         help='5\' gene partner'
     )
     annotate_parser.add_argument(
+        '-g3',
         '--gene3prime',
         type=str,
         required=True,
         help='3\' gene partner'
     )
     annotate_parser.add_argument(
+        '-j5',
         '--junction5prime',
         type=int,
         required=True,
@@ -217,6 +225,7 @@ def main():
              'the fusion before the junction.'
     )
     annotate_parser.add_argument(
+        '-j3',
         '--junction3prime',
         type=int,
         required=True,
@@ -252,6 +261,7 @@ def main():
     #         'nfuse, soapfuse, or tophatfusion.'
     #)
     batch_parser.add_argument(
+        '-a',
         '--algorithm',
         type=str,
         required=True,
