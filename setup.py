@@ -17,8 +17,8 @@ class CustomInstall(install):
             'agfusion.db.gz'
         )
 
-        #with gzip.open(file_path, 'rb') as f_in, file(file_path.replace('.gz',''), 'w') as f_out:
-        #    shutil.copyfileobj(f_in, f_out)
+        with gzip.open(file_path, 'rb') as f_in, file(file_path.replace('.gz',''), 'w') as f_out:
+            shutil.copyfileobj(f_in, f_out)
 
 VERSIONFILE = "agfusion/_version.py"
 verstrline = open(VERSIONFILE, "rt").read()
@@ -42,7 +42,7 @@ setup(
     url='https://github.com/murphycj/AGFusion',
     long_description=README,
     include_package_data=True,
-    scripts=['bin/agfusion', 'bin/agfusion_builddb'],
+    scripts=['bin/agfusion'],
     cmdclass={'install': CustomInstall},
     install_requires=[
         'pyensembl>=0.9.5',

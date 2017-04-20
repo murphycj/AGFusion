@@ -10,49 +10,15 @@ import shutil
 import agfusion
 import pyensembl
 
-def annotate(args):
-    if not os.path.exists(args.out):
-        os.mkdir(args.out)
+def annotate(gene5prime,junction5prime,gene3prime,junction3prime,
+             outdir,colors,rename,scale,db,pyensembl_data,args):
 
-    # if user does not specify a sqlite database then use the one provided
-    # by the package
-
-    if args.db is None:
-        file_path = os.path.join(
-            os.path.split(__file__)[0],
-            'data',
-            'agfusion.db'
-        )
-
-        db = agfusion.AGFusionDB(
-            file_path
-        )
-    else:
-        db = agfusion.AGFusionDB(args.db)
-
-    # get the pyensembl data
-
-    if args.genome == 'GRCm38' or args.genome == 'mus_musculus_core_84_38':
-        pyensembl_data = pyensembl.EnsemblRelease(84, 'mouse')
-        db.build = 'mus_musculus_core_84_38'
-    elif args.genome == 'GRCh38' or args.genome == 'homo_sapiens_core_84_38':
-        pyensembl_data = pyensembl.EnsemblRelease(84, 'human')
-        db.build = 'homo_sapiens_core_84_38'
-    elif args.genome == 'GRCh37' or args.genome == 'homo_sapiens_core_75_37':
-        pyensembl_data = pyensembl.EnsemblRelease(75, 'human')
-        db.build = 'homo_sapiens_core_75_37'
-    else:
-        db.logger.error(
-            'You provided an incorrect reference genome. '
-            'Use one of the following: GRCh38, GRCh37, or GRCm38'
-        )
-        sys.exit()
 
     fusion = agfusion.Fusion(
-        gene5prime=args.gene5prime,
-        gene5primejunction=args.junction5prime,
-        gene3prime=args.gene3prime,
-        gene3primejunction=args.junction3prime,
+        gene5prime=gene5prime,
+        gene5primejunction=junction5prime,
+        gene3prime=gene3prime,
+        gene3primejunction=junction3prime,
         db=db,
         pyensembl_data=pyensembl_data,
         protein_databases=args.protein_databases,
@@ -60,46 +26,21 @@ def annotate(args):
     )
 
     fusion.save_transcript_cdna(
-        out_dir=args.out,
+        out_dir=outdir,
         middlestar=args.middlestar
     )
     fusion.save_transcript_cds(
-        out_dir=args.out,
+        out_dir=outdir,
         middlestar=args.middlestar
     )
     fusion.save_proteins(
-        out_dir=args.out,
+        out_dir=outdir,
         middlestar=args.middlestar
     )
 
-    colors = {}
-    rename = {}
-
-    if args.colors is not None:
-        for i in args.colors:
-            pair = i.split(';')
-
-            assert len(pair) == 2, " did not properly specify --colors"
-
-            if pair[0] in colors:
-                print "!!! WARNING - you specified colors for %s twice." % pair[0]
-
-            colors[pair[0]] = pair[1]
-
-    if args.rename is not None:
-        for i in args.rename:
-            pair = i.split(';')
-
-            assert len(pair) == 2, " did not properly specify --rename"
-
-            if pair[0] in rename:
-                print "!!! WARNING - you rename %s twice." % pair[0]
-
-            rename[pair[0]] = pair[1]
-
     fusion.save_images(
-        out_dir=args.out,
-        scale=args.scale,
+        out_dir=outdir,
+        scale=scale,
         colors=colors,
         rename=rename,
         fontsize=args.fontsize,
@@ -139,7 +80,9 @@ def add_common_flags(parser):
         '--genome',
         type=str,
         required=True,
-        help='GRCh38 (or homo_sapiens_core_84_38), GRCh37 (or homo_sapiens_core_75_37), or GRCm38 (or mus_musculus_core_84_38)'
+        help='Pick one of the following: GRCh38 (for hg38), ' +
+             'GRCh37 (for hg19), or GRCm38 (for mm10). Or enter ' +
+             'the Ensembl MySQL database name (e.g. homo_sapiens_core_84_38 for GRCm38).'
     )
     parser.add_argument(
         '--db',
@@ -250,7 +193,7 @@ def main():
     parser = argparse.ArgumentParser(
         description='Annotate Gene Fusion (AGFusion)'
     )
-    subparsers = parser.add_subparsers(help='commands',dest="subparser_name")
+    subparsers = parser.add_subparsers(help='AGFusion programs.',dest="subparser_name")
 
     annotate_parser = subparsers.add_parser('annotate', help='Annotate and visualize a single fusion.')
     annotate_parser.add_argument(
@@ -299,14 +242,21 @@ def main():
         required=True,
         help='Output file from fusion-finding algorithm.'
     )
+    #batch_parser.add_argument(
+    #    '--algorithm',
+    #    type=str,
+    #    required=True,
+    #    help='The fusion-finding algorithm. Can be one of the following: ' +
+    #         'bellerphontes, breakfusion, chimerascan, ericscript, ' +
+    #         'fusioncatcher, fusionhunter, fusionmap, jaffa, mapsplice, ' +
+    #         'nfuse, soapfuse, or tophatfusion.'
+    #)
     batch_parser.add_argument(
         '--algorithm',
         type=str,
         required=True,
         help='The fusion-finding algorithm. Can be one of the following: ' +
-             'bellerphontes, breakfusion, chimerascan, ericscript, ' +
-             'fusioncatcher, fusionhunter, fusionmap, jaffa, mapsplice, ' +
-             'nfuse, soapfuse, or tophatfusion.'
+             'fusioncatcher. (Will support more algorithms soon)'
     )
     add_common_flags(batch_parser)
 
@@ -336,9 +286,112 @@ def main():
     )
     args = parser.parse_args()
 
-    if args.subparser_name == 'annotate':
-        annotate(args)
-    elif args.subparser_name == 'batch':
-        pass
-    elif args.subparser_name == 'database':
+    if args.subparser_name == 'database':
         builddb(args)
+    else:
+        if not os.path.exists(args.out):
+            os.mkdir(args.out)
+
+        # if user does not specify a sqlite database then use the one provided
+        # by the package
+
+        if args.db is None:
+            file_path = os.path.join(
+                os.path.split(__file__)[0],
+                'data',
+                'agfusion.db'
+            )
+
+            db = agfusion.AGFusionDB(
+                file_path
+            )
+        else:
+            db = agfusion.AGFusionDB(args.db)
+
+        # get the pyensembl data
+
+        if args.genome == 'GRCm38' or args.genome == 'mus_musculus_core_84_38':
+            pyensembl_data = pyensembl.EnsemblRelease(84, 'mouse')
+            db.build = 'mus_musculus_core_84_38'
+        elif args.genome == 'GRCh38' or args.genome == 'homo_sapiens_core_84_38':
+            pyensembl_data = pyensembl.EnsemblRelease(84, 'human')
+            db.build = 'homo_sapiens_core_84_38'
+        elif args.genome == 'GRCh37' or args.genome == 'homo_sapiens_core_75_37':
+            pyensembl_data = pyensembl.EnsemblRelease(75, 'human')
+            db.build = 'homo_sapiens_core_75_37'
+        else:
+            db.logger.error(
+                'You provided an incorrect reference genome. '
+                'Use one of the following: GRCh38, GRCh37, or GRCm38'
+            )
+            sys.exit()
+
+        colors = {}
+        rename = {}
+
+        if args.colors is not None:
+            for i in args.colors:
+                pair = i.split(';')
+
+                assert len(pair) == 2, " did not properly specify --colors"
+
+                if pair[0] in colors:
+                    print "!!! WARNING - you specified colors for %s twice." % pair[0]
+
+                colors[pair[0]] = pair[1]
+
+        if args.rename is not None:
+            for i in args.rename:
+                pair = i.split(';')
+
+                assert len(pair) == 2, " did not properly specify --rename"
+
+                if pair[0] in rename:
+                    print "!!! WARNING - you rename %s twice." % pair[0]
+
+                rename[pair[0]] = pair[1]
+
+        if args.subparser_name == 'annotate':
+            annotate(
+                gene5prime=args.gene5prime,
+                junction5prime=args.junction5prime,
+                gene3prime=args.gene3prime,
+                junction3prime=args.junction3prime,
+                outdir=args.out,
+                colors=colors,
+                rename=rename,
+                scale=args.scale,
+                db=db,
+                pyensembl_data=pyensembl_data,
+                args=args
+            )
+        else:
+            if args.algorithm in agfusion.parsers:
+                for fusion in agfusion.parsers[args.algorithm](args.file):
+
+                    outdir = os.path.join(
+                        args.out,
+                        fusion['alternative_name_5prime'] + '-' +
+                        str(fusion['junction_5prime']) + '_' +
+                        fusion['alternative_name_3prime'] + '-' +
+                        str(fusion['junction_3prime'])
+                    )
+
+                    if not os.path.exists(outdir):
+                        os.mkdir(outdir)
+                    else:
+                        db.logger.warn('The following output directory already exists! %s' % outdir)
+
+                    annotate(
+                        gene5prime=fusion['ensembl_5prime'],
+                        junction5prime=fusion['junction_5prime'],
+                        gene3prime=fusion['ensembl_3prime'],
+                        junction3prime=fusion['junction_3prime'],
+                        outdir=outdir,
+                        colors=colors,
+                        rename=rename,
+                        scale=None,
+                        db=db,
+                        pyensembl_data=pyensembl_data,
+                        args=args
+                    )

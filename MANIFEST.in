@@ -1,7 +1,6 @@
 include README.md
 include agfusion/data/agfusion.db.gz
 include bin/agfusion
-include bin/agfusion_builddb
 include test/test.py
 include test/test_mouse.sh
 include test/test_human.sh

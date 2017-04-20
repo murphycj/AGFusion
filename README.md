@@ -9,6 +9,7 @@ Docs are at http://pythonhosted.org/agfusion/
   * [Basic Usage](#Basic-Usage)
   * [Plotting wild-type protein and exon structure](#Plotting-wild-type-protein)
   * [Canonical gene isoforms](#Canonical-gene-isoforms)
+  * [Input from fusion-finding algorithms](#Input from fusion-finding algorithms)
   * [Domain names and colors](#Domain-names-and-colors)
   * [Re-scaling protein length](#Re-scaling-protein-length)
 - [Installation](#Installation)
@@ -43,6 +44,21 @@ The exon structure of the DLG1-BRAF fusion:
 
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000064477-ENSMUST00000002487.exon.png)
 
+The cDNA, CDS, and protein fusion sequences are outputted in fasta format. Here is an example protein sequence for the in-frame fusion:
+
+```
+>ENSMUSP00000064280-ENSMUSP00000002487 length=535, kD: 60.0739853, transcripts: ENSMUST00000064477-ENSMUST00000002487, genes: Dlg1-Braf, effect: in-frame
+MPVRKQDTQRALHLLEEYRSKLSQTEDRQLRSSIERVINIFQSNLFQALIDIQEFYEVTL
+LDNPKCVDHSKQCEPVQPVTTWEIASLPSTAVTSETLPGSLSPPVEDLIRDQGFRGDGAP
+LNQLMRCLRKYQSRTPSPLLHSVPSEIVFDFEPGPVFRGSTTGLSATPPASLPGSLTNVK
+ALQKSPGPQRERKSSSSSSSEDRSRMKTLGRRDSSDDWEIPDGQITVGQRIGSGSFGTVY
+KGKWHGDVAVKMLNVTAPTPQQLQAFKNEVGVLRKTRHVNILLFMGYSTKPQLAIVTQWC
+EGSSLYHHLHIIETKFEMIKLIDIARQTAQGMDYLHAKSIIHRDLKSNNIFLHEDLTVKI
+GDFGLATVKSRWSGSHQFEQLSGSILWMAPEVIRMQDKNPYSFQSDVYAFGIVLYELMTG
+QLPYSNINNRDQIIFMVGRGYLSPDLSKVRSNCPKAMKRLMAECLKKKRDERPLFPQILA
+SIELLARSLPKIHRSASEPSLNRAGFQTEDFSLYACASPKTPIQAGGYGEFAAFK
+```
+
 ### Plotting wild-type protein and exon structure
 
 You can additionally plot the wild-type proteins for each gene with --WT flag.
@@ -71,6 +87,14 @@ agfusion \
   --genome GRCm38 \
   --out DLG1-BRAF \
   --noncanonical
+```
+
+### Input from fusion-finding algorithms
+
+You can provide as input output files (per sample) from fusion-finding algorithms.
+
+```
+Under construction...
 ```
 
 ### Domain names and colors
