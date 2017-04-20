@@ -419,7 +419,7 @@ class _PlotProtein(_Plot):
 
         for domain in domains:
 
-            if domain[1] == '':
+            if domain[1] is None:
                 domain_name = str(domain[0])
             else:
                 domain_name = str(domain[1])
