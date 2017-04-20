@@ -9,7 +9,7 @@ Docs are at http://pythonhosted.org/agfusion/
   * [Basic Usage](#Basic-Usage)
   * [Plotting wild-type protein and exon structure](#Plotting-wild-type-protein)
   * [Canonical gene isoforms](#Canonical-gene-isoforms)
-  * [Input from fusion-finding algorithms](#Input from fusion-finding algorithms)
+  * [Input from fusion-finding algorithms](#Input-from-fusion-finding-algorithms)
   * [Domain names and colors](#Domain-names-and-colors)
   * [Re-scaling protein length](#Re-scaling-protein-length)
 - [Installation](#Installation)
