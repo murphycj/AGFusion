@@ -108,12 +108,12 @@ def add_common_flags(parser):
              '(default includes Pfam and transmembrane).'
     )
     parser.add_argument(
-        '--colors',
+        '--recolor',
         type=str,
         required=False,
         default=None,
         action='append',
-        help='(Optional) Re-color a domain. Provide the original name of the domain then your color (semi-colon delimited, all in quotes). Can specify --recolor multiples for each domain. (e.g. --color \"Pkinase_Tyr:blue\" --color \"I-set:#006600\").'
+        help='(Optional) Re-color a domain. Provide the original name of the domain then your color (semi-colon delimited, all in quotes). Can specify --recolor multiples for each domain. (e.g. --color \"Pkinase_Tyr;blue\" --color \"I-set;#006600\").'
     )
     parser.add_argument(
         '--rename',
@@ -121,7 +121,7 @@ def add_common_flags(parser):
         required=False,
         default=None,
         action='append',
-        help='(Optional) Rename a domain. Provide the original name of the domain then your new name (semi-colon delimited, all in quotes). Can specify --rename multiples for each domain. (e.g. --rename \"Pkinase_Tyr:Kinase\").'
+        help='(Optional) Rename a domain. Provide the original name of the domain then your new name (semi-colon delimited, all in quotes). Can specify --rename multiples for each domain. (e.g. --rename \"Pkinase_Tyr;Kinase\").'
     )
     parser.add_argument(
         '--type',
@@ -339,8 +339,8 @@ def main():
         colors = {}
         rename = {}
 
-        if args.colors is not None:
-            for i in args.colors:
+        if args.recolor is not None:
+            for i in args.recolor:
                 pair = i.split(';')
 
                 assert len(pair) == 2, " did not properly specify --colors"

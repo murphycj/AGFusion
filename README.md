@@ -109,10 +109,8 @@ agfusion annotate \
   --junction3prime 39648486 \
   --genome GRCm38 \
   --out DLG1-BRAF \
-  --colors "Serine-threonine/tyrosine-protein kinase catalytic domain;red" \
-  --colors "L27_1;#00cc00" \
-  --rename "Serine-threonine/tyrosine-protein kinase catalytic domain;Kinase" \
-  --rename "L27_1;L27"
+  --recolor "Pkinase_Tyr;red" --recolor "L27_1;blue" \
+  --rename "Pkinase_Tyr;Kinase" --rename "L27_1;L27"
 ```
 
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000064477-ENSMUST00000002487-recolorRename.png)
@@ -129,10 +127,8 @@ agfusion annotate \
   --junction3prime 39648486 \
   --genome GRCm38 \
   --out DLG1-BRAF \
-  --colors "Serine-threonine/tyrosine-protein kinase catalytic domain;red" \
-  --colors "L27_1;blue" \
-  --rename "Serine-threonine/tyrosine-protein kinase catalytic domain;Kinase" \
-  --rename "L27_1;L27" \
+  --recolor "Pkinase_Tyr;red" --recolor "L27_1;blue" \
+  --rename "Pkinase_Tyr;Kinase" --rename "L27_1;L27" \
   --scale 2000
 agfusion annotate \
   --gene5prime FGFR2 \
@@ -141,10 +137,8 @@ agfusion annotate \
   --junction3prime 162019992 \
   --genome GRCm38 \
   --out FGFR2-DNM3 \
-  --rename "Immunoglobulin I-set;I-set" \
-  --rename "Dynamin GTPase effector;Dynamin" \
-  --rename "Serine-threonine/tyrosine-protein kinase catalytic domain;Kinase" \
-  --colors "Serine-threonine/tyrosine-protein kinase catalytic domain;red" \
+  --recolor "Pkinase_Tyr;red" \
+  --rename "Pkinase_Tyr;Kinase" \
   --scale 2000
 ```
 

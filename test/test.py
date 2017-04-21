@@ -236,7 +236,6 @@ def test_mouse_12(data,db):
     assert t.effect_3prime=="intron (cds)","Test 12: incorrect 3' effect: %s" % t.effect_3prime
 
 data = pyensembl.EnsemblRelease(84,'mouse')
-db = agfusion.AGFusionDB('../agfusion/data/agfusion.db')
 
 test_mouse_1(data,db)
 test_mouse_2(data,db)
