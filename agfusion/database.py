@@ -8,7 +8,7 @@ import logging
 
 PROTEIN_ANNOTATIONS = [
     'Pfam', 'Smart', 'Superfamily', 'TIGRfam', 'Prosite_profiles',
-    'transmembrane', 'low_complexity', 'coiled_coil', 'Prints',
+    'Tmhmm', 'low_complexity', 'coiled_coil', 'Prints',
     'PIRSF', 'signal_peptide'
 ]
 
@@ -49,7 +49,6 @@ class AGFusionDB():
         )
 
         self.build = ''
-
 
     def close(self):
         """
@@ -394,7 +393,7 @@ class AGFusionDBBManager():
             else:
                 for i in range(0,len(data)):
                     tmp = list(data[i])
-                    tmp.append('')
+                    tmp.append(None)
                     data[i] = tmp
 
             self.logger.info(
