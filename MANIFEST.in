@@ -1,6 +1,6 @@
 include README.md
 include agfusion/data/agfusion.db.gz
-include agfusion/data/042017_pdb_pfam_mapping.txt.gz
+include agfusion/data/042117_pfamA.txt.gz
 include bin/agfusion
 include test/test.py
 include test/test_mouse.sh

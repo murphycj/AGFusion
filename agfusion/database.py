@@ -122,17 +122,15 @@ class AGFusionDBBManager():
         file_path = os.path.join(
             os.path.split(__file__)[0],
             'data',
-            '042017_pdb_pfam_mapping.txt.gz'
+            '042117_pfamA.txt.gz'
         )
 
         for line in gzip.open(file_path, 'rb'):
-            if line.find('PDB_ID')!=-1:
-                next
             line = line.rstrip().split('\t')
 
-            pfam_id = line[4].split('.')[0]
-            pfam_name = line[5]
-            pfam_desc = line[6]
+            pfam_id = line[0]
+            pfam_name = line[1]
+            pfam_desc = line[3]
 
             self.pfam_mapping[pfam_id] = {
                 'name': pfam_name,

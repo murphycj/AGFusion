@@ -7,7 +7,7 @@
 #  --genome GRCh37
 
 
-agfusion \
+agfusion annotate \
   --gene5prime ENSG00000066468 \
   --gene3prime ENSG00000197959 \
   --junction5prime 121485532 \

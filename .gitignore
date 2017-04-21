@@ -2,3 +2,4 @@
 doc/_build/**
 doc/_static/**
 test/DLG1-BRAF/*
+submit_to_pip.sh
