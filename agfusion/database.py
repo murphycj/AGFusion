@@ -1,4 +1,5 @@
 import sys
+import gzip
 import os
 import sqlite3
 import requests
@@ -48,6 +49,7 @@ class AGFusionDB():
         )
 
         self.build = ''
+
 
     def close(self):
         """
@@ -112,6 +114,30 @@ class AGFusionDBBManager():
         self.logger.info('MySQL - use ' + build + ';')
 
         self._check_for_tables()
+
+        #load the PFAM mappings
+
+        self.pfam_mapping = dict()
+
+        file_path = os.path.join(
+            os.path.split(__file__)[0],
+            'data',
+            '042017_pdb_pfam_mapping.txt.gz'
+        )
+
+        for line in gzip.open(file_path, 'rb'):
+            if line.find('PDB_ID')!=-1:
+                next
+            line = line.rstrip().split('\t')
+
+            pfam_id = line[4].split('.')[0]
+            pfam_name = line[5]
+            pfam_desc = line[6]
+
+            self.pfam_mapping[pfam_id] = {
+                'name': pfam_name,
+                'desc': pfam_desc
+            }
 
     def _check_for_tables(self):
 
@@ -182,10 +208,11 @@ class AGFusionDBBManager():
                 protein_annotation + " (" + \
                 "translation_id text," + \
                 "stable_id text," + \
-                "hit_name text," + \
+                "hit_id text," + \
                 "seq_start integer," + \
                 "seq_end integer," + \
-                "hit_description text);"
+                "hit_description text," + \
+                "hit_name text);"
 
             self.logger.info('SQLite - ' + sqlite3_command)
 
@@ -355,16 +382,31 @@ class AGFusionDBBManager():
                 mysql_command
             )
 
-            data = self.ensembl_cursor.fetchall()
+            data = list(self.ensembl_cursor.fetchall())
+
+            if protein_annotation=='Pfam':
+                for i in range(0,len(data)):
+                    tmp = list(data[i])
+                    if tmp[2] in self.pfam_mapping:
+                        tmp.append(self.pfam_mapping[tmp[2]]['name'])
+                        tmp[5] = self.pfam_mapping[tmp[2]]['desc']
+                    else:
+                        tmp.append('')
+                    data[i] = tmp
+            else:
+                for i in range(0,len(data)):
+                    tmp = list(data[i])
+                    tmp.append('')
+                    data[i] = tmp
 
             self.logger.info(
                 'SQLite - INSERT INTO ' +
-                self.build + '_' + protein_annotation + ' VALUES (translation_id,stable_id,hit_name,seq_start,seq_end,hit_description)'
+                self.build + '_' + protein_annotation + ' VALUES (translation_id,stable_id,hit_id,seq_start,seq_end,hit_description,hit_name)'
             )
 
             self.sqlite3_cursor.executemany(
                 'INSERT INTO ' + self.build +
-                '_' + protein_annotation + ' VALUES (?,?,?,?,?,?)', data
+                '_' + protein_annotation + ' VALUES (?,?,?,?,?,?,?)', data
             )
 
             self.sqlite3_db.commit()

@@ -1,15 +1,12 @@
-../bin/agfusion \
+agfusion annotate \
   --gene5prime FGFR2 \
   --gene3prime DNM3 \
   --junction5prime 130167703 \
   --junction3prime 162019992 \
   --genome GRCm38 \
-  --width 20 \
-  --height 10 \
-  --fontsize 8 \
   --out FGFR2-DNM3
 
-../bin/agfusion \
+agfusion annotate \
   --gene5prime ENSMUSG00000022770 \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
@@ -24,7 +21,7 @@
   --rename Pkinase_Tyr:Kinase L27_1:L27 \
   --WT
 
-../bin/agfusion \
+agfusion annotate \
   --gene5prime ENSMUSG00000022770 \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
@@ -36,7 +33,8 @@
   --rename "Serine-threonine/tyrosine-protein kinase catalytic domain;Kinase" \
   --rename "L27_1;L27" \
   --scale 2000
-../bin/agfusion \
+
+agfusion annotate \
   --gene5prime FGFR2 \
   --gene3prime DNM3 \
   --junction5prime 130167703 \
@@ -49,7 +47,7 @@
   --colors "Serine-threonine/tyrosine-protein kinase catalytic domain;red" \
   --scale 2000
 
-../bin/agfusion \
+agfusion annotate \
   --gene5prime ENSMUSG00000022770 \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
@@ -65,8 +63,7 @@
   --dpi 100 \
   --noncanonical
 
-
-../bin/agfusion \
+agfusion annotate \
   --gene5prime ENSMUSG00000022770 \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \

@@ -733,12 +733,14 @@ class FusionTranscript(object):
         for d in tmp_domains:
 
             pfeature_ID = d[2]
+            pfeature_name = d[6]
             pfeature_description = d[5]
             pfeature_start = int(d[3])
             pfeature_end = int(d[4])
 
             gene5prime_domains.append([
                 pfeature_ID,
+                pfeature_name,
                 pfeature_description,
                 pfeature_start,
                 pfeature_end
@@ -751,6 +753,7 @@ class FusionTranscript(object):
 
                     fusion_domains.append([
                         pfeature_ID,
+                        pfeature_name,
                         pfeature_description,
                         pfeature_start,
                         pfeature_end
@@ -762,6 +765,7 @@ class FusionTranscript(object):
 
                     fusion_domains.append([
                         pfeature_ID,
+                        pfeature_name,
                         pfeature_description,
                         pfeature_start,
                         pfeature_end
@@ -787,12 +791,14 @@ class FusionTranscript(object):
             for d in tmp_domains:
 
                 pfeature_ID = d[2]
+                pfeature_name = d[6]
                 pfeature_description = d[5]
                 pfeature_start = int(d[3])
                 pfeature_end = int(d[4])
 
                 gene3prime_domains.append([
                     pfeature_ID,
+                    pfeature_name,
                     pfeature_description,
                     pfeature_start,
                     pfeature_end
@@ -807,6 +813,7 @@ class FusionTranscript(object):
 
                     fusion_domains.append([
                         pfeature_ID,
+                        pfeature_name,
                         pfeature_description,
                         pfeature_start,
                         pfeature_end
@@ -819,6 +826,7 @@ class FusionTranscript(object):
 
                     fusion_domains.append([
                         pfeature_ID,
+                        pfeature_name,
                         pfeature_description,
                         pfeature_start,
                         pfeature_end

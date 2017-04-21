@@ -419,6 +419,8 @@ class _PlotProtein(_Plot):
 
         for domain in domains:
 
+            # use domain name if available, otherwise use its ID
+
             if domain[1] is None:
                 domain_name = str(domain[0])
             else:
@@ -431,8 +433,8 @@ class _PlotProtein(_Plot):
             if domain_name in self.rename:
                 domain_name = self.rename[domain_name]
 
-            domain_start = (int(domain[2])/float(self.normalize))*0.9 + self.offset
-            domain_end = (int(domain[3])/float(self.normalize))*0.9 + self.offset
+            domain_start = (int(domain[3])/float(self.normalize))*0.9 + self.offset
+            domain_end = (int(domain[4])/float(self.normalize))*0.9 + self.offset
             domain_center = (domain_end-domain_start)/2. + domain_start
 
             self.ax.add_patch(
