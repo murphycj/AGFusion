@@ -615,24 +615,47 @@ class Fusion():
 
         fout.close()
 
-#    def save_annotations(self,out_file='.',annotation='pfam'):
-#
-#        fout = open(out_file,'w')
-#        fout.write("Gene,transcript,domain,protein_start,protein_end\n")
-#
-#        for name, transcript in self.transcripts.items():
-#            for domain in transcript.domains[annotation]:
-#                try:
-#                    fout.write(
-#                        self.name + ',' + \
-#                        name + ',' + \
-#                        domain[1] + ',' + \
-#                        str(domain[2]) + ',' + \
-#                        str(domain[3]) + '\n'
-#                    )
-#                except:
-#                    import pdb; pdb.set_trace()
-#        fout.close()
+    def save_tables(self,out_dir='.',annotation='pfam'):
+
+        fout = open(
+            os.path.join(
+                out_dir,
+                self.name + '.protein_domains.csv'
+            ),
+            'w'
+        )
+        fout.write(
+            '%s,%s,%s,%s,%s,%s,%s,%s,%s\n' %
+            (
+                "5\' gene",
+                "3\' gene",
+                "5\' transcript",
+                "3\' transcript",
+                "domain_ID",
+                "domain_name",
+                "domain_description",
+                "protein_start",
+                "protein_end"
+            )
+        )
+
+        for name, transcript in self.transcripts.items():
+            for domain in transcript.domains['fusion']:
+                fout.write(
+                    '%s,%s,%s,%s,%s,%s,%s,%s,%s\n' %
+                    (
+                        transcript.gene5prime.gene.gene_name,
+                        transcript.gene3prime.gene.gene_name,
+                        transcript.transcript1.id,
+                        transcript.transcript2.id,
+                        domain[0],
+                        domain[1],
+                        domain[2],
+                        domain[3],
+                        domain[4]
+                    )
+                )
+        fout.close()
 
 
 class FusionTranscript(object):

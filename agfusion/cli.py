@@ -50,6 +50,7 @@ def annotate(gene5prime,junction5prime,gene3prime,junction3prime,
         no_domain_labels=args.no_domain_labels,
         plot_WT=args.WT
         )
+    fusion.save_tables(out_dir=outdir)
 
 def builddb(args):
 
