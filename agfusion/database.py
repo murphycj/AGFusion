@@ -7,9 +7,9 @@ import logging
 
 
 PROTEIN_ANNOTATIONS = [
-    'Pfam', 'Smart', 'Superfamily', 'TIGRfam', 'Prosite_profiles',
-    'Tmhmm', 'low_complexity', 'coiled_coil', 'Prints',
-    'PIRSF', 'signal_peptide'
+    'pfam', 'smart', 'superfamily', 'tigrfam', 'pfscan',
+    'tmhmm', 'seg', 'ncoils', 'prints',
+    'pirsf', 'signalp'
 ]
 
 class AGFusionDB():
@@ -371,7 +371,7 @@ class AGFusionDBBManager():
     def fetch_protein_annotation(self):
 
         for protein_annotation in PROTEIN_ANNOTATIONS:
-            mysql_command = "SELECT translation.translation_id, translation.stable_id, protein_feature.hit_name, protein_feature.seq_start, protein_feature.seq_end, protein_feature.hit_description FROM analysis, analysis_description, protein_feature, translation WHERE protein_feature.translation_id = translation.translation_id AND protein_feature.analysis_id = analysis.analysis_id AND analysis.analysis_id = analysis_description.analysis_id AND analysis.db = \'" + protein_annotation + "\';"
+            mysql_command = "SELECT translation.translation_id, translation.stable_id, protein_feature.hit_name, protein_feature.seq_start, protein_feature.seq_end, protein_feature.hit_description FROM analysis, analysis_description, protein_feature, translation WHERE protein_feature.translation_id = translation.translation_id AND protein_feature.analysis_id = analysis.analysis_id AND analysis.analysis_id = analysis_description.analysis_id AND analysis.logic_name = \'" + protein_annotation + "\';"
 
             self.logger.info('MySQL - ' + mysql_command)
 
