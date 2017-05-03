@@ -407,12 +407,14 @@ class PlotFusionExons(_PlotExons):
 class _PlotProtein(_Plot):
 
     def __init__(self, transcript=None, colors=None,
-                 rename=None, no_domain_labels=False, *args, **kwargs):
+                 rename=None, no_domain_labels=False,
+                 exclude = [], *args, **kwargs):
         super(_PlotProtein, self).__init__(*args, **kwargs)
         self.transcript = transcript
         self.colors = colors
         self.rename = rename
         self.no_domain_labels = no_domain_labels
+        self.exclude = exclude
 
     def _draw_domains(self, domains):
         # plot domains
@@ -425,6 +427,9 @@ class _PlotProtein(_Plot):
                 domain_name = str(domain[0])
             else:
                 domain_name = str(domain[1])
+
+            if domain_name in self.exclude:
+                continue
 
             color = '#3385ff'
             if domain_name in self.colors:

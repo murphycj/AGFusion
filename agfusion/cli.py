@@ -48,7 +48,8 @@ def annotate(gene5prime,junction5prime,gene3prime,junction3prime,
         width=args.width,
         dpi=args.dpi,
         no_domain_labels=args.no_domain_labels,
-        plot_WT=args.WT
+        plot_WT=args.WT,
+        exclude=args.exclude_domain
         )
     fusion.save_tables(out_dir=outdir)
 
@@ -123,6 +124,14 @@ def add_common_flags(parser):
         default=None,
         action='append',
         help='(Optional) Rename a domain. Provide the original name of the domain then your new name (semi-colon delimited, all in quotes). Can specify --rename multiples for each domain. (e.g. --rename \"Pkinase_Tyr;Kinase\").'
+    )
+    parser.add_argument(
+        '--exclude_domain',
+        type=str,
+        required=False,
+        default=[],
+        nargs='+',
+        help='(Optional) Exclude a certain domain(s) from plotting by providing a space-separated list of domain names.'
     )
     parser.add_argument(
         '--type',

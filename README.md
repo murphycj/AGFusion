@@ -76,7 +76,7 @@ agfusion annotate \
 
 ### Canonical gene isoforms
 
-By default AGFusion only plots the [canonical](http://useast.ensembl.org/Help/Glossary?id=346) gene isoforms, but you can tell AGFusion to include non-canonical isoform with the --noncanonical flag.
+By default AGFusion only plots the [canonical](http://useast.ensembl.org/Help/Glossary?id=346) gene isoforms, but you can tell AGFusion to include non-canonical isoform with the --noncanonical flag. This can produce many fusion isoform combinations.
 
 ```
 agfusion annotate \

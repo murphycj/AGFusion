@@ -381,7 +381,7 @@ class AGFusionDBBManager():
 
             data = list(self.ensembl_cursor.fetchall())
 
-            if protein_annotation=='Pfam':
+            if protein_annotation=='pfam':
                 for i in range(0,len(data)):
                     tmp = list(data[i])
                     if tmp[2] in self.pfam_mapping:

@@ -349,7 +349,7 @@ class Fusion():
     def save_images(
             self, out_dir='', file_type='png', fontsize=12, dpi=100,
             colors={}, rename={}, width=8, height=2, scale=0,
-            no_domain_labels=True, plot_WT=False):
+            no_domain_labels=True, plot_WT=False,exclude=None):
         """
         Save images of all fusion isoforms and write to file
         Also plot the wild type proteins if desired
@@ -392,7 +392,8 @@ class Fusion():
                 colors=colors,
                 rename=rename,
                 no_domain_labels=no_domain_labels,
-                transcript=transcript
+                transcript=transcript,
+                exclude=exclude
             )
             pplot.draw()
             pplot.save()
@@ -470,7 +471,8 @@ class Fusion():
                     colors=colors,
                     rename=rename,
                     no_domain_labels=no_domain_labels,
-                    transcript=transcript
+                    transcript=transcript,
+                    exclude=exclude
                 )
                 pplot.draw()
                 pplot.save()
@@ -491,7 +493,8 @@ class Fusion():
                     colors=colors,
                     rename=rename,
                     no_domain_labels=no_domain_labels,
-                    transcript=transcript
+                    transcript=transcript,
+                    exclude=exclude
                 )
                 pplot.draw()
                 pplot.save()
@@ -617,6 +620,59 @@ class Fusion():
 
     def save_tables(self,out_dir='.',annotation='pfam'):
 
+        #write table of fusion isoforms
+
+        fout = open(
+            os.path.join(
+                out_dir,
+                self.name + '.fusion_transcripts.csv'
+            ),
+            'w'
+        )
+        fout.write(
+            '%s,%s,%s,%s,%s,%s,%s,%s,%s\n' %
+            (
+                "5\'_gene",
+                "3\'_gene",
+                "5\'_transcript",
+                "3\'_transcript",
+                "5\'_transcript_biotype",
+                "3\'_transcript_biotype",
+                "Fusion_effect",
+                "Protein_length",
+                "Protein_weight_(kD)"
+            )
+        )
+        for name, transcript in self.transcripts.items():
+
+            if transcript.protein_length is None:
+                protein_length = "NA"
+            else:
+                protein_length = transcript.protein_length
+
+            if transcript.molecular_weight is None:
+                molecular_weight = "NA"
+            else:
+                molecular_weight = transcript.molecular_weight
+
+            fout.write(
+                '%s,%s,%s,%s,%s,%s,%s,%s,%s\n' %
+                (
+                    transcript.gene5prime.gene.gene_name,
+                    transcript.gene3prime.gene.gene_name,
+                    transcript.transcript1.id,
+                    transcript.transcript2.id,
+                    transcript.transcript1.biotype,
+                    transcript.transcript2.biotype,
+                    transcript.effect,
+                    protein_length,
+                    molecular_weight
+                )
+            )
+        fout.close()
+
+        # write table containing protein domains for each fusion isoform
+
         fout = open(
             os.path.join(
                 out_dir,
@@ -627,15 +683,15 @@ class Fusion():
         fout.write(
             '%s,%s,%s,%s,%s,%s,%s,%s,%s\n' %
             (
-                "5\' gene",
-                "3\' gene",
-                "5\' transcript",
-                "3\' transcript",
-                "domain_ID",
-                "domain_name",
-                "domain_description",
-                "protein_start",
-                "protein_end"
+                "5\'_gene",
+                "3\'_gene",
+                "5\'_transcript",
+                "3\'_transcript",
+                "Domain_ID",
+                "Domain_name",
+                "Domain_description",
+                "Protein_start",
+                "Protein_end"
             )
         )
 
