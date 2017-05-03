@@ -11,7 +11,7 @@ from Bio.Alphabet import generic_dna, generic_protein
 # matplotlib.rcParams['interactive'] = False
 
 MIN_DOMAIN_LENGTH = 5
-
+STANDARD_CHROMOSOMES = [str(i) for i in range(1,23)] + ['X','Y','MT']
 
 class _Gene():
     """
@@ -27,6 +27,7 @@ class _Gene():
 
         self.domains = []
         self.transcripts = {} # stores transcripts and their DB keys
+        self.gene = None
 
         # find the appropriate Ensembl gene ID
 
@@ -76,6 +77,7 @@ class _Gene():
                 db.logger.debug('Found Entrez gene ID entry for %s: %s' % (gene,self.gene.id))
                 gene_found = True
             elif len(tmp)>1:
+
                 db.logger.error('Found too many Entrez gene ID entries for %s!' % gene)
                 for i in tmp:
                     db.logger.error(i)
@@ -131,10 +133,19 @@ class _Gene():
                 if len(temp) > 1:
 
                     # if too many ensembl gene IDs returned
+                    # use the one located on chromosomes
 
-                    ids = map(lambda x: x.id, temp)
+                    for tmp_gene in temp:
+                        if tmp_gene.contig in STANDARD_CHROMOSOMES:
+                            self.gene = tmp_gene
+                            gene_found = True
 
-                    raise exceptions.TooManyGenesException(gene, ids, genome)
+                    if self.gene is None:
+                        raise exceptions.TooManyGenesException(
+                            gene,
+                            map(lambda x: x.id, temp),
+                            genome
+                        )
                 else:
                     self.gene = temp[0]
                     gene_found = True
