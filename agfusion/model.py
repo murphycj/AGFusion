@@ -952,6 +952,8 @@ class FusionTranscript(object):
 
         #translate CDS into protein and remove everything after the stop codon
 
+        #if (len(self.cds.seq) % 3) !=0:
+        #    import pdb; pdb.set_trace()
         protein_seq = self.cds.seq.translate()
         protein_seq = protein_seq[0:protein_seq.find('*')]
 
@@ -1279,7 +1281,7 @@ class FusionTranscript(object):
                 # if in intron, is it between CDS regions?
 
                 n = 0
-                n_max = len(self.transcript1.exons)
+                n_max = len(self.transcript1.coding_sequence_position_ranges)-1
 
                 for cds in self.transcript1.coding_sequence_position_ranges:
 
@@ -1335,7 +1337,7 @@ class FusionTranscript(object):
                 #if in intron, is it between CDS regions?
 
                 n = 0
-                n_max = len(self.transcript2.exons)
+                n_max = len(self.transcript2.coding_sequence_position_ranges)-1
 
                 for cds in self.transcript2.coding_sequence_position_ranges:
 
@@ -1387,7 +1389,7 @@ class FusionTranscript(object):
 
         self.has_coding_potential = utils.CODING_COMBINATIONS[(self.effect_5prime,self.effect_3prime)]['protein_coding_potential']
 
-        # check if not check if they don't have stop and/or start codons
+        # check if they don't have stop and/or start codons
 
         reasons = []
 

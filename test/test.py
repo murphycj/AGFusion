@@ -17,13 +17,15 @@ def test_mouse_1(data,db):
         gene3prime="ENSMUSG00000002413",
         gene3primejunction=39648486,
         db=db,
-        pyensembl_data=data
+        pyensembl_data=data,
+        protein_databases=['pfam', 'tmhmm'],
+        noncanonical=True
     )
 
     fusion.save_transcript_cdna('DLG1-BRAF_mouse')
     fusion.save_transcript_cds('DLG1-BRAF_mouse')
     fusion.save_proteins('DLG1-BRAF_mouse')
-    fusion.save_images('DLG1-BRAF_mouse')
+    #fusion.save_images('DLG1-BRAF_mouse')
 
     test_cdna = SeqIO.parse(open('Dlg1-Braf_cdna_manual.fa','r'),'fasta')
     test_cds = SeqIO.parse(open('Dlg1-Braf_cds_manual.fa','r'),'fasta')
@@ -60,7 +62,9 @@ def test_mouse_2(data,db):
         gene3prime="ENSMUSG00000002413",
         gene3primejunction=39610402,
         db=db,
-        pyensembl_data=data
+        pyensembl_data=data,
+        protein_databases=['pfam', 'tmhmm'],
+        noncanonical=True
     )
 
     cds = 'ATGGCGGCGCTGAGTGGCGGCGGTGGCAGCAGCAGCGGTGGCGGCGGCGGCGGTGGCGGCGGCGG' + \
@@ -81,7 +85,9 @@ def test_mouse_3(data,db):
         gene3prime="ENSMUSG00000002413",
         gene3primejunction=39610402,
         db=db,
-        pyensembl_data=data
+        pyensembl_data=data,
+        protein_databases=['pfam', 'tmhmm'],
+        noncanonical=True
     )
 
     cds = 'ATGCCGGTCCGGAAGCAAGAATTTGCAGCCTTCAAGTAG'
@@ -99,7 +105,9 @@ def test_mouse_4(data,db):
         gene3prime="ENSMUSG00000022770",
         gene3primejunction=31873343,
         db=db,
-        pyensembl_data=data
+        pyensembl_data=data,
+        protein_databases=['pfam', 'tmhmm'],
+        noncanonical=True
     )
 
     cdna = 'GGGGGTGCGGCCGCCGAAGGGGGAGCTCCTCCCCCGTCCCCTCACCCCCTCAGCTGAGCT' + \
@@ -123,7 +131,9 @@ def test_mouse_5(data,db):
         gene3prime="ENSMUSG00000002413",
         gene3primejunction=39651764,
         db=db,
-        pyensembl_data=data
+        pyensembl_data=data,
+        protein_databases=['pfam', 'tmhmm'],
+        noncanonical=True
     )
 
     assert fusion.transcripts['ENSMUST00000064477-ENSMUST00000002487'].effect_5prime=='CDS (start)',"Test 5: not CDS start"
@@ -137,7 +147,9 @@ def test_mouse_6(data,db):
         gene3prime="ENSMUSG00000002413",
         gene3primejunction=39610381,
         db=db,
-        pyensembl_data=data
+        pyensembl_data=data,
+        protein_databases=['pfam', 'tmhmm'],
+        noncanonical=True
     )
 
     assert fusion.transcripts['ENSMUST00000064477-ENSMUST00000002487'].effect_5prime=='5UTR (end)',"Test 6: Not found in 5'UTR-end"
@@ -151,7 +163,9 @@ def test_mouse_7(data,db):
         gene3prime="ENSMUSG00000002413",
         gene3primejunction=39610381,
         db=db,
-        pyensembl_data=data
+        pyensembl_data=data,
+        protein_databases=['pfam', 'tmhmm'],
+        noncanonical=True
     )
     assert fusion.transcripts['ENSMUST00000064477-ENSMUST00000002487'].effect_5prime=='5UTR',"Test 7: Not found in 5'UTR"
     assert fusion.transcripts['ENSMUST00000064477-ENSMUST00000002487'].effect_3prime=='3UTR (start)', "Test 7: Not found in at 3'UTR beginning"
@@ -164,7 +178,9 @@ def test_mouse_8(data,db):
         gene3prime="ENSMUSG00000022770",
         gene3primejunction=31871782,
         db=db,
-        pyensembl_data=data
+        pyensembl_data=data,
+        protein_databases=['pfam', 'tmhmm'],
+        noncanonical=True
     )
     #import pdb; pdb.set_trace()
     assert fusion.transcripts['ENSMUST00000064477-ENSMUST00000064477'].effect_5prime=='5UTR (end)',"Test 8: Not found in 5'UTR-end"
@@ -178,7 +194,9 @@ def test_mouse_9(data,db):
         gene3prime="ENSMUSG00000002413",
         gene3primejunction=39610381,
         db=db,
-        pyensembl_data=data
+        pyensembl_data=data,
+        protein_databases=['pfam', 'tmhmm'],
+        noncanonical=True
     )
 
     assert fusion.transcripts['ENSMUST00000002487-ENSMUST00000002487'].effect_5prime=='5UTR (end)',"Test 9: Not found in 5'UTR-end"
@@ -192,7 +210,9 @@ def test_mouse_10(data,db):
         gene3prime="ENSMUSG00000002413",
         gene3primejunction=39603240,
         db=db,
-        pyensembl_data=data
+        pyensembl_data=data,
+        protein_databases=['pfam', 'tmhmm'],
+        noncanonical=True
     )
 
     cdna = 'GGGGGTGCGGCCGCCGAAGGGGGAGCTCCTCCCCCGTCCCCTCACCCCCTCAGCTGAGCT' + \
@@ -213,7 +233,9 @@ def test_mouse_11(data,db):
         gene3prime="ENSMUSG00000002413",
         gene3primejunction=39665003,
         db=db,
-        pyensembl_data=data
+        pyensembl_data=data,
+        protein_databases=['pfam', 'tmhmm'],
+        noncanonical=True
     )
     t = fusion.transcripts['ENSMUST00000023454-ENSMUST00000002487']
 
@@ -228,7 +250,9 @@ def test_mouse_12(data,db):
         gene3prime="ENSMUSG00000002413",
         gene3primejunction=39610405,
         db=db,
-        pyensembl_data=data
+        pyensembl_data=data,
+        protein_databases=['pfam', 'tmhmm'],
+        noncanonical=True
     )
     t = fusion.transcripts['ENSMUST00000023454-ENSMUST00000002487']
 
@@ -236,6 +260,11 @@ def test_mouse_12(data,db):
     assert t.effect_3prime=="intron (cds)","Test 12: incorrect 3' effect: %s" % t.effect_3prime
 
 data = pyensembl.EnsemblRelease(84,'mouse')
+
+db = agfusion.AGFusionDB(
+    '/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/agfusion/data/agfusion.db'
+)
+db.build = 'mus_musculus_core_84_38'
 
 test_mouse_1(data,db)
 test_mouse_2(data,db)
