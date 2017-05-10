@@ -164,7 +164,7 @@ class _Gene():
 
         self.junction = junction
 
-        if self.junction < self.gene.start or self.junction > self.gene.end:
+        if not self.gene.contains(self.gene.contig,self.junction,self.junction):
             if gene5prime:
                 raise exceptions.JunctionException5prime()
             else:
@@ -636,12 +636,12 @@ class Fusion():
         fout = open(
             os.path.join(
                 out_dir,
-                self.name + '.fusion_transcripts.csv'
+                self.name + '.fusion_transcripts.txt'
             ),
             'w'
         )
         fout.write(
-            '%s,%s,%s,%s,%s,%s,%s,%s,%s\n' %
+            '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
             (
                 "5\'_gene",
                 "3\'_gene",
@@ -667,7 +667,7 @@ class Fusion():
                 molecular_weight = transcript.molecular_weight
 
             fout.write(
-                '%s,%s,%s,%s,%s,%s,%s,%s,%s\n' %
+                '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
                 (
                     transcript.gene5prime.gene.gene_name,
                     transcript.gene3prime.gene.gene_name,
@@ -687,12 +687,12 @@ class Fusion():
         fout = open(
             os.path.join(
                 out_dir,
-                self.name + '.protein_domains.csv'
+                self.name + '.protein_domains.txt'
             ),
             'w'
         )
         fout.write(
-            '%s,%s,%s,%s,%s,%s,%s,%s,%s\n' %
+            '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
             (
                 "5\'_gene",
                 "3\'_gene",
@@ -709,7 +709,7 @@ class Fusion():
         for name, transcript in self.transcripts.items():
             for domain in transcript.domains['fusion']:
                 fout.write(
-                    '%s,%s,%s,%s,%s,%s,%s,%s,%s\n' %
+                    '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
                     (
                         transcript.gene5prime.gene.gene_name,
                         transcript.gene3prime.gene.gene_name,
@@ -952,8 +952,13 @@ class FusionTranscript(object):
 
         #translate CDS into protein and remove everything after the stop codon
 
-        #if (len(self.cds.seq) % 3) !=0:
-        #    import pdb; pdb.set_trace()
+        #trim the CDS sequence if fusion is out-of-frame
+
+        if self.effect == 'out-of-frame':
+            self.cds.seq = self.cds.seq[0:3*(len(self.cds.seq)/3)]
+        if (len(self.cds.seq) % 3) !=0:
+            self.db.logger.warn('Fusion isoform effect is not out-of-frame but CDS is not a multiple of 3!')
+
         protein_seq = self.cds.seq.translate()
         protein_seq = protein_seq[0:protein_seq.find('*')]
 
@@ -1219,6 +1224,7 @@ class FusionTranscript(object):
                         ', ' +
                         str(self.transcript2.name)
         )
+
 
         # find out if the junction on either gene is with in the 5' or 3' UTR,
         # or if it exactly at the beginning or end of the UTR
