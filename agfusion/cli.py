@@ -197,6 +197,12 @@ def add_common_flags(parser):
              'database provided by the package.'
     )
     parser.add_argument(
+        '--debug',
+        default=False,
+        action='store_true',
+        help='(Optional) Enable debugging logging.'
+    )
+    parser.add_argument(
         '-v',
         '--version',
         action='version',
@@ -276,7 +282,7 @@ def main():
         type=str,
         required=True,
         help='The fusion-finding algorithm. Can be one of the following: ' +
-             'fusioncatcher. (Will support more algorithms soon)'
+             'fusioncatcher, starfusion. (Will support more algorithms soon)'
     )
     add_common_flags(batch_parser)
 
@@ -322,11 +328,9 @@ def main():
                 'agfusion.db'
             )
 
-            db = agfusion.AGFusionDB(
-                file_path
-            )
+            db = agfusion.AGFusionDB(file_path,debug=args.debug)
         else:
-            db = agfusion.AGFusionDB(args.db)
+            db = agfusion.AGFusionDB(args.db,debug=args.debug)
 
         # get the pyensembl data
 

@@ -19,9 +19,43 @@ class _Parser(object):
             self.iterator += 1
             return self.fusions[self.iterator-1]
 
+class STARFusion(_Parser):
+    def __init__(self,infile):
+        super(STARFusion, self).__init__()
+
+        fin = open(infile,'r')
+        for line in fin.readlines():
+            if re.findall('^#',line):
+                line = line.rstrip().split('\t')
+                assert line[0]=='#FusionName', 'Unrecognized STAR-Fusion input'
+                assert line[4]=='LeftGene', 'Unrecognized STAR-Fusion input'
+                assert line[5]=='LeftBreakpoint', 'Unrecognized STAR-Fusion input'
+                assert line[6]=='RightGene', 'Unrecognized STAR-Fusion input'
+                assert line[7]=='RightBreakpoint', 'Unrecognized STAR-Fusion input'
+                continue
+
+            line = line.strip().split('\t')
+
+            gene_5prime = line[4].split('^')[1].split('.')[0]
+            gene_5prime_name = line[4].split('^')[0]
+            gene_5prime_junction = int(line[5].split(':')[1])
+            gene_3prime = line[6].split('^')[1].split('.')[0]
+            gene_3prime_name = line[6].split('^')[0]
+            gene_3prime_junction = int(line[7].split(':')[1])
+            self.fusions.append(
+                {
+                    'ensembl_5prime':gene_5prime,
+                    'ensembl_3prime':gene_3prime,
+                    'alternative_name_5prime':gene_5prime_name,
+                    'alternative_name_3prime':gene_3prime_name,
+                    'junction_5prime':gene_5prime_junction,
+                    'junction_3prime':gene_3prime_junction
+                }
+            )
+        fin.close()
+
 class FusionEntry():
-    def __init__(self):
-        se
+    pass
 
 class Bellerophontes(_Parser):
     pass
@@ -91,5 +125,6 @@ parsers = {
     'mapsplice':MapSplice,
     'nfuse':nFuse,
     'soapfuse':SOAPfuse,
-    'tophatfusion':TopHatFusion
+    'tophatfusion':TopHatFusion,
+    'starfusion':STARFusion
 }

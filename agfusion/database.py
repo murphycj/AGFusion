@@ -21,15 +21,21 @@ class AGFusionDB():
     reference_name
     """
 
-    def __init__(self, database):
+    def __init__(self, database=None, debug=False):
 
         self.database = os.path.abspath(database)
         self.fastas = {}
 
         self.logger = logging.getLogger('AGFusion')
-        self.logger.setLevel(logging.INFO)
+        if debug:
+            self.logger.setLevel(logging.DEBUG)
+        else:
+            self.logger.setLevel(logging.INFO)
         ch = logging.StreamHandler()
-        ch.setLevel(logging.INFO)
+        if debug:
+            ch.setLevel(logging.DEBUG)
+        else:
+            ch.setLevel(logging.INFO)
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )

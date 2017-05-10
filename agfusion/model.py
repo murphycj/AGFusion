@@ -228,6 +228,9 @@ class Fusion():
             noncanonical=False,
             transcripts_5prime=None, transcripts_3prime=None):
 
+        self.db = db
+        self.pyensembl_data = pyensembl_data
+
         # get the reference genom
 
         self.gene5prime = _Gene(
@@ -564,7 +567,7 @@ class Fusion():
                 n+=1
 
         if n == 0:
-            print 'Warning: the ' + self.name + ' fusion does not produce any protein coding transcripts. No cds.fa file will be written'
+            self.db.logger.info('The %s fusion does not produce any protein coding transcripts. No cds.fa file will be written' % self.name)
             return
 
         fout = open(
@@ -605,7 +608,7 @@ class Fusion():
                 n += 1
 
         if n == 0:
-            print 'Warning: the ' + self.name + ' fusion does not produce any protein coding transcripts. No proteins.fa file will be written'
+            self.db.logger.info('The %s fusion does not produce any protein coding transcripts. No proteins.fa file will be written' % self.name)
             return
 
         fout = open(
