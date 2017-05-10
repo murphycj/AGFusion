@@ -112,7 +112,30 @@ class SOAPfuse(_Parser):
     pass
 
 class TopHatFusion(_Parser):
-    pass
+    def __init__(self,infile):
+        super(TopHatFusion, self).__init__()
+
+        fin = open(infile,'r')
+        for line in fin.readlines():
+            line = line.strip().split('\t')
+
+            gene_5prime = line[1]
+            gene_5prime_name = line[1]
+            gene_5prime_junction = int(line[3])
+            gene_3prime = line[4]
+            gene_3prime_name = line[4]
+            gene_3prime_junction = int(line[6])
+            self.fusions.append(
+                {
+                    'ensembl_5prime':gene_5prime,
+                    'ensembl_3prime':gene_3prime,
+                    'alternative_name_5prime':gene_5prime_name,
+                    'alternative_name_3prime':gene_3prime_name,
+                    'junction_5prime':gene_5prime_junction,
+                    'junction_3prime':gene_3prime_junction
+                }
+            )
+        fin.close()
 
 parsers = {
     'bellerophontes':Bellerophontes,

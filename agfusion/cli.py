@@ -8,6 +8,7 @@ import gzip
 import shutil
 
 import agfusion
+from agfusion import exceptions
 import pyensembl
 
 def annotate(gene5prime,junction5prime,gene3prime,junction3prime,
@@ -282,7 +283,7 @@ def main():
         type=str,
         required=True,
         help='The fusion-finding algorithm. Can be one of the following: ' +
-             'fusioncatcher, starfusion. (Will support more algorithms soon)'
+             'fusioncatcher, starfusion, or tophatfusion. (Will support more algorithms soon)'
     )
     add_common_flags(batch_parser)
 
@@ -406,16 +407,27 @@ def main():
                     else:
                         db.logger.warn('The following output directory already exists! %s' % outdir)
 
-                    annotate(
-                        gene5prime=fusion['ensembl_5prime'],
-                        junction5prime=fusion['junction_5prime'],
-                        gene3prime=fusion['ensembl_3prime'],
-                        junction3prime=fusion['junction_3prime'],
-                        outdir=outdir,
-                        colors=colors,
-                        rename=rename,
-                        scale=None,
-                        db=db,
-                        pyensembl_data=pyensembl_data,
-                        args=args
-                    )
+                    try:
+                        annotate(
+                            gene5prime=fusion['ensembl_5prime'],
+                            junction5prime=fusion['junction_5prime'],
+                            gene3prime=fusion['ensembl_3prime'],
+                            junction3prime=fusion['junction_3prime'],
+                            outdir=outdir,
+                            colors=colors,
+                            rename=rename,
+                            scale=None,
+                            db=db,
+                            pyensembl_data=pyensembl_data,
+                            args=args
+                        )
+                    except exceptions.GeneIDException3prime:
+                        db.logger.warn("No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(fusion['ensembl_5prime']))
+                    except exceptions.GeneIDException3prime:
+                        db.logger.warn("No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(fusion['ensembl_3prime']))
+                    except exceptions.JunctionException5prime:
+                        db.logger.warn("No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(fusion['ensembl_5prime']))
+                    except exceptions.JunctionException3prime:
+                        db.logger.warn("No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(fusion['ensembl_3prime']))
+                    except exceptions.TooManyGenesException as e:
+                        db.logger.warn("Multiple Ensembl IDs found matching one of your genes.")

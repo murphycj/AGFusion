@@ -157,8 +157,7 @@ class _Gene():
         # if gene has not been identified yet
 
         if not gene_found:
-            db.logger.error('Could not match %s to any ID in Ensembl, gene symbols, RefSeq, or Entrez gene ID!' % gene)
-            sys.exit()
+            raise exceptions.GeneIDException3prime(gene)
 
         # else continue with processing
 
