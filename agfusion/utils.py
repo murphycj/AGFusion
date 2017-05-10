@@ -2,6 +2,13 @@
 # chimeric protein are commented out
 
 import itertools
+import os
+
+agfusion_db = os.path.join(
+    os.path.split(__file__)[0],
+    'data',
+    'agfusion.db'
+)
 
 junction_locations = [
     'CDS','CDS (start)','CDS (end)','5UTR','5UTR (end)',

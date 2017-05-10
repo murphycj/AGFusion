@@ -50,18 +50,11 @@ class AGFusionDB():
         self.sqlite3_cursor = self.sqlite3_db.cursor()
         self.sqlite3_db.commit()
 
-        self.logger.info(
+        self.logger.debug(
             'Connected to the database ' + os.path.abspath(self.database)
         )
 
         self.build = ''
-
-    def close(self):
-        """
-        Close the connection to the database
-        """
-
-        self.conn.close()
 
 
 class AGFusionDBBManager():
