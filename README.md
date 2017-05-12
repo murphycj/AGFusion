@@ -92,7 +92,7 @@ agfusion annotate \
 ### Input from fusion-finding algorithms
 
 You can provide as input output files from fusion-finding algorithms. Currently available algorithms are: FusionCatcher, TopHat-Fusion, and STAR-Fusion.
-Below is an example from FusionCatcher output.
+Below is an example for FusionCatcher.
 
 ```
 agfusion batch \

@@ -4,10 +4,13 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.pyplot
 import json
+from itertools import cycle
 
 # this is so I can plot graphics on a headless server
 
 matplotlib.pyplot.ioff()
+
+HORIZONTAL_LEVELS = [1,2,3,4]
 
 
 class _Plot(object):
@@ -25,6 +28,7 @@ class _Plot(object):
             figsize=(self.width, self.height), dpi=self.dpi, frameon=False
         )
         self.ax = self.fig.add_subplot(111)
+        self.rr = self.fig.canvas.get_renderer()
 
     def save(self):
 
@@ -48,7 +52,6 @@ class _Plot(object):
             self.normalize = self.scale
 
         self.offset = 0.05 + (1.0 - float(seq_length)/self.normalize)*0.45
-        self.vertical_offset = 0.15
 
         assert self.normalize >= seq_length, "length normalization should be >= protein length"
 
@@ -56,6 +59,7 @@ class _Plot(object):
 class _PlotExons(_Plot):
     def __init__(self, *args, **kwargs):
         super(_PlotExons, self).__init__(*args, **kwargs)
+        self.vertical_offset = 0.15
 
     def _draw_length_markers(self, basepair_length):
         # plot protein length markers
@@ -415,9 +419,19 @@ class _PlotProtein(_Plot):
         self.rename = rename
         self.no_domain_labels = no_domain_labels
         self.exclude = exclude
+        self.vertical_offset = 0.55
 
     def _draw_domains(self, domains):
         # plot domains
+
+        domain_labels = {i:[] for i in HORIZONTAL_LEVELS}
+        domain_labels_levels = {}
+        domain_label_boxes = {i:[] for i in HORIZONTAL_LEVELS}
+        lowest_level_plotted = HORIZONTAL_LEVELS[0]
+
+        domains.sort(key=lambda x: x[3])
+
+        domain_count = 0
 
         for domain in domains:
 
@@ -431,12 +445,127 @@ class _PlotProtein(_Plot):
             if domain_name in self.exclude:
                 continue
 
+            if domain_name in self.rename:
+                domain_name = self.rename[domain_name]
+
+            domain_start = (int(domain[3])/float(self.normalize))*0.9 + self.offset
+            domain_end = (int(domain[4])/float(self.normalize))*0.9 + self.offset
+            domain_center = (domain_end-domain_start)/2. + domain_start
+
+            if not self.no_domain_labels:
+
+                # for each newly plotted domain, loop through all previous
+                # plotted domains and calculated the extent of overlap
+                # then horizontally adjust the domain label to be plotted
+                # closest to the protein domain structure or be
+                # on the same level as the label it overlaps with the least
+
+                #domain_stack_level = cycle()
+                overlaps = {i:0.0 for i in HORIZONTAL_LEVELS}
+                overlaps_all_levels = True
+                min_overlap = [float("inf"),HORIZONTAL_LEVELS[0]]
+                # plot domain at 1st level
+
+                for level in HORIZONTAL_LEVELS:
+
+                    level_pos = self.vertical_offset - 0.15 - (level-1.0)*0.1
+
+                    tmp_domain_label = self.ax.text(
+                        domain_center,
+                        level_pos,
+                        domain_name,
+                        horizontalalignment='center',
+                        verticalalignment='center',
+                        fontsize=self.fontsize
+                    )
+                    tmp_domain_label_box = tmp_domain_label.get_window_extent(renderer=self.rr)
+
+                    #check to see if it overlaps with anything
+
+                    if len(domain_label_boxes[level])>0:
+                        max_overlap = max([i.x1 - tmp_domain_label_box.x0 for i in domain_label_boxes[level]])
+
+                        if max_overlap > 0.0:
+                            overlaps[level] = max_overlap
+                            tmp_domain_label.remove()
+
+                            if max_overlap <= min_overlap[0]:
+                                min_overlap = [max_overlap, level]
+                        else:
+                            domain_labels[level].append(tmp_domain_label)
+                            domain_label_boxes[level].append(tmp_domain_label_box)
+                            overlaps_all_levels = False
+
+                            domain_labels_levels[domain_count] = level
+
+                            if level > lowest_level_plotted:
+                                lowest_level_plotted = level
+
+                            break
+                    else:
+                        domain_labels[level].append(tmp_domain_label)
+                        domain_label_boxes[level].append(tmp_domain_label_box)
+                        overlaps_all_levels = False
+
+                        domain_labels_levels[domain_count] = level
+
+                        if level > lowest_level_plotted:
+                            lowest_level_plotted = level
+
+                        break
+
+                # if the domain label overlaps with something on all levels
+                # then plot it on the level where is overlaps the least
+
+                if overlaps_all_levels:
+
+                    level_pos = self.vertical_offset - 0.15 - (min_overlap[1]-1.0)*0.1
+
+                    tmp_domain_label = self.ax.text(
+                        domain_center,
+                        level_pos,
+                        domain_name,
+                        horizontalalignment='center',
+                        verticalalignment='center',
+                        fontsize=self.fontsize
+                    )
+                    tmp_domain_label_box = tmp_domain_label.get_window_extent(renderer=self.rr)
+
+                    domain_labels[min_overlap[1]].append(tmp_domain_label)
+                    domain_label_boxes[min_overlap[1]].append(tmp_domain_label_box)
+
+                    domain_labels_levels[domain_count] = level
+
+                    if min_overlap[1] > lowest_level_plotted:
+                        lowest_level_plotted = min_overlap[1]
+            domain_count += 1
+
+        # now we know how many levels of domains labels are needed, so
+        # remove all levels, make the correction to self.vertical_offset
+        # and replot all labels.
+
+        for level, label in domain_labels.items():
+            for ll in label:
+                ll.remove()
+
+        self.levels_plotted = HORIZONTAL_LEVELS.index(lowest_level_plotted)
+        self.vertical_offset += (0.05 * self.levels_plotted)
+
+        domain_count = 0
+
+        for domain in domains:
+
+            if domain[1] is None:
+                domain_name = str(domain[0])
+            else:
+                domain_name = str(domain[1])
+
+            if domain_name in self.exclude:
+                continue
+
             color = '#3385ff'
             if domain_name in self.colors:
                 color = self.colors[domain_name]
-
-            if domain_name in self.rename:
-                domain_name = self.rename[domain_name]
 
             domain_start = (int(domain[3])/float(self.normalize))*0.9 + self.offset
             domain_end = (int(domain[4])/float(self.normalize))*0.9 + self.offset
@@ -446,36 +575,44 @@ class _PlotProtein(_Plot):
                 patches.Rectangle(
                     (
                         domain_start,
-                        0.45+self.vertical_offset,
+                        self.vertical_offset,
                     ),
-                    domain_end-domain_start,
+                    domain_end - domain_start,
                     0.1,
                     color=color
                 )
             )
 
-            if not self.no_domain_labels:
+            # fetch the level the domain label was determined it was to be
+            # plotted on
 
-                self.ax.text(
-                    domain_center,
-                    0.35+self.vertical_offset,
-                    domain_name,
-                    horizontalalignment='center',
-                    fontsize=self.fontsize
-                )
+            level = domain_labels_levels[domain_count]
+
+            level_pos = self.vertical_offset - 0.15 - (level-1.0)*0.1
+
+            tmp_domain_label = self.ax.text(
+                domain_center,
+                level_pos,
+                domain_name,
+                horizontalalignment='center',
+                verticalalignment='center',
+                fontsize=self.fontsize
+            )
+
+            domain_count += 1
+
 
     def _draw_protein_length_markers(self, protein_length):
         # plot protein length markers
-
-        self.protein_frame_length = protein_length/float(self.normalize)*0.9
 
         self.line_end = protein_length/float(self.normalize)*0.9 + self.offset
 
         self.ax.text(
             0.5,
-            0.01+self.vertical_offset,
+            self.vertical_offset - (0.5 + self.levels_plotted * 0.1),
             "Amino acid position",
             horizontalalignment='center',
+            verticalalignment='center',
             fontsize=self.fontsize
         )
 
@@ -484,7 +621,10 @@ class _PlotProtein(_Plot):
                 self.offset,
                 self.offset+self.protein_frame_length
             ),
-            (0.3+self.vertical_offset, 0.3+self.vertical_offset),
+            (
+                self.vertical_offset - (0.35 + self.levels_plotted * 0.05),
+                self.vertical_offset - (0.35 + self.levels_plotted * 0.05)
+            ),
             color='black'
             )
         )
@@ -496,15 +636,19 @@ class _PlotProtein(_Plot):
                 self.offset,
                 self.offset
             ),
-            (0.25+self.vertical_offset, 0.3+self.vertical_offset),
+            (
+                self.vertical_offset - (0.38 + self.levels_plotted * 0.05),
+                self.vertical_offset - (0.35 + self.levels_plotted * 0.05)
+            ),
             color='black'
             )
         )
         self.left_marker_text = self.ax.text(
             self.offset,
-            0.15+self.vertical_offset,
+            self.vertical_offset - (0.43 + self.levels_plotted * 0.05),
             "0",
             horizontalalignment='center',
+            verticalalignment='center',
             fontsize=self.fontsize
         )
 
@@ -517,7 +661,10 @@ class _PlotProtein(_Plot):
                         self.offset+(i/float(self.normalize)*0.9),
                         self.offset+(i/float(self.normalize)*0.9)
                     ),
-                    (0.275+self.vertical_offset, 0.3+self.vertical_offset),
+                    (
+                        self.vertical_offset - (0.38 + self.levels_plotted * 0.05),
+                        self.vertical_offset - (0.35 + self.levels_plotted * 0.05)
+                    ),
                     color='black'
                     )
                 )
@@ -529,15 +676,20 @@ class _PlotProtein(_Plot):
                 self.offset+self.protein_frame_length,
                 self.offset+self.protein_frame_length
             ),
-            (0.25+self.vertical_offset, 0.3+self.vertical_offset),
+            (
+                self.vertical_offset - (0.38 + self.levels_plotted * 0.05),
+                self.vertical_offset - (0.35 + self.levels_plotted * 0.05)
+            ),
             color='black'
             )
         )
+
         self.right_marker_text = self.ax.text(
             self.offset+self.protein_frame_length,
-            0.15+self.vertical_offset,
+            self.vertical_offset - (0.43 + self.levels_plotted * 0.05),
             str(protein_length),
             horizontalalignment='center',
+            verticalalignment='center',
             fontsize=self.fontsize
         )
 
@@ -548,7 +700,7 @@ class _PlotProtein(_Plot):
 
         self.ax.add_patch(
             patches.Rectangle(
-                (self.offset, 0.45+self.vertical_offset),
+                (self.offset, self.vertical_offset),
                 self.protein_frame_length,
                 0.1,
                 fill=False
@@ -557,14 +709,15 @@ class _PlotProtein(_Plot):
 
         self.ax.text(
             0.5,
-            0.9,
+            0.95,
             name_symbols,
             horizontalalignment='center',
             fontsize=self.fontsize
         )
+
         self.ax.text(
             0.5,
-            0.83,
+            0.88,
             name_isoform,
             horizontalalignment='center',
             fontsize=self.fontsize-3
@@ -583,7 +736,10 @@ class PlotFusionProtein(_PlotProtein):
                 (self.transcript.transcript_protein_junction_5prime/float(self.normalize))*0.9 + self.offset,
                 (self.transcript.transcript_protein_junction_5prime/float(self.normalize))*0.9 + self.offset
             ),
-            (0.4+self.vertical_offset, 0.6+self.vertical_offset),
+            (
+                self.vertical_offset - 0.05,
+                self.vertical_offset + 0.15
+            ),
             color='black'
             )
         )
@@ -595,10 +751,8 @@ class PlotFusionProtein(_PlotProtein):
         text_offset = (self.transcript.transcript_protein_junction_5prime/float(self.normalize))*0.9 + self.offset
         junction_label_vertical_offset = 0.0
 
-        rr = self.fig.canvas.get_renderer()
-
-        right_marker_text_box = self.right_marker_text.get_window_extent(renderer=rr)
-        left_marker_text_box = self.left_marker_text.get_window_extent(renderer=rr)
+        right_marker_text_box = self.right_marker_text.get_window_extent(renderer=self.rr)
+        left_marker_text_box = self.left_marker_text.get_window_extent(renderer=self.rr)
 
         while overlaps:
 
@@ -610,8 +764,8 @@ class PlotFusionProtein(_PlotProtein):
                     (self.transcript.transcript_protein_junction_5prime/float(self.normalize))*0.9 + self.offset
                 ),
                 (
-                    0.275+self.vertical_offset - junction_label_vertical_offset,
-                    0.3+self.vertical_offset
+                    self.vertical_offset - (0.37 + self.levels_plotted * 0.05) - junction_label_vertical_offset,
+                    self.vertical_offset - (0.35 + self.levels_plotted * 0.05)
                 ),
                 color='black'
                 )
@@ -623,8 +777,8 @@ class PlotFusionProtein(_PlotProtein):
                     (self.transcript.transcript_protein_junction_5prime/float(self.normalize))*0.9 + self.offset
                 ),
                 (
-                    0.275+self.vertical_offset-junction_label_vertical_offset,
-                    0.275+self.vertical_offset-junction_label_vertical_offset
+                    self.vertical_offset - (0.37 + self.levels_plotted * 0.05) - junction_label_vertical_offset,
+                    self.vertical_offset - (0.37 + self.levels_plotted * 0.05) - junction_label_vertical_offset
                 ),
                 color='black'
                 )
@@ -636,8 +790,8 @@ class PlotFusionProtein(_PlotProtein):
                     line_offset
                 ),
                 (
-                    0.25+self.vertical_offset-junction_label_vertical_offset,
-                    0.275+self.vertical_offset-junction_label_vertical_offset
+                    self.vertical_offset - (0.4 + self.levels_plotted * 0.05) - junction_label_vertical_offset,
+                    self.vertical_offset - (0.37 + self.levels_plotted * 0.05) - junction_label_vertical_offset
                 ),
                 color='black'
                 )
@@ -645,16 +799,17 @@ class PlotFusionProtein(_PlotProtein):
 
             middle_marker_text = self.ax.text(
                 text_offset,
-                0.15+self.vertical_offset-junction_label_vertical_offset,
+                self.vertical_offset - (0.45 + self.levels_plotted * 0.05) - junction_label_vertical_offset,
                 str(self.transcript.transcript_protein_junction_5prime),
                 horizontalalignment='center',
+                verticalalignment='center',
                 fontsize=self.fontsize
             )
 
             # detect if text overlaps
 
             middle_marker_text_box = middle_marker_text.get_window_extent(
-                renderer=rr
+                renderer=self.rr
             )
 
             # if overlaps then offset the junction text to the left
@@ -688,6 +843,7 @@ class PlotFusionProtein(_PlotProtein):
 
     def draw(self):
         self._scale(self.transcript.protein_length)
+        self.protein_frame_length = self.transcript.protein_length/float(self.normalize)*0.9
         self._draw_domains(self.transcript.domains['fusion'])
         self._draw_protein_length_markers(self.transcript.protein_length)
         self._draw_junction()
