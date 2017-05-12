@@ -1,24 +1,9 @@
 import os
-import site
-import gzip
-from setuptools import setup, find_packages
-from setuptools.command.install import install
 import re
 import shutil
+import site
 
-class CustomInstall(install):
-    def run(self):
-        install.run(self)
-
-        file_path = os.path.join(
-            site.getsitepackages()[0],
-            'agfusion',
-            'data',
-            'agfusion.db.gz'
-        )
-
-        with gzip.open(file_path, 'rb') as f_in, file(file_path.replace('.gz',''), 'w') as f_out:
-            shutil.copyfileobj(f_in, f_out)
+from setuptools import setup, find_packages
 
 VERSIONFILE = "agfusion/_version.py"
 verstrline = open(VERSIONFILE, "rt").read()
@@ -35,7 +20,7 @@ setup(
     version=verstr,
     name='agfusion',
     packages=find_packages(),
-    description="Python package providing that can visualize different annotations of a gene fusion.",
+    description="Python package to annotate and visualize gene fusions.",
     author='Charles Murphy',
     author_email='murphy.charlesj@gmail.com',
     license='MIT',
@@ -43,7 +28,6 @@ setup(
     long_description=README,
     include_package_data=True,
     scripts=['bin/agfusion'],
-    cmdclass={'install': CustomInstall},
     install_requires=[
         'pyensembl>=0.9.5',
         'matplotlib>=1.5.0',

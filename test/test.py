@@ -1,3 +1,4 @@
+from os.path import join, expanduser
 import unittest
 import agfusion
 from agfusion import utils
@@ -5,7 +6,7 @@ import pyensembl
 from Bio import SeqIO
 
 data = pyensembl.EnsemblRelease(84,'mouse')
-db = agfusion.AGFusionDB(utils.agfusion_db)
+db = agfusion.AGFusionDB(join(expanduser('~'),'.agfusion','agfusion.db'))
 db.build = 'mus_musculus_core_84_38'
 
 class TestSequencePrediction(unittest.TestCase):

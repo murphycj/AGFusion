@@ -150,12 +150,6 @@ agfusion annotate \
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000064477-ENSMUST00000002487-rescale.png)
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000122054-ENSMUST00000070330-rescale.png)
 
-# Advanced Usage
-
-### Building your own database
-
-Under construction...
-
 # Installation
 
 First you need to install pyensembl (and the other dependencies listed at the bottom) and download the reference genome you will use by running one of the following.
@@ -182,6 +176,12 @@ Then you can install AGFusion via the following:
 
 ```
 pip install agfusion
+```
+
+Finally, download the AGFusion database:
+
+```
+agfusion download
 ```
 
 # Dependencies

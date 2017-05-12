@@ -11,6 +11,25 @@ import agfusion
 from agfusion import exceptions
 import pyensembl
 
+def downloaddb(args):
+
+    import gzip
+    import urllib
+
+    if not os.path.exists(args.dir):
+        os.mkdir(args.dir)
+
+    file_path = os.path.join(
+        args.dir,
+        'agfusion.db.gz')
+
+    urllib.urlretrieve(
+        "https://raw.githubusercontent.com/murphycj/AGFusionDB/master/agfusion.db.gz",
+        file_path)
+
+    with gzip.open(file_path, 'rb') as f_in, file(file_path.replace('.gz',''), 'w') as f_out:
+        shutil.copyfileobj(f_in, f_out)
+
 def annotate(gene5prime,junction5prime,gene3prime,junction3prime,
              outdir,colors,rename,scale,db,pyensembl_data,args):
 
@@ -190,12 +209,11 @@ def add_common_flags(parser):
         help='(Optional) Do not label domains.'
     )
     parser.add_argument(
-        '--db',
+        '--dbpath',
         type=str,
-        default=None,
+        default=os.path.join(os.path.expanduser('~'),'.agfusion'),
         required=False,
-        help='(Optional) The SQLite3 database. Defaults to using the ' +
-             'database provided by the package.'
+        help='(Optional) Path to where the AGFusion databse is located (default: ' + os.path.join(os.path.expanduser('~'),'.agfusion') + ')'
     )
     parser.add_argument(
         '--debug',
@@ -287,16 +305,28 @@ def main():
     )
     add_common_flags(batch_parser)
 
-    # download database parser
+    # download database
 
-    database_parser = subparsers.add_parser('database', help='Download database for a reference genome.')
+    database_parser = subparsers.add_parser('download', help='Download database for a reference genome.')
     database_parser.add_argument(
+        '--dir',
+        type=str,
+        required=False,
+        default=os.path.join(os.path.expanduser('~'),'.agfusion'),
+        help='(Optional) Directory to the database will be downloaded to (default: $HOME/.agfusion/)'
+    )
+    args = parser.parse_args()
+
+    # build database parser
+
+    build_database_parser = subparsers.add_parser('build', help='Build database for a reference genome.')
+    build_database_parser.add_argument(
         '--database',
         type=str,
         required=True,
         help='Path to the database file (e.g. agfusion.db)'
     )
-    database_parser.add_argument(
+    build_database_parser.add_argument(
         '--build',
         type=str,
         required=True,
@@ -304,7 +334,7 @@ def main():
         'homo_sapiens_core_75_37 (for GRCh37), or ' +
         'mus_musculus_core_84_38 (for GRCm38)'
     )
-    database_parser.add_argument(
+    build_database_parser.add_argument(
         '--server',
         type=str,
         required=False,
@@ -313,8 +343,10 @@ def main():
     )
     args = parser.parse_args()
 
-    if args.subparser_name == 'database':
+    if args.subparser_name == 'build':
         builddb(args)
+    elif args.subparser_name == 'download':
+        downloaddb(args)
     else:
         if not os.path.exists(args.out):
             os.mkdir(args.out)
@@ -322,16 +354,11 @@ def main():
         # if user does not specify a sqlite database then use the one provided
         # by the package
 
-        if args.db is None:
-            file_path = os.path.join(
-                os.path.split(__file__)[0],
-                'data',
-                'agfusion.db'
-            )
-
-            db = agfusion.AGFusionDB(file_path,debug=args.debug)
-        else:
-            db = agfusion.AGFusionDB(args.db,debug=args.debug)
+        file_path = os.path.join(
+            args.dbpath,
+            'agfusion.db'
+        )
+        db = agfusion.AGFusionDB(file_path,debug=args.debug)
 
         # get the pyensembl data
 
