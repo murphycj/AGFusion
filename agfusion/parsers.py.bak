@@ -12,7 +12,7 @@ class _Parser(object):
     def __iter__(self):
         return self
 
-    def __next__(self):
+    def next(self):
         if self.iterator >= len(self.fusions):
             raise StopIteration
         else:

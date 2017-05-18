@@ -143,7 +143,7 @@ class _Gene():
                     if self.gene is None:
                         raise exceptions.TooManyGenesException(
                             gene,
-                            [x.id for x in temp],
+                            map(lambda x: x.id, temp),
                             genome
                         )
                 else:
@@ -262,8 +262,8 @@ class Fusion():
         self.transcripts = {}
 
         for combo in list(itertools.product(
-                        list(self.gene5prime.transcripts.keys()),
-                        list(self.gene3prime.transcripts.keys()))):
+                        self.gene5prime.transcripts.keys(),
+                        self.gene3prime.transcripts.keys())):
             transcript1 = pyensembl_data.transcript_by_id(combo[0])
             transcript2 = pyensembl_data.transcript_by_id(combo[1])
 
@@ -330,7 +330,7 @@ class Fusion():
         dict_of_plots = list()
         plot_key = dict()
 
-        for name, transcript in list(self.transcripts.items()):
+        for name, transcript in self.transcripts.items():
 
             if not transcript.has_coding_potential:
                 continue
@@ -388,7 +388,7 @@ class Fusion():
             if not os.path.exists(gene3prime_WT):
                 os.mkdir(gene3prime_WT)
 
-        for name, transcript in list(self.transcripts.items()):
+        for name, transcript in self.transcripts.items():
 
             if not transcript.has_coding_potential:
                 continue
@@ -528,7 +528,7 @@ class Fusion():
             'w'
         )
 
-        for name, transcript in list(self.transcripts.items()):
+        for name, transcript in self.transcripts.items():
 
             if transcript.cdna is not None:
 
@@ -560,7 +560,7 @@ class Fusion():
         #check if any transcripts have coding potential
 
         n=0
-        for name, transcript in list(self.transcripts.items()):
+        for name, transcript in self.transcripts.items():
 
             if transcript.cds is not None:
                 n+=1
@@ -577,7 +577,7 @@ class Fusion():
             'w'
         )
 
-        for name, transcript in list(self.transcripts.items()):
+        for name, transcript in self.transcripts.items():
 
             if transcript.cds is not None:
 
@@ -601,7 +601,7 @@ class Fusion():
         # check if any transcripts have coding potential
 
         n = 0
-        for name, transcript in list(self.transcripts.items()):
+        for name, transcript in self.transcripts.items():
 
             if transcript.cds is not None:
                 n += 1
@@ -618,7 +618,7 @@ class Fusion():
             'w'
         )
 
-        for name, transcript in list(self.transcripts.items()):
+        for name, transcript in self.transcripts.items():
 
             if transcript.cds is not None:
 
@@ -656,7 +656,7 @@ class Fusion():
                 "Protein_weight_(kD)"
             )
         )
-        for name, transcript in list(self.transcripts.items()):
+        for name, transcript in self.transcripts.items():
 
             if transcript.protein_length is None:
                 protein_length = "NA"
@@ -708,7 +708,7 @@ class Fusion():
             )
         )
 
-        for name, transcript in list(self.transcripts.items()):
+        for name, transcript in self.transcripts.items():
             for domain in transcript.domains['fusion']:
                 fout.write(
                     '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
@@ -820,7 +820,7 @@ class FusionTranscript(object):
             self.db.sqlite3_cursor.execute(
                 sqlite3_command
             )
-            tmp_domains += [list(x) for x in self.db.sqlite3_cursor.fetchall()]
+            tmp_domains += map(lambda x: list(x), self.db.sqlite3_cursor.fetchall())
 
         for d in tmp_domains:
 
@@ -878,7 +878,7 @@ class FusionTranscript(object):
                 self.db.sqlite3_cursor.execute(
                     sqlite3_command
                 )
-                tmp_domains += [list(x) for x in self.db.sqlite3_cursor.fetchall()]
+                tmp_domains += map(lambda x: list(x), self.db.sqlite3_cursor.fetchall())
 
             for d in tmp_domains:
 

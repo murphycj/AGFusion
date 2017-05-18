@@ -544,7 +544,7 @@ class _PlotProtein(_Plot):
         # remove all levels, make the correction to self.vertical_offset
         # and replot all labels.
 
-        for level, label in list(domain_labels.items()):
+        for level, label in domain_labels.items():
             for ll in label:
                 ll.remove()
 
