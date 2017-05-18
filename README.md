@@ -186,7 +186,7 @@ agfusion download
 
 # Dependencies
 
-- python 2.7.8
+- python 2.7, 3.5
 - pyensembl>=0.9.5
 - matplotlib>=1.5.0
 - biomart>=0.9.0
