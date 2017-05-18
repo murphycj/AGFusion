@@ -3,13 +3,18 @@ import os
 import sys
 import argparse
 import logging
-import urllib.request, urllib.parse, urllib.error
 import gzip
 import shutil
+from future.standard_library import install_aliases
+install_aliases()
+from urllib.request import urlopen
+from urllib.error import HTTPError
 
 import agfusion
 from agfusion import exceptions
 import pyensembl
+
+AGFUSION_DB_URL = "https://raw.githubusercontent.com/murphycj/AGFusionDB/master/agfusion.db.gz"
 
 def downloaddb(args):
 
@@ -23,9 +28,15 @@ def downloaddb(args):
         args.dir,
         'agfusion.db.gz')
 
-    urllib.request.urlretrieve(
-        "https://raw.githubusercontent.com/murphycj/AGFusionDB/master/agfusion.db.gz",
-        file_path)
+    try:
+        response = urlopen(AGFUSION_DB_URL)
+    except HTTPError:
+        print("Was unable to downloade the file %s!" % AGFUSION_DB_URL)
+        sys.exit()
+
+    fout = open(file_path,'wb')
+    fout.write(response.read())
+    fout.close()
 
     with gzip.open(file_path, 'rb') as f_in, file(file_path.replace('.gz',''), 'w') as f_out:
         shutil.copyfileobj(f_in, f_out)
@@ -273,7 +284,7 @@ def main():
         '--scale',
         type=int,
         required=False,
-        default=None,
+        default=-1,
         help='(Optional) Set maximum width (in amino acids) of the figure to rescale the fusion (default: max length of fusion product)'
     )
 
