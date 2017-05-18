@@ -3,7 +3,6 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.pyplot
-import json
 from itertools import cycle
 
 # this is so I can plot graphics on a headless server

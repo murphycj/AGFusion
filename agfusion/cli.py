@@ -18,9 +18,6 @@ AGFUSION_DB_URL = "https://raw.githubusercontent.com/murphycj/AGFusionDB/master/
 
 def downloaddb(args):
 
-    import gzip
-    import urllib.request, urllib.parse, urllib.error
-
     if not os.path.exists(args.dir):
         os.mkdir(args.dir)
 

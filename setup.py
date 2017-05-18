@@ -29,9 +29,7 @@ setup(
     include_package_data=True,
     scripts=['bin/agfusion'],
     install_requires=[
-        'pyensembl>=0.9.5',
         'matplotlib>=1.5.0',
-        'biomart>=0.9.0',
         'pandas>=0.18.1',
         'biopython>=1.67',
         'future>=0.16.0',

@@ -187,12 +187,11 @@ agfusion download
 # Dependencies
 
 - python 2.7, 3.5
-- pyensembl>=0.9.5
 - matplotlib>=1.5.0
-- biomart>=0.9.0
 - pandas>=0.18.1
 - biopython>=1.67
-- jsonpickle>=0.9.
+- future>=0.16.0
+- pyensembl>=1.1.0
 
 # License
 
