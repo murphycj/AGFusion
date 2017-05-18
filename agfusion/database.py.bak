@@ -277,7 +277,7 @@ class AGFusionDBBManager():
                 genes[i]['entrez_id'],
                 genes[i]['gene_name'],
                 genes[i]['canonical_transcript_id']
-            ] for i in list(genes.keys())
+            ] for i in genes.keys()
         ]
 
         self.logger.info(
@@ -324,7 +324,7 @@ class AGFusionDBBManager():
                 transcripts[i]['gene_id'],
                 transcripts[i]['transcript_stable_id'],
                 transcripts[i]['translation_id']
-            ] for i in list(transcripts.keys())
+            ] for i in transcripts.keys()
         ]
 
         self.logger.info(
