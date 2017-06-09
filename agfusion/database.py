@@ -41,7 +41,7 @@ class AGFusionDB():
         ch.setFormatter(formatter)
         self.logger.addHandler(ch)
 
-        assert os.path.exists(self.database), "database does not exist!"
+        assert os.path.exists(self.database), "AGFusion database at %s does not exist! Either run \'agfusion download\' or specify the location of the AGFusion database with the --dbpath flag." % database
 
         self.sqlite3_db = sqlite3.connect(
             os.path.abspath(self.database)

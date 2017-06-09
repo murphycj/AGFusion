@@ -4,6 +4,11 @@ class DataBaseError(Exception):
         Exception.__init__(self,e)
         self.e = e
 
+class GeneNotFound(Exception):
+    def __init__(self,gene):
+        Exception.__init__(self,"No entry in Ensembl found for {0}! Check its spelling and if you are using the right genome build.".format(gene))
+        self.gene = gene
+
 class GeneIDException3prime(Exception):
     def __init__(self,gene):
         Exception.__init__(self,"No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(gene))

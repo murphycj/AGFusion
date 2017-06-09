@@ -22,12 +22,17 @@ class _Gene():
     def __init__(self, gene=None, junction=0, pyensembl_data=None,
                  genome='', gene5prime=False, db=None, noncanonical=False):
 
-        gene_found = False
+        self.gene_found = False
         provided_transcript = False # indicates user if user provided transcript
 
         self.domains = []
         self.transcripts = {} # stores transcripts and their DB keys
         self.gene = None
+        self.pyensembl_data = pyensembl_data
+        self.genome = genome
+        self.gene5prime = gene5prime
+        self.db = db
+        self.noncanonical = noncanonical
 
         # find the appropriate Ensembl gene ID
 
@@ -35,129 +40,108 @@ class _Gene():
 
             # if it is RefSeq ID
 
-            sqlite3_command = "SELECT * FROM " + db.build + "_refseq WHERE refseq_id==\"" + gene + "\""
-            db.logger.debug('SQLite - ' + sqlite3_command)
-            db.sqlite3_cursor.execute(
+            sqlite3_command = "SELECT * FROM " + self.db.build + "_refseq WHERE refseq_id==\"" + gene + "\""
+            self.db.logger.debug('SQLite - ' + sqlite3_command)
+            self.db.sqlite3_cursor.execute(
                 sqlite3_command
             )
-            tmp = db.sqlite3_cursor.fetchall()
+            tmp = self.db.sqlite3_cursor.fetchall()
 
             if len(tmp)==1:
                 self.transcripts[tmp[0][1]] = tmp[0][0]
-                db.logger.debug('Found RefSeq entry for %s' % gene)
-                gene_found = True
+                self.db.logger.debug('Found RefSeq entry for %s' % gene)
+                self.gene_found = True
                 provided_transcript = True
 
                 #fetch the gene
 
-                transcript = pyensembl_data.transcript_by_id(tmp[0][1])
+                transcript = self.pyensembl_data.transcript_by_id(tmp[0][1])
                 self.gene = transcript.gene
 
             elif len(tmp)>1:
-                db.logger.error('Found too many RefSeq entries for %s!' % gene)
+                self.db.logger.error('Found too many RefSeq entries for %s!' % gene)
                 for i in tmp:
-                    db.logger.error(i)
+                    self.db.logger.error(i)
                 sys.exit()
             else:
-                db.logger.debug('Found no RefSeq entry for %s' % gene)
+                self.db.logger.debug('Found no RefSeq entry for %s' % gene)
 
-        if gene.isdigit() and not gene_found:
+        if gene.isdigit() and not self.gene_found:
 
             # if it is an entrez gene ID
 
-            sqlite3_command = "SELECT * FROM " + db.build + " WHERE entrez_id==\"" + gene + "\""
-            db.logger.debug('SQLite - ' + sqlite3_command)
-            db.sqlite3_cursor.execute(
+            sqlite3_command = "SELECT * FROM " + self.db.build + " WHERE entrez_id==\"" + gene + "\""
+            self.db.logger.debug('SQLite - ' + sqlite3_command)
+            self.db.sqlite3_cursor.execute(
                 sqlite3_command
             )
-            tmp = db.sqlite3_cursor.fetchall()
+            tmp = self.db.sqlite3_cursor.fetchall()
 
             if len(tmp)==1:
-                self.gene = pyensembl_data.gene_by_id(tmp[0][1])
-                db.logger.debug('Found Entrez gene ID entry for %s: %s' % (gene,self.gene.id))
-                gene_found = True
+                self.gene = self.pyensembl_data.gene_by_id(tmp[0][1])
+                self.db.logger.debug('Found Entrez gene ID entry for %s: %s' % (gene,self.gene.id))
+                self.gene_found = True
             elif len(tmp)>1:
 
-                db.logger.error('Found too many Entrez gene ID entries for %s!' % gene)
+                self.db.logger.error('Found too many Entrez gene ID entries for %s!' % gene)
                 for i in tmp:
-                    db.logger.error(i)
+                    self.db.logger.error(i)
                 sys.exit()
             else:
-                db.logger.debug('Found no Entrez gene ID entry for %s' % gene)
+                self.db.logger.debug('Found no Entrez gene ID entry for %s' % gene)
 
-        if re.findall('(^ENS.*G)', gene.upper()) and not gene_found:
+        if re.findall('(^ENS.*G)', gene.upper()) and not self.gene_found:
 
             # if it is ensembl gene id
 
-            if gene in pyensembl_data.gene_ids():
-                self.gene = pyensembl_data.gene_by_id(gene.upper())
-                db.logger.debug('Found Enrez gene ID entry for %s: %s' % (gene,self.gene.id))
-                gene_found = True
+            if gene in self.pyensembl_data.gene_ids():
+                self.gene = self.pyensembl_data.gene_by_id(gene.upper())
+                self.db.logger.debug('Found Enrez gene ID entry for %s: %s' % (gene,self.gene.id))
+                self.gene_found = True
             else:
-                db.logger.debug('Cannot find Ensembl gene id %s in database!' % gene)
+                self.db.logger.debug('Cannot find Ensembl gene id %s in database!' % gene)
 
-        if re.findall('(^ENS.*T)', gene.upper()) and not gene_found:
+        if re.findall('(^ENS.*T)', gene.upper()) and not self.gene_found:
 
             # if it is ensembl transcript id
 
-            if gene in pyensembl_data.transcript_ids():
-                transcript = pyensembl_data.transcript_by_id(gene.upper())
+            if gene in self.pyensembl_data.transcript_ids():
+                transcript = self.pyensembl_data.transcript_by_id(gene.upper())
                 self.gene = transcript.gene
 
-                db.logger.debug('Found Ensembl transcript entry for %s: %s' % (gene,self.gene.id))
-                gene_found = True
+                self.db.logger.debug('Found Ensembl transcript entry for %s: %s' % (gene,self.gene.id))
+                self.gene_found = True
                 provided_transcript = True
             else:
-                db.logger.debug('Found no Ensembl transcript entry for %s' % gene)
+                self.db.logger.debug('Found no Ensembl transcript entry for %s' % gene)
 
-            sqlite3_command = "SELECT * FROM " + db.build + "_transcript WHERE transcript_stable_id==\"" + gene + "\""
-            db.logger.debug('SQLite - ' + sqlite3_command)
-            db.sqlite3_cursor.execute(
+            sqlite3_command = "SELECT * FROM " + self.db.build + "_transcript WHERE transcript_stable_id==\"" + gene + "\""
+            self.db.logger.debug('SQLite - ' + sqlite3_command)
+            self.db.sqlite3_cursor.execute(
                 sqlite3_command
             )
-            tmp = db.sqlite3_cursor.fetchall()
+            tmp = self.db.sqlite3_cursor.fetchall()
             self.transcripts[tmp[0][2]] = tmp[0][0]
 
-        if not gene_found:
+        if not self.gene_found:
 
             # else check if it is a gene symbol
 
-            if pyensembl_data.species.latin_name == 'mus_musculus':
+            self._search_by_symbol(gene)
+
+            if not self.gene_found:
                 gene = gene.capitalize()
-            else:
+                self._search_by_symbol(gene)
+
+            if not self.gene_found:
                 gene = gene.upper()
-
-            if gene in pyensembl_data.gene_names():
-                temp = pyensembl_data.genes_by_name(gene)
-
-                if len(temp) > 1:
-
-                    # if too many ensembl gene IDs returned
-                    # use the one located on chromosomes
-
-                    for tmp_gene in temp:
-                        if tmp_gene.contig in STANDARD_CHROMOSOMES:
-                            self.gene = tmp_gene
-                            gene_found = True
-
-                    if self.gene is None:
-                        raise exceptions.TooManyGenesException(
-                            gene,
-                            [x.id for x in temp],
-                            genome
-                        )
-                else:
-                    self.gene = temp[0]
-                    gene_found = True
-                    db.logger.debug('Found gene symbol entry for %s: %s' % (gene,self.gene.id))
-            else:
-                db.logger.debug('Found no gene symbol entry for %s' % gene)
+                self._search_by_symbol(gene)
 
 
         # if gene has not been identified yet
 
-        if not gene_found:
-            raise exceptions.GeneIDException3prime(gene)
+        if not self.gene_found:
+            raise exceptions.GeneNotFound(gene)
 
         # else continue with processing
 
@@ -171,12 +155,12 @@ class _Gene():
 
         # fetch the entrez gene id and canonical transcript id
 
-        sqlite3_command = "SELECT * FROM " + db.build + " WHERE stable_id==\"" + self.gene.gene_id + "\""
-        db.logger.debug('SQLite - ' + sqlite3_command)
-        db.sqlite3_cursor.execute(
+        sqlite3_command = "SELECT * FROM " + self.db.build + " WHERE stable_id==\"" + self.gene.gene_id + "\""
+        self.db.logger.debug('SQLite - ' + sqlite3_command)
+        self.db.sqlite3_cursor.execute(
             sqlite3_command
         )
-        tmp = db.sqlite3_cursor.fetchall()
+        tmp = self.db.sqlite3_cursor.fetchall()
 
         self.gene_id = tmp[0][0]
         self.entrez_id = tmp[0][2]
@@ -188,9 +172,9 @@ class _Gene():
 
             # if only want the canonical and did not specify a certain transcript
 
-            sqlite3_command = "SELECT * FROM " + db.build + "_transcript WHERE transcript_id==\"" + self.canonical_transcript_id + "\""
-            db.logger.debug('SQLite - ' + sqlite3_command)
-            db.sqlite3_cursor.execute(
+            sqlite3_command = "SELECT * FROM " + self.db.build + "_transcript WHERE transcript_id==\"" + self.canonical_transcript_id + "\""
+            self.db.logger.debug('SQLite - ' + sqlite3_command)
+            self.db.sqlite3_cursor.execute(
                 sqlite3_command
             )
             tmp = db.sqlite3_cursor.fetchall()
@@ -200,19 +184,44 @@ class _Gene():
         else:
 
             if provided_transcript and noncanonical:
-                db.logger.warn("You provided a transcript ID as well as specified --noncanonical flag. Will process all the gene's transcripts.")
+                self.db.logger.warn("You provided a transcript ID as well as specified --noncanonical flag. Will process all the gene's transcripts.")
 
             # fetch transcript ids
 
-            sqlite3_command = "SELECT * FROM " + db.build + "_transcript WHERE gene_id==\"" + self.gene_id + "\""
-            db.logger.debug('SQLite - ' + sqlite3_command)
-            db.sqlite3_cursor.execute(
+            sqlite3_command = "SELECT * FROM " + self.db.build + "_transcript WHERE gene_id==\"" + self.gene_id + "\""
+            self.db.logger.debug('SQLite - ' + sqlite3_command)
+            self.db.sqlite3_cursor.execute(
                 sqlite3_command
             )
-            tmp = db.sqlite3_cursor.fetchall()
+            tmp = self.db.sqlite3_cursor.fetchall()
 
             for transcript in tmp:
                 self.transcripts[transcript[2]] = transcript[0]
+
+    def _search_by_symbol(self,gene):
+        if gene in self.pyensembl_data.gene_names():
+            temp = self.pyensembl_data.genes_by_name(gene)
+
+            if len(temp) > 1:
+
+                # if too many ensembl gene IDs returned
+                # use the one located on chromosomes
+
+                for tmp_gene in temp:
+                    if tmp_gene.contig in STANDARD_CHROMOSOMES:
+                        self.gene = tmp_gene
+                        self.gene_found = True
+
+                if self.gene is None:
+                    raise exceptions.TooManyGenesException(
+                        gene,
+                        [x.id for x in temp],
+                        self.genome
+                    )
+            else:
+                self.gene = temp[0]
+                self.gene_found = True
+                self.db.logger.debug('Found gene symbol entry for %s: %s' % (gene,self.gene.id))
 
 class Fusion():
     """

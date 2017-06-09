@@ -25,6 +25,8 @@ def downloaddb(args):
         args.dir,
         'agfusion.db.gz')
 
+    print("Downloading the AGFusion database...")
+
     try:
         response = urlopen(AGFUSION_DB_URL)
     except HTTPError:
@@ -219,7 +221,7 @@ def add_common_flags(parser):
     parser.add_argument(
         '--dbpath',
         type=str,
-        default=os.path.join(os.path.expanduser('~'),'.agfusion'),
+        default=os.path.join(os.path.expanduser('~'),'.agfusion/agfusion.db'),
         required=False,
         help='(Optional) Path to where the AGFusion databse is located (default: ' + os.path.join(os.path.expanduser('~'),'.agfusion') + ')'
     )
@@ -362,11 +364,11 @@ def main():
         # if user does not specify a sqlite database then use the one provided
         # by the package
 
-        file_path = os.path.join(
-            args.dbpath,
-            'agfusion.db'
-        )
-        db = agfusion.AGFusionDB(file_path,debug=args.debug)
+        #file_path = os.path.join(
+        #    args.dbpath,
+        #    'agfusion.db'
+        #)
+        db = agfusion.AGFusionDB(args.dbpath,debug=args.debug)
 
         # get the pyensembl data
 
