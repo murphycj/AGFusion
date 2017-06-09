@@ -1,5 +1,5 @@
 # Annotate Gene Fusion (AGFusion)
-For a given gene fusion, AGFusion will predict the cDNA, CDS, and protein sequences resulting from fusion of all combinations of transcripts and save them to fasta files. AGFusion can also plot the protein domain architecture of the fusion transcripts. Currently, only PFAM domains are used to annotate gene fusions. CDS and protein sequences are only outputted for fusions that can form a protein.
+For a given gene fusion, AGFusion will predict the cDNA, CDS, and protein sequences resulting from a gene fusion and save them to fasta files. AGFusion also plots the protein domain and exon architectures of the fusion transcripts.
 
 Docs are at http://pythonhosted.org/agfusion/
 
@@ -76,7 +76,7 @@ agfusion annotate \
 
 ### Canonical gene isoforms
 
-By default AGFusion only plots the [canonical](http://useast.ensembl.org/Help/Glossary?id=346) gene isoforms, but you can tell AGFusion to include non-canonical isoform with the --noncanonical flag. This can produce many fusion isoform combinations.
+By default AGFusion only plots the [canonical](http://useast.ensembl.org/Help/Glossary?id=346) gene isoforms, but you can tell AGFusion to include non-canonical isoform with the --noncanonical flag.
 
 ```
 agfusion annotate \
