@@ -25,7 +25,7 @@ def downloaddb(args):
         args.dir,
         'agfusion.db.gz')
 
-    print("Downloading the AGFusion database...")
+    print("Downloading the AGFusion database to %s..." % file_path)
 
     try:
         response = urlopen(AGFUSION_DB_URL)

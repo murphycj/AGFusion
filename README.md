@@ -184,6 +184,12 @@ Finally, download the AGFusion database:
 agfusion download
 ```
 
+The AGFusion database will be downloaded to $HOME/.agfusion/, but if you wish to change that then use the --dir flag (NOTE: you will need to then specify --dbpath when running AGFusion):
+
+```
+agfusion download --dir /your/path
+```
+
 # Dependencies
 
 - python 2.7, 3.5
