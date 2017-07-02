@@ -865,6 +865,7 @@ class PlotWTProtein(_PlotProtein):
 
     def draw(self):
         self._scale(len(self.ensembl_transcript.coding_sequence)/3)
+        self.protein_frame_length = len(self.ensembl_transcript.coding_sequence)/3/float(self.normalize)*0.9
         self._draw_domains(self.transcript.domains[self.ensembl_transcript.id])
         self._draw_protein_length_markers(len(self.ensembl_transcript.coding_sequence)/3)
         self._draw_main_body(
