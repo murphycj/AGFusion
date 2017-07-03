@@ -231,12 +231,6 @@ def add_common_flags(parser):
         action='store_true',
         help='(Optional) Enable debugging logging.'
     )
-    parser.add_argument(
-        '-v',
-        '--version',
-        action='version',
-        version=agfusion.__version__
-    )
 
 def main():
 
@@ -325,7 +319,6 @@ def main():
         default=os.path.join(os.path.expanduser('~'),'.agfusion'),
         help='(Optional) Directory to the database will be downloaded to (default: $HOME/.agfusion/)'
     )
-    args = parser.parse_args()
 
     # build database parser
 
@@ -350,6 +343,12 @@ def main():
         required=False,
         default='ensembldb.ensembl.org',
         help='(optional) Ensembl server (default ensembldb.ensembl.org)'
+    )
+    parser.add_argument(
+        '-v',
+        '--version',
+        action='version',
+        version=agfusion.__version__
     )
     args = parser.parse_args()
 
