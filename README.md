@@ -61,7 +61,7 @@ SIELLARSLPKIHRSASEPSLNRAGFQTEDFSLYACASPKTPIQAGGYGEFAAFK
 
 ### Plotting wild-type protein and exon structure
 
-You can additionally plot the wild-type proteins for each gene with --WT flag.
+You can additionally plot the wild-type proteins and exon structures for each gene with --WT flag.
 
 ```
 agfusion annotate \
@@ -91,7 +91,7 @@ agfusion annotate \
 
 ### Input from fusion-finding algorithms
 
-You can provide as input output files from fusion-finding algorithms. Currently available algorithms are: FusionCatcher, TopHat-Fusion, and STAR-Fusion.
+You can provide as input output files from fusion-finding algorithms. Currently available algorithms are: FusionCatcher, TopHat-Fusion, and STAR-Fusion (support for more algorithms is under development).
 Below is an example for FusionCatcher.
 
 ```

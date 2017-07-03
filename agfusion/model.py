@@ -735,6 +735,64 @@ class Fusion():
                 )
         fout.close()
 
+        # write tables of exon structure
+
+        fout = open(
+            os.path.join(
+                out_dir,
+                self.name + '.exons.txt'
+            ),
+            'w'
+        )
+        fout.write(
+            '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
+            (
+                "5\'_gene",
+                "3\'_gene",
+                "5\'_transcript",
+                "3\'_transcript",
+                "exon_gene_source",
+                "exon_number",
+                "exon_chr",
+                "exon_start",
+                "exon_end"
+            )
+        )
+        for name, transcript in list(self.transcripts.items()):
+            for exon in transcript.gene5prime_exon_intervals:
+                fout.write(
+                    '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
+                    (
+                        transcript.gene5prime.gene.gene_name,
+                        transcript.gene3prime.gene.gene_name,
+                        transcript.transcript1.id,
+                        transcript.transcript2.id,
+                        '\'5 gene',
+                        exon[2],
+                        transcript.transcript1.contig,
+                        exon[0],
+                        exon[1]
+                    )
+                )
+
+            for exon in transcript.gene3prime_exon_intervals:
+                fout.write(
+                    '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
+                    (
+                        transcript.gene5prime.gene.gene_name,
+                        transcript.gene3prime.gene.gene_name,
+                        transcript.transcript1.id,
+                        transcript.transcript2.id,
+                        '\'3 gene',
+                        exon[2],
+                        transcript.transcript2.contig,
+                        exon[0],
+                        exon[1]
+                    )
+                )
+
+        fout.close()
+
 
 class FusionTranscript(object):
     """
@@ -1070,7 +1128,12 @@ class FusionTranscript(object):
         n_max = len(self.transcript1.exons)
 
         if self.transcript1.strand == "+":
+
+            exon_count = 0
+
             for exon in self.transcript1.exons:
+
+                exon_count += 1
 
                 # is in intron?
 
@@ -1090,7 +1153,8 @@ class FusionTranscript(object):
                     self.transcript_cdna_junction_5prime += (exon.end - exon.start + 1)
                     self.gene5prime_exon_intervals.append([
                         exon.start,
-                        exon.end
+                        exon.end,
+                        exon_count
                     ])
                 elif self.gene5prime.junction <= exon.start:
                     break
@@ -1098,11 +1162,17 @@ class FusionTranscript(object):
                     self.transcript_cdna_junction_5prime += (self.gene5prime.junction - exon.start + 1)
                     self.gene5prime_exon_intervals.append([
                         exon.start,
-                        self.gene5prime.junction
+                        self.gene5prime.junction,
+                        exon_count
                     ])
                     break
         else:
+
+            exon_count = 0
+
             for exon in self.transcript1.exons:
+
+                exon_count += 1
 
                 # is in intron?
 
@@ -1122,7 +1192,8 @@ class FusionTranscript(object):
                     self.transcript_cdna_junction_5prime += (exon.end - exon.start + 1)
                     self.gene5prime_exon_intervals.append([
                         exon.start,
-                        exon.end
+                        exon.end,
+                        exon_count
                     ])
                 elif self.gene5prime.junction >= exon.end:
                     break
@@ -1130,7 +1201,8 @@ class FusionTranscript(object):
                     self.transcript_cdna_junction_5prime += (exon.end - self.gene5prime.junction + 1)
                     self.gene5prime_exon_intervals.append([
                         self.gene5prime.junction,
-                        exon.end
+                        exon.end,
+                        exon_count
                     ])
 
         self.cdna_5prime = self.transcript1.sequence[0:self.transcript_cdna_junction_5prime]
@@ -1143,20 +1215,25 @@ class FusionTranscript(object):
 
         if self.transcript2.strand == "+":
 
+            exon_count = 0
+
             # get the exons in the fusion
 
             for exon in self.transcript2.exons:
+                exon_count += 1
                 if self.gene3prime.junction >= exon.end:
                     continue
                 elif self.gene3prime.junction <= exon.start:
                     self.gene3prime_exon_intervals.append([
                         exon.start,
-                        exon.end
+                        exon.end,
+                        exon_count
                     ])
                 else:
                     self.gene3prime_exon_intervals.append([
                         self.gene3prime.junction,
-                        exon.end
+                        exon.end,
+                        exon_count
                     ])
 
             for exon in self.transcript2.exons:
@@ -1183,20 +1260,25 @@ class FusionTranscript(object):
                     self.transcript_cdna_junction_3prime += (self.gene3prime.junction - exon.start)
         else:
 
+            exon_count = 0
+
             # get the exons in the fusion
 
             for exon in self.transcript2.exons:
+                exon_count += 1
                 if self.gene3prime.junction <= exon.start:
                     continue
                 elif self.gene3prime.junction >= exon.end:
                     self.gene3prime_exon_intervals.append([
                         exon.start,
-                        exon.end
+                        exon.end,
+                        exon_count
                     ])
                 else:
                     self.gene3prime_exon_intervals.append([
                         exon.start,
-                        self.gene3prime.junction
+                        self.gene3prime.junction,
+                        exon_count
                     ])
 
             for exon in self.transcript2.exons:
