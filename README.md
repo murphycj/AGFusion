@@ -1,7 +1,13 @@
 # Annotate Gene Fusion (AGFusion)
-For a given gene fusion, AGFusion will predict the cDNA, CDS, and protein sequences resulting from a gene fusion and save them to fasta files. AGFusion also plots the protein domain and exon architectures of the fusion transcripts.
+AGFusion is a python package for annotating gene fusions from the human or mouse genomes. Specifically, the output of AGFusion includes:
 
-Docs are at http://pythonhosted.org/agfusion/
+* FASTA files of cDNA, CDS, and protein sequences.
+* Visualizes the protein domain and exon architectures of the fusion transcripts.
+* Saves tables listing the coordinates of protein features and exons included in the fusion.
+* Optional exon structure and protein domain visualization of the wild-type  version of the fusion gene partners.
+
+Annotation is by default done only for canonical gene isoforms, but there is the option to annotate all gene non-canonical isoform combinations.
+
 
 ## Table of Contents
 
@@ -43,21 +49,6 @@ The protein domain structure of the DLG1-BRAF fusion:
 The exon structure of the DLG1-BRAF fusion:
 
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000064477-ENSMUST00000002487.exon.png)
-
-The cDNA, CDS, and protein fusion sequences are outputted in fasta format. Here is an example protein sequence for the in-frame fusion:
-
-```
->ENSMUSP00000064280-ENSMUSP00000002487 length=535, kD: 60.0739853, transcripts: ENSMUST00000064477-ENSMUST00000002487, genes: Dlg1-Braf, effect: in-frame
-MPVRKQDTQRALHLLEEYRSKLSQTEDRQLRSSIERVINIFQSNLFQALIDIQEFYEVTL
-LDNPKCVDHSKQCEPVQPVTTWEIASLPSTAVTSETLPGSLSPPVEDLIRDQGFRGDGAP
-LNQLMRCLRKYQSRTPSPLLHSVPSEIVFDFEPGPVFRGSTTGLSATPPASLPGSLTNVK
-ALQKSPGPQRERKSSSSSSSEDRSRMKTLGRRDSSDDWEIPDGQITVGQRIGSGSFGTVY
-KGKWHGDVAVKMLNVTAPTPQQLQAFKNEVGVLRKTRHVNILLFMGYSTKPQLAIVTQWC
-EGSSLYHHLHIIETKFEMIKLIDIARQTAQGMDYLHAKSIIHRDLKSNNIFLHEDLTVKI
-GDFGLATVKSRWSGSHQFEQLSGSILWMAPEVIRMQDKNPYSFQSDVYAFGIVLYELMTG
-QLPYSNINNRDQIIFMVGRGYLSPDLSKVRSNCPKAMKRLMAECLKKKRDERPLFPQILA
-SIELLARSLPKIHRSASEPSLNRAGFQTEDFSLYACASPKTPIQAGGYGEFAAFK
-```
 
 ### Plotting wild-type protein and exon structure
 
