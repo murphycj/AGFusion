@@ -821,10 +821,12 @@ class FusionTranscript(object):
         self.transcript_cds_junction_3prime = None
         self.gene5prime_cds_intervals = []
         self.gene3prime_cds_intervals = []
+        self.cds_3prime = None
+        self.cds_3prime = None
 
         self.cdna = None
-        self.cdna_5prime = ''
-        self.cdna_3prime = ''
+        self.cdna_5prime = None
+        self.cdna_3prime = None
         self.transcript_cdna_junction_5prime = None
         self.transcript_cdna_junction_3prime = None
         self.gene5prime_exon_intervals = []
@@ -1101,7 +1103,8 @@ class FusionTranscript(object):
 
         #create a sequence record
 
-        seq = self.cds_5prime + self.cds_3prime
+        if self.cds_5prime is not None and self.cds_3prime is not None:
+            seq = self.cds_5prime + self.cds_3prime
 
         self.cds = SeqRecord.SeqRecord(
             Seq.Seq(seq,generic_dna),
@@ -1205,7 +1208,17 @@ class FusionTranscript(object):
                         exon_count
                     ])
 
-        self.cdna_5prime = self.transcript1.sequence[0:self.transcript_cdna_junction_5prime]
+        try:
+            self.cdna_5prime = self.transcript1.sequence[0:self.transcript_cdna_junction_5prime]
+        except TypeError:
+            self.db.logger.warn('No cDNA sequence available for %s (this ' \
+                'is a known bug). Will not print the FASTA sequence for ' \
+                'fusion %s.' %
+                (
+                    str(self.gene5prime.gene.name),
+                    self.gene_names
+                )
+            )
 
         # get the 3prime transcript sequence and determine if junction is
         # within intron
@@ -1304,18 +1317,33 @@ class FusionTranscript(object):
                 else:
                     self.transcript_cdna_junction_3prime += (exon.end - self.gene3prime.junction)
 
-        self.cdna_3prime = self.transcript2.sequence[
-            self.transcript_cdna_junction_3prime::
-        ]
+        if self.cdna_5prime is not None:
+            try:
+                self.cdna_3prime = self.transcript2.sequence[
+                    self.transcript_cdna_junction_3prime::
+                ]
+            except TypeError:
+                self.db.logger.warn('No cDNA sequence available for %s (this ' \
+                    'is a known bug). Will not print the FASTA sequence for ' \
+                    'fusion %s.' %
+                    (
+                        str(self.gene3prime.gene.name),
+                        self.gene_names
+                    )
+                )
+
+        if self.cdna_5prime is not None and self.cdna_3prime is not None:
+            seq = self.cdna_5prime + self.cdna_3prime
+            seq_length = str(len(seq))
+        else:
+            seq = ''
+            seq_length = 'NA'
 
         self.cdna = SeqRecord.SeqRecord(
-            Seq.Seq(self.cdna_5prime+self.cdna_3prime, generic_dna),
+            Seq.Seq(seq, generic_dna),
             id=self.name,
             name=self.name,
-            description="length=" +
-                        str(len(self.cdna_5prime+self.cdna_3prime)) +
-                        ', ' +
-                        str(self.transcript2.name)
+            description="length=" + seq_length
         )
 
 

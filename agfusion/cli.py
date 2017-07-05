@@ -397,7 +397,7 @@ def main():
                 assert len(pair) == 2, " did not properly specify --colors"
 
                 if pair[0] in colors:
-                    print("!!! WARNING - you specified colors for %s twice." % pair[0])
+                    db.logger.warn("You specified colors for %s twice." % pair[0])
 
                 colors[pair[0]] = pair[1]
 
@@ -408,7 +408,7 @@ def main():
                 assert len(pair) == 2, " did not properly specify --rename"
 
                 if pair[0] in rename:
-                    print("!!! WARNING - you rename %s twice." % pair[0])
+                    db.logger.warn("WARNING - you rename %s twice." % pair[0])
 
                 rename[pair[0]] = pair[1]
 
