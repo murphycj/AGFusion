@@ -19,6 +19,8 @@ class _Parser(object):
             self.iterator += 1
             return self.fusions[self.iterator-1]
 
+    next = __next__
+
 class STARFusion(_Parser):
     def __init__(self,infile):
         super(STARFusion, self).__init__()
