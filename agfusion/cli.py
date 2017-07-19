@@ -1,6 +1,7 @@
 import sqlite3
-import os
-import sys
+from os.path import split, exists, join, expanduser
+from os import mkdir, remove
+from sys import exit
 import argparse
 import logging
 import gzip
@@ -14,24 +15,49 @@ import agfusion
 from agfusion import exceptions
 import pyensembl
 
-AGFUSION_DB_URL = "https://raw.githubusercontent.com/murphycj/AGFusionDB/master/agfusion.db.gz"
+from agfusion.utils import AGFUSION_DB_URL, AVAILABLE_ENSEMBL_SPECIES, GENOME_SHORTCUTS
+
+def list_available_databases():
+    print('\n')
+    print('{:<10}\t\t{:<5}\t\t{:<20}'.format('Species','Release','Shortcut(s)'))
+    for species, releases in AVAILABLE_ENSEMBL_SPECIES.items():
+        for release in releases:
+            shortcut = []
+            for ss, data in GENOME_SHORTCUTS.items():
+                if species in data and release in data:
+                    shortcut.append(ss)
+            print('{:<10}\t\t{:<5}\t\t{:<20}'.format(species,release,','.join(shortcut)))
+    exit()
 
 def downloaddb(args):
 
-    if not os.path.exists(args.dir):
-        os.mkdir(args.dir)
+    if args.genome is not None:
+        if args.genome not in GENOME_SHORTCUTS:
+            print('Invalid genome shortcut! Use -a to see available shortcuts.')
+            exit()
+        else:
+            species = GENOME_SHORTCUTS[args.genome][0]
+            release = str(GENOME_SHORTCUTS[args.genome][1])
+    else:
+        if args.species is None or args.release is None:
+            print("Specify --species and --release or --genome!")
+            exit()
+        species = args.species
+        release = str(args.release)
 
-    file_path = os.path.join(
+    file_path = join(
         args.dir,
-        'agfusion.db.gz')
+        'agfusion.' + species + '.' + release + '.db.gz')
 
     print("Downloading the AGFusion database to %s..." % file_path)
 
+    db_url = AGFUSION_DB_URL + species + '.' + release + '.db.gz'
+
     try:
-        response = urlopen(AGFUSION_DB_URL)
+        response = urlopen(db_url)
     except HTTPError:
-        print("Was unable to downloade the file %s!" % AGFUSION_DB_URL)
-        sys.exit()
+        print("Was unable to downloade the file %s!" % db_url)
+        exit()
 
     fout = open(file_path,'wb')
     fout.write(response.read())
@@ -39,6 +65,8 @@ def downloaddb(args):
 
     with gzip.open(file_path, 'rb') as f_in, file(file_path.replace('.gz',''), 'w') as f_out:
         shutil.copyfileobj(f_in, f_out)
+
+    remove(file_path)
 
 def annotate(gene5prime,junction5prime,gene3prime,junction3prime,
              outdir,colors,rename,scale,db,pyensembl_data,args):
@@ -85,7 +113,13 @@ def annotate(gene5prime,junction5prime,gene3prime,junction3prime,
 
 def builddb(args):
 
-    db = agfusion.AGFusionDBBManager(args.database, args.build, args.server)
+    db = agfusion.AGFusionDBBManager(
+        args.dir,
+        args.species,
+        args.release,
+        args.pfam,
+        args.server
+    )
 
     db.logger.info('Fetching alternative gene names...')
 
@@ -103,20 +137,17 @@ def builddb(args):
 
 def add_common_flags(parser):
     parser.add_argument(
+        '--db',
+        type=str,
+        required=True,
+        help='Path to the AGFusion database (e.g. --db /path/to/agfusion.homo_sapiens.87.db)'
+    )
+    parser.add_argument(
         '-o',
         '--out',
         type=str,
         required=True,
         help='Directory to save results'
-    )
-    parser.add_argument(
-        '-g',
-        '--genome',
-        type=str,
-        required=True,
-        help='Pick one of the following: GRCh38 (for hg38), ' +
-             'GRCh37 (for hg19), or GRCm38 (for mm10). Or enter ' +
-             'the Ensembl MySQL database name (e.g. homo_sapiens_core_84_38 for GRCm38).'
     )
     parser.add_argument(
         '--noncanonical',
@@ -219,13 +250,6 @@ def add_common_flags(parser):
         help='(Optional) Do not label domains.'
     )
     parser.add_argument(
-        '--dbpath',
-        type=str,
-        default=os.path.join(os.path.expanduser('~'),'.agfusion/agfusion.db'),
-        required=False,
-        help='(Optional) Path to where the AGFusion databse is located (default: ' + os.path.join(os.path.expanduser('~'),'.agfusion') + ')'
-    )
-    parser.add_argument(
         '--debug',
         default=False,
         action='store_true',
@@ -290,15 +314,6 @@ def main():
         required=True,
         help='Output file from fusion-finding algorithm.'
     )
-    #batch_parser.add_argument(
-    #    '--algorithm',
-    #    type=str,
-    #    required=True,
-    #    help='The fusion-finding algorithm. Can be one of the following: ' +
-    #         'bellerphontes, breakfusion, chimerascan, ericscript, ' +
-    #         'fusioncatcher, fusionhunter, fusionmap, jaffa, mapsplice, ' +
-    #         'nfuse, soapfuse, or tophatfusion.'
-    #)
     batch_parser.add_argument(
         '-a',
         '--algorithm',
@@ -313,29 +328,69 @@ def main():
 
     database_parser = subparsers.add_parser('download', help='Download database for a reference genome.')
     database_parser.add_argument(
+        '-d',
         '--dir',
         type=str,
+        default='',
+        help='(Optional) Directory to the database will be downloaded to (defaults to current working directory).'
+    )
+    database_parser.add_argument(
+        '-g',
+        '--genome',
+        type=str,
+        default=None,
+        help='Specify the genome shortcut (e.g. hg19). To see all available ' + \
+             'shortcuts run \'agfusion download -a\'. Either specify this or ' + \
+             '--species and --release. '
+    )
+    database_parser.add_argument(
+        '-s',
+        '--species',
+        type=str,
+        default=None,
+        help='The species (e.g. homo_sapiens).'
+    )
+    database_parser.add_argument(
+        '-r',
+        '--release',
+        type=int,
+        default=None,
+        help='The ensembl release (e.g. 87).'
+    )
+    database_parser.add_argument(
+        '-a',
+        '--available',
+        action='store_true',
         required=False,
-        default=os.path.join(os.path.expanduser('~'),'.agfusion'),
-        help='(Optional) Directory to the database will be downloaded to (default: $HOME/.agfusion/)'
+        help='List available species and ensembl releases.'
     )
 
     # build database parser
 
     build_database_parser = subparsers.add_parser('build', help='Build database for a reference genome.')
     build_database_parser.add_argument(
-        '--database',
+        '--dir',
         type=str,
         required=True,
-        help='Path to the database file (e.g. agfusion.db)'
+        help='Directory to write database file to.'
     )
     build_database_parser.add_argument(
-        '--build',
+        '--species',
         type=str,
         required=True,
-        help='homo_sapiens_core_84_38 (for GRCh38), ' +
-        'homo_sapiens_core_75_37 (for GRCh37), or ' +
-        'mus_musculus_core_84_38 (for GRCm38)'
+        help='The species (e.g. homo_sapiens).'
+    )
+    build_database_parser.add_argument(
+        '--release',
+        type=int,
+        required=True,
+        help='The ensembl release (e.g. 87).'
+    )
+    build_database_parser.add_argument(
+        '--pfam',
+        type=str,
+        required=True,
+        help='File containing PFAM ID mappings.'
     )
     build_database_parser.add_argument(
         '--server',
@@ -344,6 +399,9 @@ def main():
         default='ensembldb.ensembl.org',
         help='(optional) Ensembl server (default ensembldb.ensembl.org)'
     )
+
+    # agfusion version number
+
     parser.add_argument(
         '-v',
         '--version',
@@ -355,37 +413,38 @@ def main():
     if args.subparser_name == 'build':
         builddb(args)
     elif args.subparser_name == 'download':
-        downloaddb(args)
+        if args.available:
+            list_available_databases()
+        else:
+            downloaddb(args)
     else:
-        if not os.path.exists(args.out):
-            os.mkdir(args.out)
+        if not exists(args.out):
+            mkdir(args.out)
 
         # if user does not specify a sqlite database then use the one provided
         # by the package
 
-        #file_path = os.path.join(
-        #    args.dbpath,
-        #    'agfusion.db'
-        #)
-        db = agfusion.AGFusionDB(args.dbpath,debug=args.debug)
+        db_file = split(args.db)[1]
+        species = db_file.split('.')[1]
+        release = db_file.split('.')[2]
+
+        assert species in AVAILABLE_ENSEMBL_SPECIES, 'unsupported species!'
+
+        db = agfusion.AGFusionDB(args.db,debug=args.debug)
+        db.build = species + '_' + str(release)
 
         # get the pyensembl data
 
-        if args.genome == 'GRCm38' or args.genome == 'mus_musculus_core_84_38':
-            pyensembl_data = pyensembl.EnsemblRelease(84, 'mouse')
-            db.build = 'mus_musculus_core_84_38'
-        elif args.genome == 'GRCh38' or args.genome == 'homo_sapiens_core_84_38':
-            pyensembl_data = pyensembl.EnsemblRelease(84, 'human')
-            db.build = 'homo_sapiens_core_84_38'
-        elif args.genome == 'GRCh37' or args.genome == 'homo_sapiens_core_75_37':
-            pyensembl_data = pyensembl.EnsemblRelease(75, 'human')
-            db.build = 'homo_sapiens_core_75_37'
-        else:
+        pyensembl_data = pyensembl.EnsemblRelease(release, species)
+
+        try:
+            pyensembl_data.db
+        except ValueError:
             db.logger.error(
-                'You provided an incorrect reference genome. '
-                'Use one of the following: GRCh38, GRCh37, or GRCm38'
+                "Missing pyensembl data. Run pyensembl install --release %s --species %s" %
+                (release,species)
             )
-            sys.exit()
+            exit()
 
         colors = {}
         rename = {}
@@ -430,7 +489,7 @@ def main():
             if args.algorithm in agfusion.parsers:
                 for fusion in agfusion.parsers[args.algorithm](args.file):
 
-                    outdir = os.path.join(
+                    outdir = join(
                         args.out,
                         fusion['alternative_name_5prime'] + '-' +
                         str(fusion['junction_5prime']) + '_' +
@@ -438,8 +497,8 @@ def main():
                         str(fusion['junction_3prime'])
                     )
 
-                    if not os.path.exists(outdir):
-                        os.mkdir(outdir)
+                    if not exists(outdir):
+                        mkdir(outdir)
                     else:
                         db.logger.warn('The following output directory already exists! %s' % outdir)
 

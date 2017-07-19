@@ -1,5 +1,5 @@
 # Annotate Gene Fusion (AGFusion)
-AGFusion is a python package for annotating gene fusions from the human or mouse genomes. Specifically, the output of AGFusion includes:
+AGFusion is a python package for annotating gene fusions from the human or mouse genomes. AGFusion simply needs the reference genome, the two gene partners, and the fusion junction coordinates as input, and outputs the following:
 
 * FASTA files of cDNA, CDS, and protein sequences.
 * Visualizes the protein domain and exon architectures of the fusion transcripts.
@@ -145,37 +145,39 @@ agfusion annotate \
 
 First you need to install pyensembl (and the other dependencies listed at the bottom) and download the reference genome you will use by running one of the following.
 
+```
 For GRCh38/hg38:
-
-```
-pyensembl install --release 84 --species homo_sapiens
-```
+pyensembl install --species homo_sapiens --release 87 
 
 For GRCh37/hg19:
-
-```
-pyensembl install --release 75 --species homo_sapiens
-```
+pyensembl install --species homo_sapiens --release 75 
 
 For GRCm38/mm10:
-
-```
-pyensembl install --release 84 --species mus_musculus
+pyensembl install --species mus_musculus --release 87 
 ```
 
-Then you can install AGFusion via the following:
+Then you can install AGFusion:
 
 ```
 pip install agfusion
 ```
 
-Finally, download the AGFusion database:
+Finally, download the AGFusion database for your reference genome:
 
 ```
-agfusion download
+For GRCh38/hg38:
+agfusion download --species homo_sapiens --release 87
+
+For GRCh37/hg19:
+agfusion download --species homo_sapiens --release 75
+
+For GRCm38/mm10:
+agfusion download --species mus_musculus --release 87
 ```
 
-The AGFusion database will be downloaded to $HOME/.agfusion/, but if you wish to change that then use the --dir flag (NOTE: you will need to then specify --dbpath when running AGFusion):
+Due to limitations in pyensembl, the maximum supported Ensembl release is 87. You can view all supported species and ensembl releases with ```agfusion download --available```
+
+The AGFusion database will be downloaded to ```$HOME/.agfusion/```, but if you wish to change that then use the ```--dir``` flag (NOTE: you will need to then specify --db when running AGFusion):
 
 ```
 agfusion download --dir /your/path

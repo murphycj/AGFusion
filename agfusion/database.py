@@ -1,15 +1,10 @@
 import sys
 import gzip
-import os
+from os.path import abspath, exists, join, split
 import sqlite3
 import logging
 
-
-PROTEIN_ANNOTATIONS = [
-    'pfam', 'smart', 'superfamily', 'tigrfam', 'pfscan',
-    'tmhmm', 'seg', 'ncoils', 'prints',
-    'pirsf', 'signalp'
-]
+from agfusion.utils import PROTEIN_ANNOTATIONS, ENSEMBL_MYSQL_TABLES
 
 class AGFusionDB():
     """
@@ -22,7 +17,7 @@ class AGFusionDB():
 
     def __init__(self, database=None, debug=False):
 
-        self.database = os.path.abspath(database)
+        self.database = abspath(database)
         self.fastas = {}
 
         self.logger = logging.getLogger('AGFusion')
@@ -41,16 +36,16 @@ class AGFusionDB():
         ch.setFormatter(formatter)
         self.logger.addHandler(ch)
 
-        assert os.path.exists(self.database), "AGFusion database at %s does not exist! Either run \'agfusion download\' or specify the location of the AGFusion database with the --dbpath flag." % database
+        assert exists(self.database), "AGFusion database at %s does not exist! Either run \'agfusion download\' or specify the location of the AGFusion database with the --dbpath flag." % database
 
         self.sqlite3_db = sqlite3.connect(
-            os.path.abspath(self.database)
+            abspath(self.database)
         )
         self.sqlite3_cursor = self.sqlite3_db.cursor()
         self.sqlite3_db.commit()
 
         self.logger.debug(
-            'Connected to the database ' + os.path.abspath(self.database)
+            'Connected to the database ' + abspath(self.database)
         )
 
         self.build = ''
@@ -64,9 +59,18 @@ class AGFusionDBBManager():
     reference
     """
 
-    def __init__(self, database, build, server):
+    def __init__(self, db_dir, species, release, pfam, server):
 
-        self.database = os.path.abspath(database)
+        self.species = species
+        self.release = release
+        self.server = server
+        self.build = self.species + '_' + str(self.release)
+        self.table = ENSEMBL_MYSQL_TABLES[self.species][self.release]
+
+        self.database = join(
+            abspath(db_dir),
+            'agfusion.' + self.species + '.' + str(self.release) + '.db'
+        )
         self.fastas = {}
 
         self.logger = logging.getLogger('AGFusion')
@@ -79,36 +83,33 @@ class AGFusionDBBManager():
         ch.setFormatter(formatter)
         self.logger.addHandler(ch)
 
-        self.build = build
-        self.server = server
-
-        if not os.path.exists(self.database):
-            fout = open(os.path.abspath(self.database), 'a')
+        if not exists(self.database):
+            fout = open(abspath(self.database), 'a')
             fout.close()
             self.logger.info(
-                "Created the database " + os.path.abspath(self.database)
+                "Created the database " + abspath(self.database)
             )
 
         self.sqlite3_db = sqlite3.connect(
-            os.path.abspath(self.database)
+            abspath(self.database)
         )
         self.sqlite3_cursor = self.sqlite3_db.cursor()
         self.sqlite3_db.commit()
 
         self.logger.info(
-            'Connected to the database ' + os.path.abspath(self.database)
+            'Connected to the database ' + abspath(self.database)
         )
 
         import MySQLdb
 
         self.ensembl_db = MySQLdb.connect(server, 'anonymous')
         self.ensembl_cursor = self.ensembl_db.cursor()
-        self.ensembl_cursor.execute('use ' + build + ';')
+        self.ensembl_cursor.execute('use ' + self.table + ';')
 
         self.logger.info(
             'Connected to the ensembl MySQL server at ' + server
         )
-        self.logger.info('MySQL - use ' + build + ';')
+        self.logger.info('MySQL - use ' +  self.table + ';')
 
         self._check_for_tables()
 
@@ -116,13 +117,7 @@ class AGFusionDBBManager():
 
         self.pfam_mapping = dict()
 
-        file_path = os.path.join(
-            os.path.split(__file__)[0],
-            'data',
-            '042117_pfamA.txt.gz'
-        )
-
-        for line in gzip.open(file_path, 'rb'):
+        for line in open(pfam, 'r'):
             line = line.rstrip().split('\t')
 
             pfam_id = line[0]

@@ -10,8 +10,7 @@ from Bio.Alphabet import generic_dna, generic_protein
 
 # matplotlib.rcParams['interactive'] = False
 
-MIN_DOMAIN_LENGTH = 5
-STANDARD_CHROMOSOMES = [str(i) for i in range(1,23)] + ['X','Y','MT']
+from agfusion.utils import STANDARD_CHROMOSOMES, MIN_DOMAIN_LENGTH
 
 class _Gene():
     """

@@ -10,13 +10,66 @@ agfusion_db = os.path.join(
     'agfusion.db'
 )
 
-junction_locations = [
+AGFUSION_DB_URL = "https://github.com/murphycj/AGFusionDB/raw/master/agfusion."
+
+# this is mostly contigent on the maximum ensembl release supported
+# by pyensembl
+
+GENOME_SHORTCUTS = {
+    'GRCm38':['mus_musculus',87],
+    'mm10':['mus_musculus',87],
+    'mm9':['mus_musculus',67],
+    'GRCh38':['homo_sapiens',87],
+    'hg38':['homo_sapiens',87],
+    'hg19':['homo_sapiens',75]
+}
+
+MAX_ENSEMBL_RELEASE = 87
+
+AVAILABLE_ENSEMBL_SPECIES = {
+    'homo_sapiens':range(75,MAX_ENSEMBL_RELEASE+1),
+    'mus_musculus':range(67,MAX_ENSEMBL_RELEASE+1)
+}
+
+ENSEMBL_MYSQL_TABLES = {
+    'homo_sapiens':{},
+    'mus_musculus':{}
+}
+for i in range(75,MAX_ENSEMBL_RELEASE+1):
+    if i < 76:
+        ENSEMBL_MYSQL_TABLES['homo_sapiens'][i] = 'homo_sapiens_core_' + str(i) + '_37'
+    else:
+        ENSEMBL_MYSQL_TABLES['homo_sapiens'][i] = 'homo_sapiens_core_' + str(i) + '_38'
+
+for i in range(67,MAX_ENSEMBL_RELEASE+1):
+    if i < 68:
+        ENSEMBL_MYSQL_TABLES['mus_musculus'][i] = 'mus_musculus_core_' + str(i) + '_37'
+    else:
+        ENSEMBL_MYSQL_TABLES['mus_musculus'][i] = 'mus_musculus_core_' + str(i) + '_38'
+
+# min amino acid length of domain to plot it
+
+MIN_DOMAIN_LENGTH = 5
+
+# just
+
+STANDARD_CHROMOSOMES = [str(i) for i in range(1,23)] + ['X','Y','MT']
+
+# the available protein domain annotations
+
+PROTEIN_ANNOTATIONS = [
+    'pfam', 'smart', 'superfamily', 'tigrfam', 'pfscan',
+    'tmhmm', 'seg', 'ncoils', 'prints',
+    'pirsf', 'signalp'
+]
+
+JUNCTION_LOCATIONS = [
     'CDS','CDS (start)','CDS (end)','5UTR','5UTR (end)',
     '3UTR','3UTR (start)','exon','intron','intron (cds)',
     'intron (before cds)','intron (after cds)'
     ]
 
-CODING_COMBINATIONS = list(itertools.product(junction_locations,junction_locations))
+CODING_COMBINATIONS = list(itertools.product(JUNCTION_LOCATIONS,JUNCTION_LOCATIONS))
 CODING_COMBINATIONS = {i:{'protein_coding_potential':False,'truncated':False} for i in CODING_COMBINATIONS}
 
 
