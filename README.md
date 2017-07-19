@@ -175,13 +175,7 @@ For GRCm38/mm10:
 agfusion download --species mus_musculus --release 87
 ```
 
-Due to limitations in pyensembl, the maximum supported Ensembl release is 87. You can view all supported species and ensembl releases with ```agfusion download --available```
-
-The AGFusion database will be downloaded to ```$HOME/.agfusion/```, but if you wish to change that then use the ```--dir``` flag (NOTE: you will need to then specify --db when running AGFusion):
-
-```
-agfusion download --dir /your/path
-```
+Due to limitations in pyensembl, the maximum supported Ensembl release is 87. You can view all supported species and ensembl releases with ```agfusion download --available```.
 
 # Dependencies
 
