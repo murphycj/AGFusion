@@ -162,7 +162,7 @@ Then you can install AGFusion:
 pip install agfusion
 ```
 
-Finally, download the AGFusion database for your reference genome:
+Finally, download the AGFusion database for your reference genome (downloaded from [here](https://github.com/murphycj/AGFusionDB)):
 
 ```
 For GRCh38/hg38:
