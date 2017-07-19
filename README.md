@@ -162,20 +162,15 @@ Then you can install AGFusion:
 pip install agfusion
 ```
 
-Finally, download the AGFusion database for your reference genome (downloaded from [here](https://github.com/murphycj/AGFusionDB)):
+Finally, download the AGFusion database for your reference genome (downloaded from [here](https://github.com/murphycj/AGFusionDB)).
 
-```
-For GRCh38/hg38:
-agfusion download --species homo_sapiens --release 87
+For GRCh38/hg38: ```agfusion download -s homo_sapiens -r 87``` or simply ```agfusion download -g hg38```.
 
-For GRCh37/hg19:
-agfusion download --species homo_sapiens --release 75
+For GRCh37/hg19: ```agfusion download -s homo_sapiens -r 75``` or simply ```agfusion download -g hg19```.
 
-For GRCm38/mm10:
-agfusion download --species mus_musculus --release 87
-```
+For GRCm38/mm10: ```agfusion download -s mus_musculus -87``` or simply ```agfusion download -g mm10```.
 
-Due to limitations in pyensembl, the maximum supported Ensembl release is 87. You can view all supported species and ensembl releases with ```agfusion download --available```.
+You can view all supported species and ensembl releases with ```agfusion download --available```. Due to limitations in pyensembl, the maximum supported Ensembl release is 87.
 
 # Dependencies
 
