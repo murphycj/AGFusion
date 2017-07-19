@@ -34,11 +34,11 @@ Example usage from the command line:
 
 ```
 agfusion annotate \
-  --gene5prime ENSMUSG00000022770 \
-  --gene3prime ENSMUSG00000002413 \
+  --gene5prime DLG1 \
+  --gene3prime BRAF \
   --junction5prime 31684294 \
   --junction3prime 39648486 \
-  --genome GRCm38 \
+  --db agfusion.mus_musculus.87.db \
   --out DLG1-BRAF
 ```
 
@@ -60,7 +60,7 @@ agfusion annotate \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
   --junction3prime 39648486 \
-  --genome GRCm38 \
+  --db agfusion.mus_musculus.87.db \
   --out DLG1-BRAF \
   --WT
 ```
@@ -75,7 +75,7 @@ agfusion annotate \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
   --junction3prime 39648486 \
-  --genome GRCm38 \
+  --db agfusion.mus_musculus.87.db \
   --out DLG1-BRAF \
   --noncanonical
 ```
@@ -90,7 +90,7 @@ agfusion batch \
   --file final-list_candidate-fusion-genes.txt \
   -a fusioncatcher \
   -o test \
-  -g GRCm38
+  --db agfusion.mus_musculus.87.db
 ```
 
 ### Domain names and colors
@@ -103,7 +103,7 @@ agfusion annotate \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
   --junction3prime 39648486 \
-  --genome GRCm38 \
+  --db agfusion.mus_musculus.87.db \
   --out DLG1-BRAF \
   --recolor "Pkinase_Tyr;red" --recolor "L27_1;blue" \
   --rename "Pkinase_Tyr;Kinase" --rename "L27_1;L27"
@@ -121,7 +121,7 @@ agfusion annotate \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
   --junction3prime 39648486 \
-  --genome GRCm38 \
+  --db agfusion.mus_musculus.87.db \
   --out DLG1-BRAF \
   --recolor "Pkinase_Tyr;red" --recolor "L27_1;blue" \
   --rename "Pkinase_Tyr;Kinase" --rename "L27_1;L27" \
@@ -131,7 +131,7 @@ agfusion annotate \
   --gene3prime DNM3 \
   --junction5prime 130167703 \
   --junction3prime 162019992 \
-  --genome GRCm38 \
+  --db agfusion.mus_musculus.87.db \
   --out FGFR2-DNM3 \
   --recolor "Pkinase_Tyr;red" \
   --rename "Pkinase_Tyr;Kinase" \
@@ -164,13 +164,18 @@ pip install agfusion
 
 Finally, download the AGFusion database for your reference genome (downloaded from [here](https://github.com/murphycj/AGFusionDB)).
 
-For GRCh38/hg38: ```agfusion download -s homo_sapiens -r 87``` or simply ```agfusion download -g hg38```.
+```
+For GRCh38/hg38:
+agfusion download -g hg38
 
-For GRCh37/hg19: ```agfusion download -s homo_sapiens -r 75``` or simply ```agfusion download -g hg19```.
+For GRCh37/hg19:
+agfusion download -g hg19
 
-For GRCm38/mm10: ```agfusion download -s mus_musculus -87``` or simply ```agfusion download -g mm10```.
+For GRCm38/mm10:
+agfusion download -g mm10
+```
 
-You can view all supported species and ensembl releases with ```agfusion download --available```. Due to limitations in pyensembl, the maximum supported Ensembl release is 87.
+You can view all supported species and ensembl releases with ```agfusion download -a```. Due to limitations in pyensembl, the maximum supported Ensembl release is 87.
 
 # Dependencies
 

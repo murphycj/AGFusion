@@ -2,6 +2,7 @@
 doc/_build/**
 doc/_static/**
 test/DLG1-BRAF/*
-test/agfusion.mus_musculus.84.db
+test/*.db
+test/*.sh
 submit_to_pip.sh
 *pyc

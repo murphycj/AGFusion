@@ -13,4 +13,4 @@ agfusion annotate \
   --junction5prime 121485532 \
   --junction3prime 172407772 \
   --out fgfr2-ccdc6 \
-  --genome GRCh38
+  --genome agfusion.homo_sapiens.84.db.gz
