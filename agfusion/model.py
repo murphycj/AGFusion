@@ -1025,7 +1025,7 @@ class FusionTranscript(object):
         #trim the CDS sequence if fusion is out-of-frame
 
         if self.effect == 'out-of-frame':
-            self.cds.seq = self.cds.seq[0:3*(len(self.cds.seq)/3)]
+            self.cds.seq = self.cds.seq[0:3*int(len(self.cds.seq)/3)]
         if (len(self.cds.seq) % 3) !=0:
             self.db.logger.warn('Fusion isoform effect is not out-of-frame but CDS is not a multiple of 3!')
 
