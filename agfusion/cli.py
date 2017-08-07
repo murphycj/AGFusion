@@ -63,7 +63,7 @@ def downloaddb(args):
     fout.write(response.read())
     fout.close()
 
-    with gzip.open(file_path, 'rb') as f_in, file(file_path.replace('.gz',''), 'w') as f_out:
+    with gzip.open(file_path, 'rb') as f_in, open(file_path.replace('.gz',''), 'wb') as f_out:
         shutil.copyfileobj(f_in, f_out)
 
     remove(file_path)
