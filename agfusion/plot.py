@@ -45,7 +45,7 @@ class _Plot(object):
         scale the sequence (protein or DNA)
         """
 
-        if self.scale == -1 or self.scale < seq_length:
+        if self.scale is None or self.scale < seq_length:
             self.normalize = seq_length
         else:
             self.normalize = self.scale
