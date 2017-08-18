@@ -140,16 +140,16 @@ class TopHatFusion(_Parser):
         fin.close()
 
 parsers = {
-    'bellerophontes':Bellerophontes,
-    'chimerascan':Chimerascan,
-    'ericscript':EricScript,
+    #'bellerophontes':Bellerophontes,
+    #'chimerascan':Chimerascan,
+    #'ericscript':EricScript,
     'fusioncatcher':FusionCatcher,
-    'fusionhunter':FusionHunter,
-    'fusionmap':FusionMap,
-    'jaffa':JAFFA,
-    'mapsplice':MapSplice,
-    'nfuse':nFuse,
-    'soapfuse':SOAPfuse,
+    #'fusionhunter':FusionHunter,
+    #'fusionmap':FusionMap,
+    #'jaffa':JAFFA,
+    #'mapsplice':MapSplice,
+    #'nfuse':nFuse,
+    #'soapfuse':SOAPfuse,
     'tophatfusion':TopHatFusion,
     'starfusion':STARFusion
 }

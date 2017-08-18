@@ -526,3 +526,12 @@ def main():
                         db.logger.warn("No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(fusion['ensembl_3prime']))
                     except exceptions.TooManyGenesException as e:
                         db.logger.warn("Multiple Ensembl IDs found matching one of your genes.")
+            else:
+                db.logger.error(
+                    '\'%s\' is not an available option for -a! Choose one of the following: %s' %
+                    (
+                        args.algorithm,
+                        ','.join(agfusion.parsers.keys())
+                    )
+                )
+                exit()
