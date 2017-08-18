@@ -1210,9 +1210,10 @@ class FusionTranscript(object):
         try:
             self.cdna_5prime = self.transcript1.sequence[0:self.transcript_cdna_junction_5prime]
         except TypeError:
-            self.db.logger.warn('No cDNA sequence available for %s (this ' \
-                'is a known bug). Will not print the FASTA sequence for ' \
-                'fusion %s.' %
+            self.db.logger.warn('No cDNA sequence available for %s! ' \
+                'Will not print cDNA sequence for the %s fusion. ' \
+                'You might be working with an outdated pyensembl. ' \
+                'Update the package and rerun \'pyensembl install\'' %
                 (
                     str(self.gene5prime.gene.name),
                     self.gene_names
@@ -1322,9 +1323,10 @@ class FusionTranscript(object):
                     self.transcript_cdna_junction_3prime::
                 ]
             except TypeError:
-                self.db.logger.warn('No cDNA sequence available for %s (this ' \
-                    'is a known bug). Will not print the FASTA sequence for ' \
-                    'fusion %s.' %
+                self.db.logger.warn('No cDNA sequence available for %s! ' \
+                    'Will not print cDNA sequence for the %s fusion. ' \
+                    'You might be working with an outdated pyensembl. ' \
+                    'Update the package and rerun \'pyensembl install\'' %
                     (
                         str(self.gene3prime.gene.name),
                         self.gene_names
@@ -1384,6 +1386,8 @@ class FusionTranscript(object):
             elif self.transcript2.complete and \
                     (len(self.transcript2)-self.transcript_cdna_junction_3prime) == len(self.transcript2.three_prime_utr_sequence):
                 self.effect_3prime='3UTR (start)'
+
+        self.effect = self.effect_5prime + '-' + self.effect_3prime
 
     # def _check_if_in_intron(self):
 
