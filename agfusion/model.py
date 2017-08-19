@@ -139,8 +139,10 @@ class _Gene():
 
         # if gene has not been identified yet
 
-        if not self.gene_found:
-            raise exceptions.GeneNotFound(gene)
+        if not self.gene_found and gene5prime:
+            raise exceptions.GeneIDException5prime(gene)
+        elif not self.gene_found:
+            raise exceptions.GeneIDException3prime(gene)
 
         # else continue with processing
 

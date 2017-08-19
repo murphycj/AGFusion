@@ -137,7 +137,8 @@ def builddb(args):
 
 def add_common_flags(parser):
     parser.add_argument(
-        '--db',
+        '-db',
+        '--database',
         type=str,
         required=True,
         help='Path to the AGFusion database (e.g. --db /path/to/agfusion.homo_sapiens.87.db)'
@@ -150,6 +151,7 @@ def add_common_flags(parser):
         help='Directory to save results'
     )
     parser.add_argument(
+        '-nc',
         '--noncanonical',
         action='store_true',
         required=False,
@@ -238,12 +240,14 @@ def add_common_flags(parser):
         help='(Optional) Include this to plot wild-type architechtures of the 5\' and 3\' genes'
     )
     parser.add_argument(
+        '-ms',
         '--middlestar',
         action='store_true',
         required=False,
         help='(Optional) Insert a * at the junction position for the cdna, cds, and protein sequences (default False).'
     )
     parser.add_argument(
+        '-ndl',
         '--no_domain_labels',
         action='store_true',
         required=False,
@@ -309,6 +313,7 @@ def main():
 
     batch_parser = subparsers.add_parser('batch', help='Annotate fusions from an output file from a fusion finding algorithm.')
     batch_parser.add_argument(
+        '-f',
         '--file',
         type=str,
         required=True,
@@ -369,18 +374,21 @@ def main():
 
     build_database_parser = subparsers.add_parser('build', help='Build database for a reference genome.')
     build_database_parser.add_argument(
+        '-d',
         '--dir',
         type=str,
         required=True,
         help='Directory to write database file to.'
     )
     build_database_parser.add_argument(
+        '-s',
         '--species',
         type=str,
         required=True,
         help='The species (e.g. homo_sapiens).'
     )
     build_database_parser.add_argument(
+        '-r',
         '--release',
         type=int,
         required=True,
@@ -424,13 +432,13 @@ def main():
         # if user does not specify a sqlite database then use the one provided
         # by the package
 
-        db_file = split(args.db)[1]
+        db_file = split(args.database)[1]
         species = db_file.split('.')[1]
         release = db_file.split('.')[2]
 
         assert species in AVAILABLE_ENSEMBL_SPECIES, 'unsupported species!'
 
-        db = agfusion.AGFusionDB(args.db,debug=args.debug)
+        db = agfusion.AGFusionDB(args.database,debug=args.debug)
         db.build = species + '_' + str(release)
 
         # get the pyensembl data
@@ -516,16 +524,16 @@ def main():
                             pyensembl_data=pyensembl_data,
                             args=args
                         )
+                    except exceptions.GeneIDException5prime:
+                        db.logger.error("No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(fusion['ensembl_5prime']))
                     except exceptions.GeneIDException3prime:
-                        db.logger.warn("No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(fusion['ensembl_5prime']))
-                    except exceptions.GeneIDException3prime:
-                        db.logger.warn("No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(fusion['ensembl_3prime']))
+                        db.logger.error("No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(fusion['ensembl_3prime']))
                     except exceptions.JunctionException5prime:
-                        db.logger.warn("No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(fusion['ensembl_5prime']))
+                        db.logger.error("No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(fusion['ensembl_5prime']))
                     except exceptions.JunctionException3prime:
-                        db.logger.warn("No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(fusion['ensembl_3prime']))
+                        db.logger.error("No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(fusion['ensembl_3prime']))
                     except exceptions.TooManyGenesException as e:
-                        db.logger.warn("Multiple Ensembl IDs found matching one of your genes.")
+                        db.logger.error("Multiple Ensembl IDs found matching one of your genes.")
             else:
                 db.logger.error(
                     '\'%s\' is not an available option for -a! Choose one of the following: %s' %

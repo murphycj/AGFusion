@@ -18,7 +18,7 @@ AGFusion automatically predicts the functional effect of the gene fusion (e.g. i
   * [Input from fusion-finding algorithms](#Input-from-fusion-finding-algorithms)
   * [Domain names and colors](#Domain-names-and-colors)
   * [Re-scaling protein length](#Re-scaling-protein-length)
-- [Installation](#Installation)
+- [Installation](#installation)
 - [Dependencies](#Dependencies)
 - [License](#License)
 - [Citing AGFusion](#Citing-AGFusion)
@@ -38,8 +38,8 @@ agfusion annotate \
   --gene3prime BRAF \
   --junction5prime 31684294 \
   --junction3prime 39648486 \
-  --db agfusion.mus_musculus.87.db \
-  --out DLG1-BRAF
+  -db agfusion.mus_musculus.87.db \
+  -o DLG1-BRAF
 ```
 
 The protein domain structure of the DLG1-BRAF fusion:
@@ -60,8 +60,8 @@ agfusion annotate \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
   --junction3prime 39648486 \
-  --db agfusion.mus_musculus.87.db \
-  --out DLG1-BRAF \
+  -db agfusion.mus_musculus.87.db \
+  -o DLG1-BRAF \
   --WT
 ```
 
@@ -75,8 +75,8 @@ agfusion annotate \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
   --junction3prime 39648486 \
-  --db agfusion.mus_musculus.87.db \
-  --out DLG1-BRAF \
+  -db agfusion.mus_musculus.87.db \
+  -o DLG1-BRAF \
   --noncanonical
 ```
 
@@ -90,7 +90,7 @@ agfusion batch \
   --file final-list_candidate-fusion-genes.txt \
   -a fusioncatcher \
   -o test \
-  --db agfusion.mus_musculus.87.db
+  -db agfusion.mus_musculus.87.db
 ```
 
 ### Domain names and colors
@@ -103,8 +103,8 @@ agfusion annotate \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
   --junction3prime 39648486 \
-  --db agfusion.mus_musculus.87.db \
-  --out DLG1-BRAF \
+  -db agfusion.mus_musculus.87.db \
+  -o DLG1-BRAF \
   --recolor "Pkinase_Tyr;red" --recolor "L27_1;blue" \
   --rename "Pkinase_Tyr;Kinase" --rename "L27_1;L27"
 ```
@@ -121,8 +121,8 @@ agfusion annotate \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
   --junction3prime 39648486 \
-  --db agfusion.mus_musculus.87.db \
-  --out DLG1-BRAF \
+  -db agfusion.mus_musculus.87.db \
+  -o DLG1-BRAF \
   --recolor "Pkinase_Tyr;red" --recolor "L27_1;blue" \
   --rename "Pkinase_Tyr;Kinase" --rename "L27_1;L27" \
   --scale 2000
@@ -131,8 +131,8 @@ agfusion annotate \
   --gene3prime DNM3 \
   --junction5prime 130167703 \
   --junction3prime 162019992 \
-  --db agfusion.mus_musculus.87.db \
-  --out FGFR2-DNM3 \
+  -db agfusion.mus_musculus.87.db \
+  -o FGFR2-DNM3 \
   --recolor "Pkinase_Tyr;red" \
   --rename "Pkinase_Tyr;Kinase" \
   --scale 2000
