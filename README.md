@@ -11,17 +11,17 @@ AGFusion automatically predicts the functional effect of the gene fusion (e.g. i
 
 ## Table of Contents
 
-- [Examples](#Examples)
-  * [Basic Usage](#Basic-Usage)
-  * [Plotting wild-type protein and exon structure](#Plotting-wild-type-protein)
-  * [Canonical gene isoforms](#Canonical-gene-isoforms)
-  * [Input from fusion-finding algorithms](#Input-from-fusion-finding-algorithms)
-  * [Domain names and colors](#Domain-names-and-colors)
-  * [Re-scaling protein length](#Re-scaling-protein-length)
+- [Examples](#examples)
+  * [Basic Usage](#basic-usage)
+  * [Plotting wild-type protein and exon structure](#plotting-wild-type-protein-and-exon-structure)
+  * [Canonical gene isoforms](#canonical-gene-isoforms)
+  * [Input from fusion-finding algorithms](#input-from-fusion-finding-algorithms)
+  * [Domain names and colors](#domain-names-and-colors)
+  * [Re-scaling protein length](#re-scaling-protein-length)
 - [Installation](#installation)
-- [Dependencies](#Dependencies)
-- [License](#License)
-- [Citing AGFusion](#Citing-AGFusion)
+- [Dependencies](#dependencies)
+- [License](#license)
+- [Citing AGFusion](#citing-agfusion)
 
 
 ## Examples
