@@ -111,6 +111,70 @@ def annotate(gene5prime,junction5prime,gene3prime,junction3prime,
         )
     fusion.save_tables(out_dir=outdir)
 
+def batch_mode(args,db,pyensembl_data,rename,colors):
+    if args.algorithm in agfusion.parsers:
+        for fusion in agfusion.parsers[args.algorithm](args.file):
+
+            outdir = join(
+                args.out,
+                fusion['alternative_name_5prime'] + '-' +
+                str(fusion['junction_5prime']) + '_' +
+                fusion['alternative_name_3prime'] + '-' +
+                str(fusion['junction_3prime'])
+            )
+
+            if not exists(outdir):
+                mkdir(outdir)
+            else:
+                db.logger.warn('The following output directory already exists! %s' % outdir)
+
+            try:
+                annotate(
+                    gene5prime=fusion['ensembl_5prime'],
+                    junction5prime=fusion['junction_5prime'],
+                    gene3prime=fusion['ensembl_3prime'],
+                    junction3prime=fusion['junction_3prime'],
+                    outdir=outdir,
+                    colors=colors,
+                    rename=rename,
+                    scale=None,
+                    db=db,
+                    pyensembl_data=pyensembl_data,
+                    args=args
+                )
+            except exceptions.GeneIDException5prime:
+                db.logger.error(
+                    "No Ensembl ID found for {0}! Check its spelling and " +
+                    "if you are using the right genome build and Ensembl " +
+                    "release.".format(fusion['ensembl_5prime']))
+            except exceptions.GeneIDException3prime:
+                db.logger.error(
+                    "No Ensembl ID found for {0}! Check its spelling and " +
+                    "if you are using the right genome build and Ensembl " +
+                    "release.".format(fusion['ensembl_3prime']))
+            except exceptions.JunctionException5prime:
+                db.logger.error(
+                    "No Ensembl ID found for {0}! Check its spelling and " +
+                    "if you are using the right genome build and Ensembl " +
+                    "release.".format(fusion['ensembl_5prime']))
+            except exceptions.JunctionException3prime:
+                db.logger.error(
+                    "No Ensembl ID found for {0}! Check its spelling and " +
+                    "if you are using the right genome build and Ensembl " +
+                    "release.".format(fusion['ensembl_3prime']))
+            except exceptions.TooManyGenesException as e:
+                db.logger.error(
+                    "Multiple Ensembl IDs found matching one of your genes.")
+    else:
+        db.logger.error(
+            '\'%s\' is not an available option for -a! Choose one of the following: %s' %
+            (
+                args.algorithm,
+                ','.join(agfusion.parsers.keys())
+            )
+        )
+        exit()
+
 def builddb(args):
 
     db = agfusion.AGFusionDBBManager(
@@ -178,81 +242,79 @@ def add_common_flags(parser):
         required=False,
         default=None,
         action='append',
-        help='(Optional) Re-color a domain. Provide the original name of the domain then your color (semi-colon delimited, all in quotes). Can specify --recolor multiples for each domain. (e.g. --color \"Pkinase_Tyr;blue\" --color \"I-set;#006600\").'
-    )
+        help='(Optional) Re-color a domain. Provide the original name of ' +
+             'the domain then your color (semi-colon delimited, all in ' +
+             'quotes). Can specify --recolor multiples for each domain. ' +
+             '(e.g. --color \"Pkinase_Tyr;blue\" --color \"I-set;#006600\").')
     parser.add_argument(
         '--rename',
         type=str,
         required=False,
         default=None,
         action='append',
-        help='(Optional) Rename a domain. Provide the original name of the domain then your new name (semi-colon delimited, all in quotes). Can specify --rename multiples for each domain. (e.g. --rename \"Pkinase_Tyr;Kinase\").'
-    )
+        help='(Optional) Rename a domain. Provide the original name of ' +
+             'the domain then your new name (semi-colon delimited, ' +
+             'all in quotes). Can specify --rename multiples for each ' +
+             'domain. (e.g. --rename \"Pkinase_Tyr;Kinase\").')
     parser.add_argument(
         '--exclude_domain',
         type=str,
         required=False,
         default=[],
         nargs='+',
-        help='(Optional) Exclude a certain domain(s) from plotting by providing a space-separated list of domain names.'
-    )
+        help='(Optional) Exclude a certain domain(s) from plotting ' +
+             'by providing a space-separated list of domain names.')
     parser.add_argument(
         '--type',
         type=str,
         required=False,
         default='png',
-        help='(Optional) Image file type (png, jpeg, pdf). Default: png'
-    )
+        help='(Optional) Image file type (png, jpeg, pdf). Default: png')
     parser.add_argument(
         '-w',
         '--width',
         type=int,
         required=False,
         default=10,
-        help='(Optional) Image width in inches (default 10).'
-    )
+        help='(Optional) Image width in inches (default 10).')
     parser.add_argument(
         '-ht',
         '--height',
         type=int,
         required=False,
         default=3,
-        help='(Optional) Image file height in inches (default 3).'
-    )
+        help='(Optional) Image file height in inches (default 3).')
     parser.add_argument(
         '--dpi',
         type=int,
         required=False,
         default=None,
-        help='(Optional) Dots per inch.'
-    )
+        help='(Optional) Dots per inch.')
     parser.add_argument(
         '--fontsize',
         type=int,
         required=False,
         default=12,
-        help='(Optional) Fontsize (default 12).'
-    )
+        help='(Optional) Fontsize (default 12).')
     parser.add_argument(
         '--WT',
         action='store_true',
         required=False,
-        help='(Optional) Include this to plot wild-type architechtures of the 5\' and 3\' genes'
-    )
+        help='(Optional) Include this to plot wild-type architechtures ' +
+             'of the 5\' and 3\' genes')
     parser.add_argument(
         '-ms',
         '--middlestar',
         action='store_true',
         required=False,
-        help='(Optional) Insert a * at the junction position for the cdna, cds, and protein sequences (default False).'
-    )
+        help='(Optional) Insert a * at the junction position for the ' +
+             'cdna, cds, and protein sequences (default False).')
     parser.add_argument(
         '-ndl',
         '--no_domain_labels',
         action='store_true',
         required=False,
-        help='(Optional) Do not label domains.'
-    )
+        help='(Optional) Do not label domains.')
     parser.add_argument(
         '--debug',
         default=False,
@@ -265,9 +327,13 @@ def main():
     parser = argparse.ArgumentParser(
         description='Annotate Gene Fusion (AGFusion)'
     )
-    subparsers = parser.add_subparsers(help='AGFusion programs.',dest="subparser_name")
+    subparsers = parser.add_subparsers(
+        help='AGFusion programs.',
+        dest="subparser_name")
 
-    annotate_parser = subparsers.add_parser('annotate', help='Annotate and visualize a single fusion.')
+    annotate_parser = subparsers.add_parser(
+        'annotate',
+        help='Annotate and visualize a single fusion.')
     annotate_parser.add_argument(
         '-g5',
         '--gene5prime',
@@ -306,12 +372,16 @@ def main():
         type=int,
         required=False,
         default=-1,
-        help='(Optional) Set maximum width (in amino acids) of the figure to rescale the fusion (default: max length of fusion product)'
-    )
+        help='(Optional) Set maximum width (in amino acids) of the ' +
+             'figure to rescale the fusion (default: max length of ' +
+             'fusion product)')
 
     # batch file parser
 
-    batch_parser = subparsers.add_parser('batch', help='Annotate fusions from an output file from a fusion finding algorithm.')
+    batch_parser = subparsers.add_parser(
+        'batch',
+        help='Annotate fusions from an output file from a fusion ' +
+             'finding algorithm.')
     batch_parser.add_argument(
         '-f',
         '--file',
@@ -325,54 +395,55 @@ def main():
         type=str,
         required=True,
         help='The fusion-finding algorithm. Can be one of the following: ' +
-             'fusioncatcher, starfusion, or tophatfusion. (Will support more algorithms soon)'
+             'fusioncatcher, starfusion, or tophatfusion. ' +
+             '(Will support more algorithms soon)'
     )
     add_common_flags(batch_parser)
 
     # download database
 
-    database_parser = subparsers.add_parser('download', help='Download database for a reference genome.')
+    database_parser = subparsers.add_parser(
+        'download',
+        help='Download database for a reference genome.')
     database_parser.add_argument(
         '-d',
         '--dir',
         type=str,
         default='',
-        help='(Optional) Directory to the database will be downloaded to (defaults to current working directory).'
-    )
+        help='(Optional) Directory to the database will be downloaded ' +
+             'to (defaults to current working directory).')
     database_parser.add_argument(
         '-g',
         '--genome',
         type=str,
         default=None,
-        help='Specify the genome shortcut (e.g. hg19). To see all available ' + \
-             'shortcuts run \'agfusion download -a\'. Either specify this or ' + \
-             '--species and --release. '
-    )
+        help='Specify the genome shortcut (e.g. hg19). To see all' +
+             'available shortcuts run \'agfusion download -a\'. Either ' +
+             'specify this or --species and --release.')
     database_parser.add_argument(
         '-s',
         '--species',
         type=str,
         default=None,
-        help='The species (e.g. homo_sapiens).'
-    )
+        help='The species (e.g. homo_sapiens).')
     database_parser.add_argument(
         '-r',
         '--release',
         type=int,
         default=None,
-        help='The ensembl release (e.g. 87).'
-    )
+        help='The ensembl release (e.g. 87).')
     database_parser.add_argument(
         '-a',
         '--available',
         action='store_true',
         required=False,
-        help='List available species and ensembl releases.'
-    )
+        help='List available species and ensembl releases.')
 
     # build database parser
 
-    build_database_parser = subparsers.add_parser('build', help='Build database for a reference genome.')
+    build_database_parser = subparsers.add_parser(
+        'build',
+        help='Build database for a reference genome.')
     build_database_parser.add_argument(
         '-d',
         '--dir',
@@ -420,126 +491,83 @@ def main():
 
     if args.subparser_name == 'build':
         builddb(args)
+        exit()
     elif args.subparser_name == 'download':
         if args.available:
             list_available_databases()
         else:
             downloaddb(args)
-    else:
-        if not exists(args.out):
-            mkdir(args.out)
+        exit()
 
-        # if user does not specify a sqlite database then use the one provided
-        # by the package
+    # single or batch mode
 
-        db_file = split(args.database)[1]
-        species = db_file.split('.')[1]
-        release = db_file.split('.')[2]
+    if not exists(args.out):
+        mkdir(args.out)
 
-        assert species in AVAILABLE_ENSEMBL_SPECIES, 'unsupported species!'
+    # if user does not specify a sqlite database then use the one provided
+    # by the package
 
-        db = agfusion.AGFusionDB(args.database,debug=args.debug)
-        db.build = species + '_' + str(release)
+    db_file = split(args.database)[1]
+    species = db_file.split('.')[1]
+    release = db_file.split('.')[2]
 
-        # get the pyensembl data
+    assert species in AVAILABLE_ENSEMBL_SPECIES, 'unsupported species!'
 
-        pyensembl_data = pyensembl.EnsemblRelease(release, species)
+    db = agfusion.AGFusionDB(args.database,debug=args.debug)
+    db.build = species + '_' + str(release)
 
-        try:
-            pyensembl_data.db
-        except ValueError:
-            db.logger.error(
-                "Missing pyensembl data. Run pyensembl install --release %s --species %s" %
-                (release,species)
-            )
-            exit()
+    # get the pyensembl data
 
-        colors = {}
-        rename = {}
+    pyensembl_data = pyensembl.EnsemblRelease(release, species)
 
-        if args.recolor is not None:
-            for i in args.recolor:
-                pair = i.split(';')
+    try:
+        pyensembl_data.db
+    except ValueError:
+        db.logger.error(
+            "Missing pyensembl data. Run pyensembl install --release " +
+            "%s --species %s" %
+            (release,species)
+        )
+        exit()
 
-                assert len(pair) == 2, " did not properly specify --colors"
+    colors = {}
+    rename = {}
 
-                if pair[0] in colors:
-                    db.logger.warn("You specified colors for %s twice." % pair[0])
+    if args.recolor is not None:
+        for i in args.recolor:
+            pair = i.split(';')
 
-                colors[pair[0]] = pair[1]
+            assert len(pair) == 2, " did not properly specify --colors"
 
-        if args.rename is not None:
-            for i in args.rename:
-                pair = i.split(';')
+            if pair[0] in colors:
+                db.logger.warn("You specified colors for %s twice." % pair[0])
 
-                assert len(pair) == 2, " did not properly specify --rename"
+            colors[pair[0]] = pair[1]
 
-                if pair[0] in rename:
-                    db.logger.warn("WARNING - you rename %s twice." % pair[0])
+    if args.rename is not None:
+        for i in args.rename:
+            pair = i.split(';')
 
-                rename[pair[0]] = pair[1]
+            assert len(pair) == 2, " did not properly specify --rename"
 
-        if args.subparser_name == 'annotate':
-            annotate(
-                gene5prime=args.gene5prime,
-                junction5prime=args.junction5prime,
-                gene3prime=args.gene3prime,
-                junction3prime=args.junction3prime,
-                outdir=args.out,
-                colors=colors,
-                rename=rename,
-                scale=args.scale,
-                db=db,
-                pyensembl_data=pyensembl_data,
-                args=args
-            )
-        else:
-            if args.algorithm in agfusion.parsers:
-                for fusion in agfusion.parsers[args.algorithm](args.file):
+            if pair[0] in rename:
+                db.logger.warn("WARNING - you rename %s twice." % pair[0])
 
-                    outdir = join(
-                        args.out,
-                        fusion['alternative_name_5prime'] + '-' +
-                        str(fusion['junction_5prime']) + '_' +
-                        fusion['alternative_name_3prime'] + '-' +
-                        str(fusion['junction_3prime'])
-                    )
+            rename[pair[0]] = pair[1]
 
-                    if not exists(outdir):
-                        mkdir(outdir)
-                    else:
-                        db.logger.warn('The following output directory already exists! %s' % outdir)
-
-                    try:
-                        annotate(
-                            gene5prime=fusion['ensembl_5prime'],
-                            junction5prime=fusion['junction_5prime'],
-                            gene3prime=fusion['ensembl_3prime'],
-                            junction3prime=fusion['junction_3prime'],
-                            outdir=outdir,
-                            colors=colors,
-                            rename=rename,
-                            scale=None,
-                            db=db,
-                            pyensembl_data=pyensembl_data,
-                            args=args
-                        )
-                    except exceptions.GeneIDException5prime:
-                        db.logger.error("No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(fusion['ensembl_5prime']))
-                    except exceptions.GeneIDException3prime:
-                        db.logger.error("No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(fusion['ensembl_3prime']))
-                    except exceptions.JunctionException5prime:
-                        db.logger.error("No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(fusion['ensembl_5prime']))
-                    except exceptions.JunctionException3prime:
-                        db.logger.error("No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(fusion['ensembl_3prime']))
-                    except exceptions.TooManyGenesException as e:
-                        db.logger.error("Multiple Ensembl IDs found matching one of your genes.")
-            else:
-                db.logger.error(
-                    '\'%s\' is not an available option for -a! Choose one of the following: %s' %
-                    (
-                        args.algorithm,
-                        ','.join(agfusion.parsers.keys())
-                    )
-                )
-                exit()
+    if args.subparser_name == 'annotate':
+        annotate(
+            gene5prime=args.gene5prime,
+            junction5prime=args.junction5prime,
+            gene3prime=args.gene3prime,
+            junction3prime=args.junction3prime,
+            outdir=args.out,
+            colors=colors,
+            rename=rename,
+            scale=args.scale,
+            db=db,
+            pyensembl_data=pyensembl_data,
+            args=args
+        )
+    elif args.subparser_name == 'batch':
+        batch_mode(args,db,pyensembl_data,rename,colors)
