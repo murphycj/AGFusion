@@ -267,5 +267,46 @@ class TestEffectPrediciton(unittest.TestCase):
         assert t.effect_5prime=="intron (before cds)","Test 12: incorrect 5' effect: %s" % t.effect_5prime
         assert t.effect_3prime=="intron (cds)","Test 12: incorrect 3' effect: %s" % t.effect_3prime
 
+class TestBatch(unittest.TestCase):
+    def test_1(self):
+        assert set(agfusion.parsers) == set(['fusioncatcher','tophatfusion','starfusion']), "parser set not right!"
+        assert 'fusioncatcheR' not in agfusion.parsers, "fusioncatcheR found in parsers!"
+
+class TestFusionCatcher(unittest.TestCase):
+    def test_1(self):
+        all_fusions = ['Adamts9-Ano2','Trp53-Sat2','1700112E06Rik-Runx1','Runx1-1700112E06Rik','Rell1-Lhfpl3','Phc1-Smarca2','Lrrc8d-Gbp11','C920009B18Rik-H60b']
+        for fusion in agfusion.parsers['fusioncatcher']('./data/FusionsFindingAlgorithms/FusionCatcher/final-list_candidate-fusion-genes.txt'):
+            fusion = agfusion.Fusion(
+                gene5prime=fusion['ensembl_5prime'],
+                gene5primejunction=fusion['junction_5prime'],
+                gene3prime=fusion['ensembl_3prime'],
+                gene3primejunction=fusion['junction_3prime'],
+                db=db,
+                pyensembl_data=data,
+                protein_databases=['pfam'],
+                noncanonical=False
+            )
+            assert fusion.name in all_fusions, '%s not in list!' % fusion.name
+
+class TestSTARFusion(unittest.TestCase):
+    def test_1(self):
+        all_fusions = ['Adamts9-Ano2','Trp53-Sat2','1700112E06Rik-Runx1','Runx1-1700112E06Rik','Rell1-Lhfpl3','Phc1-Smarca2','Lrrc8d-Gbp11','C920009B18Rik-H60b']
+        for fusion in agfusion.parsers['fusioncatcher']('./data/FusionsFindingAlgorithms/FusionCatcher/final-list_candidate-fusion-genes.txt'):
+            fusion = agfusion.Fusion(
+                gene5prime=fusion['ensembl_5prime'],
+                gene5primejunction=fusion['junction_5prime'],
+                gene3prime=fusion['ensembl_3prime'],
+                gene3primejunction=fusion['junction_3prime'],
+                db=db,
+                pyensembl_data=data,
+                protein_databases=['pfam'],
+                noncanonical=False
+            )
+            assert fusion.name in all_fusions, '%s not in list!' % fusion.name
+
+class TestTopHatFusion(unittest.TestCase):
+    def test_1(self):
+        pass
+
 if __name__ == "__main__":
     unittest.main()

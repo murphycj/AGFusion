@@ -1,9 +1,10 @@
-import sqlite3
-from os.path import split, exists, join, expanduser
+"""
+Command line interface
+"""
+
+from os.path import split, exists, join
 from os import mkdir, remove
-from sys import exit
 import argparse
-import logging
 import gzip
 import shutil
 from future.standard_library import install_aliases
@@ -11,25 +12,32 @@ install_aliases()
 from urllib.request import urlopen
 from urllib.error import HTTPError
 
+import pyensembl
 import agfusion
 from agfusion import exceptions
-import pyensembl
-
 from agfusion.utils import AGFUSION_DB_URL, AVAILABLE_ENSEMBL_SPECIES, GENOME_SHORTCUTS
 
+
 def list_available_databases():
+    """
+    List the available databases that can be downloaded.
+    """
+
     print('\n')
-    print('{:<10}\t\t{:<5}\t\t{:<20}'.format('Species','Release','Shortcut(s)'))
+    print('{:<10}\t\t{:<5}\t\t{:<20}'.format('Species', 'Release', 'Shortcut(s)'))
     for species, releases in AVAILABLE_ENSEMBL_SPECIES.items():
         for release in releases:
             shortcut = []
-            for ss, data in GENOME_SHORTCUTS.items():
+            for genome, data in GENOME_SHORTCUTS.items():
                 if species in data and release in data:
-                    shortcut.append(ss)
-            print('{:<10}\t\t{:<5}\t\t{:<20}'.format(species,release,','.join(shortcut)))
+                    shortcut.append(genome)
+            print('{:<10}\t\t{:<5}\t\t{:<20}'.format(species, release, ','.join(shortcut)))
     exit()
 
 def downloaddb(args):
+    """
+    Download the AGFusion database from github
+    """
 
     if args.genome is not None:
         if args.genome not in GENOME_SHORTCUTS:
@@ -59,17 +67,21 @@ def downloaddb(args):
         print("Was unable to downloade the file %s!" % db_url)
         exit()
 
-    fout = open(file_path,'wb')
+    fout = open(file_path, 'wb')
     fout.write(response.read())
     fout.close()
 
-    with gzip.open(file_path, 'rb') as f_in, open(file_path.replace('.gz',''), 'wb') as f_out:
+    with gzip.open(file_path, 'rb') as f_in, open(file_path.replace('.gz', ''), 'wb') as f_out:
         shutil.copyfileobj(f_in, f_out)
 
     remove(file_path)
 
-def annotate(gene5prime,junction5prime,gene3prime,junction3prime,
-             outdir,colors,rename,scale,db,pyensembl_data,args):
+def annotate(gene5prime, junction5prime, gene3prime, junction3prime,
+             outdir, agfusion_db, pyensembl_data, args, colors=None,
+             rename=None, scale=None):
+    """
+    Annotate the gene fusion
+    """
 
 
     fusion = agfusion.Fusion(
@@ -77,7 +89,7 @@ def annotate(gene5prime,junction5prime,gene3prime,junction3prime,
         gene5primejunction=junction5prime,
         gene3prime=gene3prime,
         gene3primejunction=junction3prime,
-        db=db,
+        db=agfusion_db,
         pyensembl_data=pyensembl_data,
         protein_databases=args.protein_databases,
         noncanonical=args.noncanonical
@@ -111,7 +123,12 @@ def annotate(gene5prime,junction5prime,gene3prime,junction3prime,
         )
     fusion.save_tables(out_dir=outdir)
 
-def batch_mode(args,db,pyensembl_data,rename,colors):
+def batch_mode(args, agfusion_db, pyensembl_data, rename, colors):
+    """
+    Batch mode for annotation fusions from output from a fusion-finding
+    algorithm
+    """
+
     if args.algorithm in agfusion.parsers:
         for fusion in agfusion.parsers[args.algorithm](args.file):
 
@@ -126,47 +143,59 @@ def batch_mode(args,db,pyensembl_data,rename,colors):
             if not exists(outdir):
                 mkdir(outdir)
             else:
-                db.logger.warn('The following output directory already exists! %s' % outdir)
+                agfusion_db.logger.warn(
+                    'The following output directory already exists! %s' %
+                    outdir)
+
+            if fusion['ensembl_5prime'] is not None:
+                gene5prime = fusion['ensembl_5prime']
+            else:
+                gene5prime = fusion['alternative_name_5prime']
+
+            if fusion['ensembl_3prime'] is not None:
+                gene3prime = fusion['ensembl_5prime']
+            else:
+                gene3prime = fusion['alternative_name_3prime']
 
             try:
                 annotate(
-                    gene5prime=fusion['ensembl_5prime'],
+                    gene5prime=gene5prime,
                     junction5prime=fusion['junction_5prime'],
-                    gene3prime=fusion['ensembl_3prime'],
+                    gene3prime=gene3prime,
                     junction3prime=fusion['junction_3prime'],
                     outdir=outdir,
                     colors=colors,
                     rename=rename,
                     scale=None,
-                    db=db,
+                    agfusion_db=agfusion_db,
                     pyensembl_data=pyensembl_data,
                     args=args
                 )
             except exceptions.GeneIDException5prime:
-                db.logger.error(
+                agfusion_db.logger.error(
                     "No Ensembl ID found for {0}! Check its spelling and " +
                     "if you are using the right genome build and Ensembl " +
                     "release.".format(fusion['ensembl_5prime']))
             except exceptions.GeneIDException3prime:
-                db.logger.error(
+                agfusion_db.logger.error(
                     "No Ensembl ID found for {0}! Check its spelling and " +
                     "if you are using the right genome build and Ensembl " +
                     "release.".format(fusion['ensembl_3prime']))
             except exceptions.JunctionException5prime:
-                db.logger.error(
+                agfusion_db.logger.error(
                     "No Ensembl ID found for {0}! Check its spelling and " +
                     "if you are using the right genome build and Ensembl " +
                     "release.".format(fusion['ensembl_5prime']))
             except exceptions.JunctionException3prime:
-                db.logger.error(
+                agfusion_db.logger.error(
                     "No Ensembl ID found for {0}! Check its spelling and " +
                     "if you are using the right genome build and Ensembl " +
                     "release.".format(fusion['ensembl_3prime']))
-            except exceptions.TooManyGenesException as e:
-                db.logger.error(
+            except exceptions.TooManyGenesException:
+                agfusion_db.logger.error(
                     "Multiple Ensembl IDs found matching one of your genes.")
     else:
-        db.logger.error(
+        agfusion_db.logger.error(
             '\'%s\' is not an available option for -a! Choose one of the following: %s' %
             (
                 args.algorithm,
@@ -176,8 +205,11 @@ def batch_mode(args,db,pyensembl_data,rename,colors):
         exit()
 
 def builddb(args):
+    """
+    Build a AGFusion database
+    """
 
-    db = agfusion.AGFusionDBBManager(
+    agfusion_db = agfusion.AGFusionDBBManager(
         args.dir,
         args.species,
         args.release,
@@ -185,21 +217,25 @@ def builddb(args):
         args.server
     )
 
-    db.logger.info('Fetching alternative gene names...')
+    agfusion_db.logger.info('Fetching alternative gene names...')
 
-    db.fetch_gene_names()
+    agfusion_db.fetch_gene_names()
 
-    db.logger.info('Fetching transcript tables...')
+    agfusion_db.logger.info('Fetching transcript tables...')
 
-    db.fetch_transcript_table()
+    agfusion_db.fetch_transcript_table()
 
-    db.fetch_refseq_table()
+    agfusion_db.fetch_refseq_table()
 
-    db.logger.info('Fetching protein annotation data...')
+    agfusion_db.logger.info('Fetching protein annotation data...')
 
-    db.fetch_protein_annotation()
+    agfusion_db.fetch_protein_annotation()
 
 def add_common_flags(parser):
+    """
+    Add commaond line flags that are common to multiple sub parsers
+    """
+
     parser.add_argument(
         '-db',
         '--database',
@@ -221,7 +257,7 @@ def add_common_flags(parser):
         required=False,
         default=False,
         help='(Optional) Include non-canonical gene transcripts ' +
-             'in the analysis (default False).'
+        'in the analysis (default False).'
     )
     parser.add_argument(
         '--protein_databases',
@@ -230,11 +266,12 @@ def add_common_flags(parser):
         nargs='+',
         default=['pfam', 'tmhmm'],
         help='(Optional) Space-delimited list of one or more protein ' +
-             'feature databases to include when visualizing proteins. ' +
-             'Options are: pfam, smart, superfamily, tigrfam, pfscan (Prosite_profiles), ' +
-             'tmhmm (i.e. transmembrane), seg (low_complexity regions), ncoils (coiled coil regions), prints ' +
-             'pirsf, and signalp (signal peptide regions) ' +
-             '(default includes pfam and tmhmm).'
+        'feature databases to include when visualizing proteins. ' +
+        'Options are: pfam, smart, superfamily, tigrfam, pfscan (Prosite_profiles), ' +
+        'tmhmm (i.e. transmembrane), seg (low_complexity regions), ncoils ' +
+        '(coiled coil regions), prints ' +
+        'pirsf, and signalp (signal peptide regions) ' +
+        '(default includes pfam and tmhmm).'
     )
     parser.add_argument(
         '--recolor',
@@ -243,9 +280,9 @@ def add_common_flags(parser):
         default=None,
         action='append',
         help='(Optional) Re-color a domain. Provide the original name of ' +
-             'the domain then your color (semi-colon delimited, all in ' +
-             'quotes). Can specify --recolor multiples for each domain. ' +
-             '(e.g. --color \"Pkinase_Tyr;blue\" --color \"I-set;#006600\").')
+        'the domain then your color (semi-colon delimited, all in ' +
+        'quotes). Can specify --recolor multiples for each domain. ' +
+        '(e.g. --color \"Pkinase_Tyr;blue\" --color \"I-set;#006600\").')
     parser.add_argument(
         '--rename',
         type=str,
@@ -253,9 +290,9 @@ def add_common_flags(parser):
         default=None,
         action='append',
         help='(Optional) Rename a domain. Provide the original name of ' +
-             'the domain then your new name (semi-colon delimited, ' +
-             'all in quotes). Can specify --rename multiples for each ' +
-             'domain. (e.g. --rename \"Pkinase_Tyr;Kinase\").')
+        'the domain then your new name (semi-colon delimited, ' +
+        'all in quotes). Can specify --rename multiples for each ' +
+        'domain. (e.g. --rename \"Pkinase_Tyr;Kinase\").')
     parser.add_argument(
         '--exclude_domain',
         type=str,
@@ -263,7 +300,7 @@ def add_common_flags(parser):
         default=[],
         nargs='+',
         help='(Optional) Exclude a certain domain(s) from plotting ' +
-             'by providing a space-separated list of domain names.')
+        'by providing a space-separated list of domain names.')
     parser.add_argument(
         '--type',
         type=str,
@@ -301,14 +338,14 @@ def add_common_flags(parser):
         action='store_true',
         required=False,
         help='(Optional) Include this to plot wild-type architechtures ' +
-             'of the 5\' and 3\' genes')
+        'of the 5\' and 3\' genes')
     parser.add_argument(
         '-ms',
         '--middlestar',
         action='store_true',
         required=False,
         help='(Optional) Insert a * at the junction position for the ' +
-             'cdna, cds, and protein sequences (default False).')
+        'cdna, cds, and protein sequences (default False).')
     parser.add_argument(
         '-ndl',
         '--no_domain_labels',
@@ -323,6 +360,9 @@ def add_common_flags(parser):
     )
 
 def main():
+    """
+    Main function for processing command line options
+    """
 
     parser = argparse.ArgumentParser(
         description='Annotate Gene Fusion (AGFusion)'
@@ -354,8 +394,8 @@ def main():
         type=int,
         required=True,
         help='Genomic location of predicted fuins for the 5\' gene partner. ' +
-             'The 1-based position that is the last nucleotide included in ' +
-             'the fusion before the junction.'
+        'The 1-based position that is the last nucleotide included in ' +
+        'the fusion before the junction.'
     )
     annotate_parser.add_argument(
         '-j3',
@@ -363,8 +403,8 @@ def main():
         type=int,
         required=True,
         help='Genomic location of predicted fuins for the 3\' gene partner. ' +
-             'The 1-based position that is the first nucleotide included in ' +
-             'the fusion after the junction.'
+        'The 1-based position that is the first nucleotide included in ' +
+        'the fusion after the junction.'
     )
     add_common_flags(annotate_parser)
     annotate_parser.add_argument(
@@ -373,15 +413,15 @@ def main():
         required=False,
         default=-1,
         help='(Optional) Set maximum width (in amino acids) of the ' +
-             'figure to rescale the fusion (default: max length of ' +
-             'fusion product)')
+        'figure to rescale the fusion (default: max length of ' +
+        'fusion product)')
 
     # batch file parser
 
     batch_parser = subparsers.add_parser(
         'batch',
         help='Annotate fusions from an output file from a fusion ' +
-             'finding algorithm.')
+        'finding algorithm.')
     batch_parser.add_argument(
         '-f',
         '--file',
@@ -395,8 +435,8 @@ def main():
         type=str,
         required=True,
         help='The fusion-finding algorithm. Can be one of the following: ' +
-             'fusioncatcher, starfusion, or tophatfusion. ' +
-             '(Will support more algorithms soon)'
+        'fusioncatcher, starfusion, or tophatfusion. ' +
+        '(Will support more algorithms soon)'
     )
     add_common_flags(batch_parser)
 
@@ -411,15 +451,15 @@ def main():
         type=str,
         default='',
         help='(Optional) Directory to the database will be downloaded ' +
-             'to (defaults to current working directory).')
+        'to (defaults to current working directory).')
     database_parser.add_argument(
         '-g',
         '--genome',
         type=str,
         default=None,
         help='Specify the genome shortcut (e.g. hg19). To see all' +
-             'available shortcuts run \'agfusion download -a\'. Either ' +
-             'specify this or --species and --release.')
+        'available shortcuts run \'agfusion download -a\'. Either ' +
+        'specify this or --species and --release.')
     database_parser.add_argument(
         '-s',
         '--species',
@@ -513,8 +553,8 @@ def main():
 
     assert species in AVAILABLE_ENSEMBL_SPECIES, 'unsupported species!'
 
-    db = agfusion.AGFusionDB(args.database,debug=args.debug)
-    db.build = species + '_' + str(release)
+    agfusion_db = agfusion.AGFusionDB(args.database, debug=args.debug)
+    agfusion_db.build = species + '_' + str(release)
 
     # get the pyensembl data
 
@@ -523,10 +563,10 @@ def main():
     try:
         pyensembl_data.db
     except ValueError:
-        db.logger.error(
+        agfusion_db.logger.error(
             "Missing pyensembl data. Run pyensembl install --release " +
             "%s --species %s" %
-            (release,species)
+            (release, species)
         )
         exit()
 
@@ -540,7 +580,7 @@ def main():
             assert len(pair) == 2, " did not properly specify --colors"
 
             if pair[0] in colors:
-                db.logger.warn("You specified colors for %s twice." % pair[0])
+                agfusion_db.logger.warn("You specified colors for %s twice." % pair[0])
 
             colors[pair[0]] = pair[1]
 
@@ -551,7 +591,7 @@ def main():
             assert len(pair) == 2, " did not properly specify --rename"
 
             if pair[0] in rename:
-                db.logger.warn("WARNING - you rename %s twice." % pair[0])
+                agfusion_db.logger.warn("WARNING - you rename %s twice." % pair[0])
 
             rename[pair[0]] = pair[1]
 
@@ -562,12 +602,12 @@ def main():
             gene3prime=args.gene3prime,
             junction3prime=args.junction3prime,
             outdir=args.out,
+            agfusion_db=agfusion_db,
+            pyensembl_data=pyensembl_data,
+            args=args,
             colors=colors,
             rename=rename,
-            scale=args.scale,
-            db=db,
-            pyensembl_data=pyensembl_data,
-            args=args
+            scale=args.scale
         )
     elif args.subparser_name == 'batch':
-        batch_mode(args,db,pyensembl_data,rename,colors)
+        batch_mode(args, agfusion_db, pyensembl_data, rename, colors)

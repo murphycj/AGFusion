@@ -96,7 +96,81 @@ class FusionCatcher(_Parser):
         fin.close()
 
 class FusionHunter(_Parser):
-    pass
+    def __init__(self,infile):
+        super(FusionHunter, self).__init__()
+
+        gene1 = gene2 = None
+        gene1_junction = gene2_junction = None
+
+        fin = open(infile,'r')
+        for line in fin.readlines():
+
+            if re.findall('^# Fusion:',line):
+
+                if gene1 is not None and gene2 is not None:
+                    self.fusions.append(
+                        {
+                            'ensembl_5prime':None,
+                            'ensembl_3prime':None,
+                            'alternative_name_5prime':gene1,
+                            'alternative_name_3prime':gene2,
+                            'junction_5prime':int(gene1_junction),
+                            'junction_3prime':int(gene2_junction)
+                        }
+                    )
+
+                strands = re.findall("(?<=\[)(.*)(?=\])",line)
+                assert len(strands)==1,"Unrecognized FusionHunter input. Incorrect strand information."
+                gene1_strand = strands[0][0]
+                gene2_strand = strands[0][1]
+
+            elif re.findall('^--',line):
+                #new breakpoint
+                if gene1 is not None and gene2 is not None:
+                    self.fusions.append(
+                        {
+                            'ensembl_5prime':None,
+                            'ensembl_3prime':None,
+                            'alternative_name_5prime':gene1,
+                            'alternative_name_3prime':gene2,
+                            'junction_5prime':int(gene1_junction),
+                            'junction_3prime':int(gene2_junction)
+                        }
+                    )
+
+            elif re.findall('^->',line):
+                junctions = re.findall("(chr[0-9]*):([0-9]*)-([0-9]*)",line)
+                assert len(junctions)==2,"Unrecognized FusionHunter input. Incorrect junction information."
+
+                gene1 = gene2 = None
+                gene1_junction = gene2_junction = None
+
+                gene1, gene2 = re.findall("[A-Z0-9]*\sx\s[A-Z0-9a-z]*(?=\t)",line)[0].split(' x ')
+                assert gene1 is not None and gene2 is not None, "Unrecognized FusionHunter input. Incorrect gnee information."
+
+                if gene1_strand=='+':
+                    gene1_junction = junctions[0][2]
+                else:
+                    gene1_junction = junctions[0][1]
+
+                if gene2_strand=='+':
+                    gene2_junction = junctions[1][1]
+                else:
+                    gene2_junction = junctions[1][2]
+        fin.close()
+
+        if gene1 is not None and gene2 is not None:
+            self.fusions.append(
+                {
+                    'ensembl_5prime':None,
+                    'ensembl_3prime':None,
+                    'alternative_name_5prime':gene1,
+                    'alternative_name_3prime':gene2,
+                    'junction_5prime':int(gene1_junction),
+                    'junction_3prime':int(gene2_junction)
+                }
+            )
+
 
 class FusionMap(_Parser):
     pass
@@ -144,7 +218,7 @@ parsers = {
     #'chimerascan':Chimerascan,
     #'ericscript':EricScript,
     'fusioncatcher':FusionCatcher,
-    #'fusionhunter':FusionHunter,
+    'fusionhunter':FusionHunter,
     #'fusionmap':FusionMap,
     #'jaffa':JAFFA,
     #'mapsplice':MapSplice,
