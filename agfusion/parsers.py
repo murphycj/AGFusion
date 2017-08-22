@@ -173,7 +173,33 @@ class FusionHunter(_Parser):
 
 
 class FusionMap(_Parser):
-    pass
+    def __init__(self,infile):
+        super(FusionMap, self).__init__()
+
+        fin = open(infile,'r')
+        for line in fin.readlines():
+            if re.findall('^FusionID',line):
+                line = line.strip().split('\t')
+                for i, j in zip([6,8,9,13],['Position1','Position2','KnownGene1','KnownGene2']):
+                    assert line[i]==j, "Unrecognized FusionMap input: %s".format(j)
+            else:
+                line = line.strip().split('\t')
+
+                gene_5prime_name = line[9]
+                gene_5prime_junction = int(line[6])
+                gene_3prime_name = line[13]
+                gene_3prime_junction = int(line[8])
+                self.fusions.append(
+                    {
+                        'ensembl_5prime':None,
+                        'ensembl_3prime':None,
+                        'alternative_name_5prime':gene_5prime_name,
+                        'alternative_name_3prime':gene_3prime_name,
+                        'junction_5prime':gene_5prime_junction,
+                        'junction_3prime':gene_3prime_junction
+                    }
+                )
+        fin.close()
 
 class JAFFA(_Parser):
     pass
@@ -219,7 +245,7 @@ parsers = {
     #'ericscript':EricScript,
     'fusioncatcher':FusionCatcher,
     'fusionhunter':FusionHunter,
-    #'fusionmap':FusionMap,
+    'fusionmap':FusionMap,
     #'jaffa':JAFFA,
     #'mapsplice':MapSplice,
     #'nfuse':nFuse,
