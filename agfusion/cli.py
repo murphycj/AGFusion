@@ -435,8 +435,7 @@ def main():
         type=str,
         required=True,
         help='The fusion-finding algorithm. Can be one of the following: ' +
-        'fusioncatcher, starfusion, or tophatfusion. ' +
-        '(Will support more algorithms soon)'
+        ', '.join(agfusion.parsers.keys()) + '.'
     )
     add_common_flags(batch_parser)
 

@@ -66,7 +66,33 @@ class Chimerascan(_Parser):
     pass
 
 class EricScript(_Parser):
-    pass
+    def __init__(self,infile):
+        super(EricScript, self).__init__()
+
+        fin = open(infile,'r')
+        for line in fin.readlines():
+            if re.findall('^GeneName1',line):
+                line = line.strip().split('\t')
+                for i, j in zip([3,6,8,9],['Breakpoint1','Breakpoint2','EnsemblGene1','EnsemblGene2']):
+                    assert line[i]==j, "Unrecognized EricScript input: %s".format(j)
+            else:
+                line = line.strip().split('\t')
+
+                gene_5prime_name = line[8]
+                gene_5prime_junction = int(line[3])
+                gene_3prime_name = line[9]
+                gene_3prime_junction = int(line[6])
+                self.fusions.append(
+                    {
+                        'ensembl_5prime':None,
+                        'ensembl_3prime':None,
+                        'alternative_name_5prime':gene_5prime_name,
+                        'alternative_name_3prime':gene_3prime_name,
+                        'junction_5prime':gene_5prime_junction,
+                        'junction_3prime':gene_3prime_junction
+                    }
+                )
+        fin.close()
 
 class FusionCatcher(_Parser):
     def __init__(self,infile):
@@ -242,7 +268,7 @@ class TopHatFusion(_Parser):
 parsers = {
     #'bellerophontes':Bellerophontes,
     #'chimerascan':Chimerascan,
-    #'ericscript':EricScript,
+    'ericscript':EricScript,
     'fusioncatcher':FusionCatcher,
     'fusionhunter':FusionHunter,
     'fusionmap':FusionMap,

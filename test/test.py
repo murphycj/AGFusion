@@ -269,7 +269,7 @@ class TestEffectPrediciton(unittest.TestCase):
 
 class TestBatch(unittest.TestCase):
     def test_1(self):
-        assert set(agfusion.parsers) == set(['fusioncatcher','tophatfusion','starfusion','fusionhunter','fusionmap']), "parser set not right!"
+        assert set(agfusion.parsers) == set(['fusioncatcher','tophatfusion','starfusion','fusionhunter','fusionmap','ericscript']), "parser set not right!"
         assert 'fusioncatcheR' not in agfusion.parsers, "fusioncatcheR found in parsers!"
 
 class TestFusionCatcher(unittest.TestCase):
