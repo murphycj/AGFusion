@@ -56,10 +56,10 @@ You can additionally plot the wild-type proteins and exon structures for each ge
 
 ```
 agfusion annotate \
-  --gene5prime ENSMUSG00000022770 \
-  --gene3prime ENSMUSG00000002413 \
-  --junction5prime 31684294 \
-  --junction3prime 39648486 \
+  -g5 ENSMUSG00000022770 \
+  -g3 ENSMUSG00000002413 \
+  -j5 31684294 \
+  -j3 39648486 \
   -db agfusion.mus_musculus.87.db \
   -o DLG1-BRAF \
   --WT
@@ -71,10 +71,10 @@ By default AGFusion only plots the [canonical](http://useast.ensembl.org/Help/Gl
 
 ```
 agfusion annotate \
-  --gene5prime ENSMUSG00000022770 \
-  --gene3prime ENSMUSG00000002413 \
-  --junction5prime 31684294 \
-  --junction3prime 39648486 \
+  -g5 ENSMUSG00000022770 \
+  -g3 ENSMUSG00000002413 \
+  -j5 31684294 \
+  -j3 39648486 \
   -db agfusion.mus_musculus.87.db \
   -o DLG1-BRAF \
   --noncanonical
@@ -87,7 +87,7 @@ Below is an example for FusionCatcher.
 
 ```
 agfusion batch \
-  --file final-list_candidate-fusion-genes.txt \
+  -f final-list_candidate-fusion-genes.txt \
   -a fusioncatcher \
   -o test \
   -db agfusion.mus_musculus.87.db
@@ -99,10 +99,10 @@ You can change domain names and colors:
 
 ```
 agfusion annotate \
-  --gene5prime ENSMUSG00000022770 \
-  --gene3prime ENSMUSG00000002413 \
-  --junction5prime 31684294 \
-  --junction3prime 39648486 \
+  -g5 ENSMUSG00000022770 \
+  -g3 ENSMUSG00000002413 \
+  -j5 31684294 \
+  -j3 39648486 \
   -db agfusion.mus_musculus.87.db \
   -o DLG1-BRAF \
   --recolor "Pkinase_Tyr;red" --recolor "L27_1;blue" \
@@ -117,20 +117,20 @@ You can rescale the protein length so that images of two different fusions have 
 
 ```
 agfusion annotate \
-  --gene5prime ENSMUSG00000022770 \
-  --gene3prime ENSMUSG00000002413 \
-  --junction5prime 31684294 \
-  --junction3prime 39648486 \
+  -g5 ENSMUSG00000022770 \
+  -g3 ENSMUSG00000002413 \
+  -j5 31684294 \
+  -j3 39648486 \
   -db agfusion.mus_musculus.87.db \
   -o DLG1-BRAF \
   --recolor "Pkinase_Tyr;red" --recolor "L27_1;blue" \
   --rename "Pkinase_Tyr;Kinase" --rename "L27_1;L27" \
   --scale 2000
 agfusion annotate \
-  --gene5prime FGFR2 \
-  --gene3prime DNM3 \
-  --junction5prime 130167703 \
-  --junction3prime 162019992 \
+  -g5 FGFR2 \
+  -g3 DNM3 \
+  -j5 130167703 \
+  -j3 162019992 \
   -db agfusion.mus_musculus.87.db \
   -o FGFR2-DNM3 \
   --recolor "Pkinase_Tyr;red" \
