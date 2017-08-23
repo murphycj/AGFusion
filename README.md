@@ -84,13 +84,15 @@ agfusion annotate \
 
 You can provide as input output files from fusion-finding algorithms. Currently supported algorithms are:
 
-* FusionCatcher
-* TopHat-Fusion
-* STAR-Fusion
-* FusionMap
+* deFuse
 * EricScript
+* FusionCatcher
 * FusionHunter
+* FusionMap
 * MapSplice (only if --gene-gtf specified)
+* STAR-Fusion
+* TopHat-Fusion
+
 
 
 Below is an example for FusionCatcher.
