@@ -25,7 +25,7 @@ class _Parser(object):
             self.logger.error("Read 0 fusions from the file! Exiting...")
         else:
             self.logger.info(
-                "Read %s fusions from the file." % len(self.fusions)
+                "Read {} fusions from the file.".format(len(self.fusions))
             )
     next = __next__
 
@@ -75,7 +75,7 @@ class EricScript(_Parser):
             if re.findall('^GeneName1',line):
                 line = line.strip().split('\t')
                 for i, j in zip([3,6,8,9],['Breakpoint1','Breakpoint2','EnsemblGene1','EnsemblGene2']):
-                    assert line[i]==j, "Unrecognized EricScript input: %s".format(j)
+                    assert line[i]==j, "Unrecognized EricScript input: {}".format(j)
             else:
                 line = line.strip().split('\t')
 
@@ -214,7 +214,7 @@ class FusionMap(_Parser):
             if re.findall('^FusionID',line):
                 line = line.strip().split('\t')
                 for i, j in zip([6,8,9,13],['Position1','Position2','KnownGene1','KnownGene2']):
-                    assert line[i]==j, "Unrecognized FusionMap input %s header not in expected position.".format(j)
+                    assert line[i]==j, "Unrecognized FusionMap input {} header not in expected position.".format(j)
             else:
                 line = line.strip().split('\t')
 
@@ -245,7 +245,7 @@ class MapSplice(_Parser):
             if re.findall('^chrom',line):
                 line = line.strip().split('\t')
                 for i, j in zip([1,2,60,61],['doner_end','acceptor_start','annotated_gene_donor','annotated_gene_acceptor']):
-                    assert line[i]==j, "Unrecognized MapSplice input. %s header not in expected position.".format(j)
+                    assert line[i]==j, "Unrecognized MapSplice input. {} header not in expected position.".format(j)
             else:
                 line = line.strip().split('\t')
 
@@ -303,25 +303,25 @@ class DeFuse(_Parser):
 
         fin = open(infile,'r')
         for line in fin.readlines():
-            if re.findall('^chrom',line):
+            if re.findall('^cluster_id',line):
                 line = line.strip().split('\t')
                 try:
-                    gene1_ix = line.index('annotated_gene_donor')
+                    gene1_ix = line.index('gene1')
                 except ValueError:
                     logger.error("Unrecognized DeFuse input! Cannot find annotated_gene_donor column.")
                     exit()
                 try:
-                    gene2_ix = line.index('annotated_gene_acceptor')
+                    gene2_ix = line.index('gene2')
                 except ValueError:
                     logger.error("Unrecognized DeFuse input! Cannot find annotated_gene_acceptor column.")
                     exit()
                 try:
-                    gene1_junction_ix = line.index('doner_end')
+                    gene1_junction_ix = line.index('genomic_break_pos1')
                 except ValueError:
                     logger.error("Unrecognized DeFuse input! Cannot find doner_end column.")
                     exit()
                 try:
-                    gene2_junction_ix = line.index('acceptor_start')
+                    gene2_junction_ix = line.index('genomic_break_pos2')
                 except ValueError:
                     logger.error("Unrecognized DeFuse input! Cannot find acceptor_start column.")
                     exit()
@@ -334,10 +334,10 @@ class DeFuse(_Parser):
                 gene_3prime_junction = int(line[gene2_junction_ix])
                 self.fusions.append(
                     {
-                        'ensembl_5prime':None,
-                        'ensembl_3prime':None,
-                        'alternative_name_5prime':gene_5prime_name,
-                        'alternative_name_3prime':gene_3prime_name,
+                        'ensembl_5prime':gene_5prime_name,
+                        'ensembl_3prime':gene_3prime_name,
+                        'alternative_name_5prime':None,
+                        'alternative_name_3prime':None,
                         'junction_5prime':gene_5prime_junction,
                         'junction_3prime':gene_3prime_junction
                     }

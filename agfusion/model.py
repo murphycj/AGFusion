@@ -139,20 +139,15 @@ class _Gene():
 
         # if gene has not been identified yet
 
-        if not self.gene_found and gene5prime:
-            raise exceptions.GeneIDException5prime(gene)
-        elif not self.gene_found:
-            raise exceptions.GeneIDException3prime(gene)
+        if not self.gene_found:
+            raise exceptions.GeneIDException(gene)
 
         # else continue with processing
 
         self.junction = junction
 
         if not self.gene.contains(self.gene.contig,self.junction,self.junction):
-            if gene5prime:
-                raise exceptions.JunctionException5prime()
-            else:
-                raise exceptions.JunctionException3prime()
+            raise exceptions.JunctionException(self.gene.name, self.junction)
 
         # fetch the entrez gene id and canonical transcript id
 

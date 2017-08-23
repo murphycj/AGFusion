@@ -4,25 +4,26 @@ class DataBaseError(Exception):
         Exception.__init__(self,e)
         self.e = e
 
-class GeneIDException3prime(Exception):
+class GeneIDException(Exception):
     def __init__(self,gene):
-        Exception.__init__(self,"No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(gene))
-        self.gene = gene
-
-class GeneIDException5prime(Exception):
-    def __init__(self,gene):
-        Exception.__init__(self,"No Ensembl ID found for {0}! Check its spelling and if you are using the right genome build.".format(gene))
-        self.gene = gene
+        Exception.__init__(
+            self,
+            "No Ensembl ID found for {}! Check its spelling and if you are " \
+            "using the right genome build.".format(gene)
+        )
 
 class TooManyGenesException(Exception):
     def __init__(self,gene,ids,build):
-        Exception.__init__(self,"Multiple Ensembl IDs found matching {0}: {1} for genome {2}. Specify which Ensembl ID.".format(gene,', '.join(ids),build))
-        self.gene = gene
+        Exception.__init__(
+            self,
+            "Multiple Ensembl IDs found matching {}: {} for genome {}." \
+            " Specify which Ensembl ID.".format(gene,', '.join(ids),build)
+        )
 
-class JunctionException5prime(Exception):
-    def __init__(self):
-        Exception.__init__(self,"Junction not within gene boundaries")
-
-class JunctionException3prime(Exception):
-    def __init__(self):
-        Exception.__init__(self,"Junction not within gene boundaries")
+class JunctionException(Exception):
+    def __init__(self,gene,junction):
+        Exception.__init__(
+            self,
+            "Junction {} not within {} gene boundaries!"
+            .format(junction,gene)
+        )

@@ -24,14 +24,20 @@ def list_available_databases():
     """
 
     print('\n')
-    print('{:<10}\t\t{:<5}\t\t{:<20}'.format('Species', 'Release', 'Shortcut(s)'))
+    print(
+        '{:<10}\t\t{:<5}\t\t{:<20}'
+        .format('Species', 'Release', 'Shortcut(s)')
+    )
     for species, releases in AVAILABLE_ENSEMBL_SPECIES.items():
         for release in releases:
             shortcut = []
             for genome, data in GENOME_SHORTCUTS.items():
                 if species in data and release in data:
                     shortcut.append(genome)
-            print('{:<10}\t\t{:<5}\t\t{:<20}'.format(species, release, ','.join(shortcut)))
+            print(
+                '{:<10}\t\t{:<5}\t\t{:<20}'
+                .format(species, release, ','.join(shortcut))
+            )
     exit()
 
 def downloaddb(args):
@@ -57,14 +63,14 @@ def downloaddb(args):
         args.dir,
         'agfusion.' + species + '.' + release + '.db.gz')
 
-    print("Downloading the AGFusion database to %s..." % file_path)
+    print("Downloading the AGFusion database to {}...".format(file_path))
 
     db_url = AGFUSION_DB_URL + species + '.' + release + '.db.gz'
 
     try:
         response = urlopen(db_url)
     except HTTPError:
-        print("Was unable to downloade the file %s!" % db_url)
+        print("Was unable to downloade the file {}!".format(db_url))
         exit()
 
     fout = open(file_path, 'wb')
@@ -77,12 +83,11 @@ def downloaddb(args):
     remove(file_path)
 
 def annotate(gene5prime, junction5prime, gene3prime, junction3prime,
-             outdir, agfusion_db, pyensembl_data, args, colors=None,
-             rename=None, scale=None):
+             agfusion_db, pyensembl_data, args, outdir=None, colors=None,
+             rename=None, scale=None, batch_out_dir=None):
     """
     Annotate the gene fusion
     """
-
 
     fusion = agfusion.Fusion(
         gene5prime=gene5prime,
@@ -94,6 +99,16 @@ def annotate(gene5prime, junction5prime, gene3prime, junction3prime,
         protein_databases=args.protein_databases,
         noncanonical=args.noncanonical
     )
+
+    if batch_out_dir is not None:
+
+        outdir = join(
+            batch_out_dir,
+            fusion.gene5prime.gene.name + '-' +
+            str(junction5prime) + '_' +
+            fusion.gene3prime.gene.name + '-' +
+            str(junction3prime)
+        )
 
     fusion.save_transcript_cdna(
         out_dir=outdir,
@@ -129,23 +144,16 @@ def batch_mode(args, agfusion_db, pyensembl_data, rename, colors):
     algorithm
     """
 
+    if not exists(args.out):
+        mkdir(args.out)
+    else:
+        agfusion_db.logger.warn(
+            'Output directory {} already exists! Overwriting...'
+            .format(args.out)
+        )
+
     if args.algorithm in agfusion.parsers:
         for fusion in agfusion.parsers[args.algorithm](args.file,agfusion_db.logger):
-
-            outdir = join(
-                args.out,
-                fusion['alternative_name_5prime'] + '-' +
-                str(fusion['junction_5prime']) + '_' +
-                fusion['alternative_name_3prime'] + '-' +
-                str(fusion['junction_3prime'])
-            )
-
-            if not exists(outdir):
-                mkdir(outdir)
-            else:
-                agfusion_db.logger.warn(
-                    'The following output directory already exists! %s' %
-                    outdir)
 
             if fusion['ensembl_5prime'] is not None:
                 gene5prime = fusion['ensembl_5prime']
@@ -153,7 +161,7 @@ def batch_mode(args, agfusion_db, pyensembl_data, rename, colors):
                 gene5prime = fusion['alternative_name_5prime']
 
             if fusion['ensembl_3prime'] is not None:
-                gene3prime = fusion['ensembl_5prime']
+                gene3prime = fusion['ensembl_3prime']
             else:
                 gene3prime = fusion['alternative_name_3prime']
 
@@ -163,41 +171,24 @@ def batch_mode(args, agfusion_db, pyensembl_data, rename, colors):
                     junction5prime=fusion['junction_5prime'],
                     gene3prime=gene3prime,
                     junction3prime=fusion['junction_3prime'],
-                    outdir=outdir,
+                    agfusion_db=agfusion_db,
+                    pyensembl_data=pyensembl_data,
+                    args=args,
                     colors=colors,
                     rename=rename,
                     scale=None,
-                    agfusion_db=agfusion_db,
-                    pyensembl_data=pyensembl_data,
-                    args=args
+                    batch_out_dir=args.out
                 )
-            except exceptions.GeneIDException5prime:
-                agfusion_db.logger.error(
-                    "No Ensembl ID found for {0}! Check its spelling and " +
-                    "if you are using the right genome build and Ensembl " +
-                    "release.".format(fusion['ensembl_5prime']))
-            except exceptions.GeneIDException3prime:
-                agfusion_db.logger.error(
-                    "No Ensembl ID found for {0}! Check its spelling and " +
-                    "if you are using the right genome build and Ensembl " +
-                    "release.".format(fusion['ensembl_3prime']))
-            except exceptions.JunctionException5prime:
-                agfusion_db.logger.error(
-                    "No Ensembl ID found for {0}! Check its spelling and " +
-                    "if you are using the right genome build and Ensembl " +
-                    "release.".format(fusion['ensembl_5prime']))
-            except exceptions.JunctionException3prime:
-                agfusion_db.logger.error(
-                    "No Ensembl ID found for {0}! Check its spelling and " +
-                    "if you are using the right genome build and Ensembl " +
-                    "release.".format(fusion['ensembl_3prime']))
-            except exceptions.TooManyGenesException:
-                agfusion_db.logger.error(
-                    "Multiple Ensembl IDs found matching one of your genes.")
+            except exceptions.GeneIDException, e:
+                agfusion_db.logger.error(e)
+            except exceptions.JunctionException, e:
+                agfusion_db.logger.error(e)
+            except exceptions.TooManyGenesException, e:
+                agfusion_db.logger.error(e)
     else:
         agfusion_db.logger.error(
-            '\'%s\' is not an available option for -a! Choose one of the following: %s' %
-            (
+            '\'{}\' is not an available option for -a! Choose one of the ' +
+            'following: {}.'.format(
                 args.algorithm,
                 ','.join(agfusion.parsers.keys())
             )
@@ -564,8 +555,7 @@ def main():
     except ValueError:
         agfusion_db.logger.error(
             "Missing pyensembl data. Run pyensembl install --release " +
-            "%s --species %s" %
-            (release, species)
+            "{} --species {}".format(release, species)
         )
         exit()
 
@@ -579,7 +569,10 @@ def main():
             assert len(pair) == 2, " did not properly specify --colors"
 
             if pair[0] in colors:
-                agfusion_db.logger.warn("You specified colors for %s twice." % pair[0])
+                agfusion_db.logger.warn(
+                    "You specified colors for {} twice."
+                    .format(pair[0])
+                )
 
             colors[pair[0]] = pair[1]
 
@@ -590,7 +583,10 @@ def main():
             assert len(pair) == 2, " did not properly specify --rename"
 
             if pair[0] in rename:
-                agfusion_db.logger.warn("WARNING - you rename %s twice." % pair[0])
+                agfusion_db.logger.warn(
+                    "WARNING - you rename {} twice."
+                    .format(pair[0])
+                )
 
             rename[pair[0]] = pair[1]
 
@@ -600,10 +596,10 @@ def main():
             junction5prime=args.junction5prime,
             gene3prime=args.gene3prime,
             junction3prime=args.junction3prime,
-            outdir=args.out,
             agfusion_db=agfusion_db,
             pyensembl_data=pyensembl_data,
             args=args,
+            outdir=args.out,
             colors=colors,
             rename=rename,
             scale=args.scale
