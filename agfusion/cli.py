@@ -130,7 +130,7 @@ def batch_mode(args, agfusion_db, pyensembl_data, rename, colors):
     """
 
     if args.algorithm in agfusion.parsers:
-        for fusion in agfusion.parsers[args.algorithm](args.file):
+        for fusion in agfusion.parsers[args.algorithm](args.file,agfusion_db.logger):
 
             outdir = join(
                 args.out,

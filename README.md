@@ -90,6 +90,7 @@ You can provide as input output files from fusion-finding algorithms. Currently 
 * FusionMap
 * EricScript
 * FusionHunter
+* MapSplice (only if --gene-gtf specified)
 
 
 Below is an example for FusionCatcher.
