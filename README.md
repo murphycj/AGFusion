@@ -16,8 +16,7 @@ AGFusion automatically predicts the functional effect of the gene fusion (e.g. i
   * [Plotting wild-type protein and exon structure](#plotting-wild-type-protein-and-exon-structure)
   * [Canonical gene isoforms](#canonical-gene-isoforms)
   * [Input from fusion-finding algorithms](#input-from-fusion-finding-algorithms)
-  * [Domain names and colors](#domain-names-and-colors)
-  * [Re-scaling protein length](#re-scaling-protein-length)
+  * [Graphical parameters](#graphical-parameters)
 - [Installation](#installation)
 - [Dependencies](#dependencies)
 - [License](#license)
@@ -105,7 +104,7 @@ agfusion batch \
   -db agfusion.mus_musculus.87.db
 ```
 
-### Domain names and colors
+### Graphical parameters
 
 You can change domain names and colors:
 
@@ -122,8 +121,6 @@ agfusion annotate \
 ```
 
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000064477-ENSMUST00000002487-recolorRename.png)
-
-### Re-scaling protein length
 
 You can rescale the protein length so that images of two different fusions have appropriate relative lengths when plotted side by side:
 
