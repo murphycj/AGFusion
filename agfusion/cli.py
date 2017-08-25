@@ -155,22 +155,12 @@ def batch_mode(args, agfusion_db, pyensembl_data, rename, colors):
     if args.algorithm in agfusion.parsers:
         for fusion in agfusion.parsers[args.algorithm](args.file,agfusion_db.logger):
 
-            if fusion['ensembl_5prime'] is not None:
-                gene5prime = fusion['ensembl_5prime']
-            else:
-                gene5prime = fusion['alternative_name_5prime']
-
-            if fusion['ensembl_3prime'] is not None:
-                gene3prime = fusion['ensembl_3prime']
-            else:
-                gene3prime = fusion['alternative_name_3prime']
-
             try:
                 annotate(
-                    gene5prime=gene5prime,
-                    junction5prime=fusion['junction_5prime'],
-                    gene3prime=gene3prime,
-                    junction3prime=fusion['junction_3prime'],
+                    gene5prime=fusion['gene5prime'],
+                    junction5prime=fusion['gene5prime_junction'],
+                    gene3prime=fusion['gene3prime'],
+                    junction3prime=fusion['gene3prime_junction'],
                     agfusion_db=agfusion_db,
                     pyensembl_data=pyensembl_data,
                     args=args,
@@ -188,7 +178,8 @@ def batch_mode(args, agfusion_db, pyensembl_data, rename, colors):
     else:
         agfusion_db.logger.error(
             '\'{}\' is not an available option for -a! Choose one of the ' +
-            'following: {}.'.format(
+            'following: {}.'
+            .format(
                 args.algorithm,
                 ','.join(agfusion.parsers.keys())
             )

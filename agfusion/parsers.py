@@ -299,32 +299,74 @@ class DeFuse(_Parser):
     def __init__(self,infile,logger):
         super(DeFuse, self).__init__(logger)
 
-        gene1_ix = gene2_ix = gene1_junction_ix = gene2_junction_ix = None
+        data_indices = {
+            'gene5prime':None,
+            'gene3prime':None,
+            'gene5prime_junction':None,
+            'gene3prime_junction':None
+        }
 
         fin = open(infile,'r')
         for line in fin.readlines():
             if re.findall('^cluster_id',line):
                 line = line.strip().split('\t')
-                try:
-                    gene1_ix = line.index('gene1')
-                except ValueError:
-                    logger.error("Unrecognized DeFuse input! Cannot find annotated_gene_donor column.")
-                    exit()
-                try:
-                    gene2_ix = line.index('gene2')
-                except ValueError:
-                    logger.error("Unrecognized DeFuse input! Cannot find annotated_gene_acceptor column.")
-                    exit()
-                try:
-                    gene1_junction_ix = line.index('genomic_break_pos1')
-                except ValueError:
-                    logger.error("Unrecognized DeFuse input! Cannot find doner_end column.")
-                    exit()
-                try:
-                    gene2_junction_ix = line.index('genomic_break_pos2')
-                except ValueError:
-                    logger.error("Unrecognized DeFuse input! Cannot find acceptor_start column.")
-                    exit()
+                for column in data_indices.keys():
+                    try:
+                        data_indices[column] = line.index(column)
+                    except ValueError:
+                        logger.error(
+                            "Unrecognized {} input! Cannot find {} column."
+                            .format(
+                                self.__class__.__name__,
+                                column
+                            )
+                        )
+                        exit()
+                continue
+            if not any([i is None for i in data_indices.keys()]):
+                line = line.strip().split('\t')
+                self.fusions.append(
+                    {
+                        'gene5prime':line[data_indices['gene5prime']],
+                        'gene3prime':line[data_indices['gene3prime']],
+                        'gene5prime_junction':int(line[data_indices['gene5prime_junction']]),
+                        'gene3prime_junction':int(line[data_indices['gene3prime_junction']])
+                    }
+                )
+        fin.close()
+
+        self._check_data()
+
+class Chimerascan(_Parser):
+    def __init__(self,infile,logger):
+        super(Chimerascan, self).__init__(logger)
+
+        data_indices = {
+            'gene5prime':None,
+            'gene3prime':None,
+            'gene5prime_junction':None,
+            'gene3prime_junction':None,
+            'gene5prime_strand':None,
+            'gene3prime_strand':None
+        }
+
+        fin = open(infile,'r')
+        for line in fin.readlines():
+            if re.findall('^#chrom5p',line):
+                line = line.strip().split('\t')
+                for column in data_indices.keys():
+                    try:
+                        data_indices[column] = line.index(column)
+                    except ValueError:
+                        logger.error(
+                            "Unrecognized {} input! Cannot find {} column."
+                            .format(
+                                self.__class__.__name__,
+                                column
+                            )
+                        )
+                        exit()
+                continue
             elif gene1_ix is not None:
                 line = line.strip().split('\t')
 
@@ -342,6 +384,50 @@ class DeFuse(_Parser):
                         'junction_3prime':gene_3prime_junction
                     }
                 )
+        fin.close()
+
+        self._check_data()
+
+class ChimeRScope(_Parser):
+    def __init__(self,infile,logger):
+        super(ChimeRScope, self).__init__(logger)
+
+        data_indices = {
+            'Gene1':2,
+            'Gene2':4,
+            'Gene1_fusionPoint':7,
+            'Gene2_fusionPoint':9
+        }
+
+        fin = open(infile,'r')
+        for line in fin.readlines():
+            if re.findall('^ConfidentScore',line):
+                line = line.strip().split('\t')
+                for column in data_indices.keys():
+                    try:
+                        data_indices[column] = line.index(column)
+                    except ValueError:
+                        logger.error(
+                            "Unrecognized {} input! Cannot find {} column."
+                            .format(
+                                self.__class__.__name__,
+                                column
+                            )
+                        )
+                        exit()
+                continue
+
+            line = line.strip().split('\t')
+            self.fusions.append(
+                {
+                    'ensembl_5prime':None,
+                    'ensembl_3prime':None,
+                    'alternative_name_5prime':line[data_indices['Gene1']],
+                    'alternative_name_3prime':line[data_indices['Gene2']],
+                    'junction_5prime':line[data_indices['Gene1_fusionPoint']],
+                    'junction_3prime':line[data_indices['Gene2_fusionPoint']]
+                }
+            )
         fin.close()
 
         self._check_data()
@@ -376,20 +462,19 @@ class Bellerophontes(_Parser):
 
         self._check_data()
 
-class Chimerascan(_Parser):
-    def __init__(self,infile,logger):
-        super(Chimerascan, self).__init__(logger)
-
-        self._check_data()
-
 parsers = {
     #'bellerophontes':Bellerophontes,
     #'chimerascan':Chimerascan,
+    'chimerscope':ChimeRScope.
     'ericscript':EricScript,
     'fusioncatcher':FusionCatcher,
     'fusionhunter':FusionHunter,
     'fusionmap':FusionMap,
     #'jaffa':JAFFA,
+    #'fusionseq':FusionSeq,
+    #'prada':Prada,
+    #'gfusion':GFusion,
+    #'machete':Machete,
     'mapsplice':MapSplice,
     'defuse':DeFuse,
     #'nfuse':nFuse,
