@@ -88,6 +88,7 @@ You can provide as input output files from fusion-finding algorithms. Currently 
 * FusionCatcher
 * FusionHunter
 * FusionMap
+* JAFFA
 * MapSplice (only if --gene-gtf specified)
 * STAR-Fusion
 * TopHat-Fusion
