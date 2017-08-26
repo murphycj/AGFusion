@@ -83,6 +83,8 @@ agfusion annotate \
 
 You can provide as input output files from fusion-finding algorithms. Currently supported algorithms are:
 
+* Bellerophontes
+* ChimeRScope
 * deFuse
 * EricScript
 * FusionCatcher

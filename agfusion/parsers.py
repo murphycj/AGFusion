@@ -469,6 +469,32 @@ class JAFFA(_Parser):
 
         self._check_data()
 
+class Bellerophontes(_Parser):
+    def __init__(self,infile,logger):
+        super(Bellerophontes, self).__init__(logger)
+
+        fin = open(infile,'r')
+        for line in fin.readlines():
+
+            line = line.strip().split('\t')
+            if len(line) <= 2:
+                continue
+
+            gene1_strand = line[2]
+            gene2_strand = line[6]
+
+            self.fusions.append(
+                {
+                    'gene5prime':line[0],
+                    'gene3prime':line[4],
+                    'gene5prime_junction':int(line[9]),
+                    'gene3prime_junction':int(line[11])
+                }
+            )
+        fin.close()
+
+        self._check_data()
+
 class NFuse(_Parser):
     def __init__(self,infile,logger):
         super(NFuse, self).__init__(logger)
@@ -487,16 +513,11 @@ class FusionEntry():
 
         self._check_data()
 
-class Bellerophontes(_Parser):
-    def __init__(self,infile,logger):
-        super(Bellerophontes, self).__init__(logger)
-
-        self._check_data()
-
 parsers = {
-    #'bellerophontes':Bellerophontes,
+    'bellerophontes':Bellerophontes,
     #'chimerascan':Chimerascan,
     'chimerscope':ChimeRScope,
+    'defuse':DeFuse,
     'ericscript':EricScript,
     'fusioncatcher':FusionCatcher,
     'fusionhunter':FusionHunter,
@@ -507,9 +528,8 @@ parsers = {
     #'gfusion':GFusion,
     #'machete':Machete,
     'mapsplice':MapSplice,
-    'defuse':DeFuse,
     #'nfuse':nFuse,
     #'soapfuse':SOAPfuse,
-    'tophatfusion':TopHatFusion,
-    'starfusion':STARFusion
+    'starfusion':STARFusion,
+    'tophatfusion':TopHatFusion
 }
