@@ -376,12 +376,10 @@ class Chimerascan(_Parser):
                 gene_3prime_junction = int(line[gene2_junction_ix])
                 self.fusions.append(
                     {
-                        'ensembl_5prime':gene_5prime_name,
-                        'ensembl_3prime':gene_3prime_name,
-                        'alternative_name_5prime':None,
-                        'alternative_name_3prime':None,
-                        'junction_5prime':gene_5prime_junction,
-                        'junction_3prime':gene_3prime_junction
+                        'gene5prime':gene_5prime_name,
+                        'gene3prime':gene_3prime_name,
+                        'gene5prime_junction':gene_5prime_junction,
+                        'gene3prime_junction':gene_3prime_junction
                     }
                 )
         fin.close()
@@ -420,12 +418,10 @@ class ChimeRScope(_Parser):
             line = line.strip().split('\t')
             self.fusions.append(
                 {
-                    'ensembl_5prime':None,
-                    'ensembl_3prime':None,
-                    'alternative_name_5prime':line[data_indices['Gene1']],
-                    'alternative_name_3prime':line[data_indices['Gene2']],
-                    'junction_5prime':line[data_indices['Gene1_fusionPoint']],
-                    'junction_3prime':line[data_indices['Gene2_fusionPoint']]
+                    'gene5prime':line[data_indices['Gene1']],
+                    'gene3prime':line[data_indices['Gene2']],
+                    'gene5prime_junction':line[data_indices['Gene1_fusionPoint']],
+                    'gene3prime_junction':line[data_indices['Gene2_fusionPoint']]
                 }
             )
         fin.close()
@@ -435,6 +431,41 @@ class ChimeRScope(_Parser):
 class JAFFA(_Parser):
     def __init__(self,infile,logger):
         super(JAFFA, self).__init__(logger)
+
+        data_indices = {
+            'base1':7,
+            'base2':9,
+            'fusion genes':1
+        }
+
+        fin = open(infile,'r')
+        for line in fin.readlines():
+            if re.findall('sample',line):
+                line = line.strip().replace('"','').split(',')
+                for column in data_indices.keys():
+                    try:
+                        data_indices[column] = line.index(column)
+                    except ValueError:
+                        logger.error(
+                            "Unrecognized {} input! Cannot find {} column."
+                            .format(
+                                self.__class__.__name__,
+                                column
+                            )
+                        )
+                        exit()
+                continue
+
+            line = line.strip().replace('"','').split(',')
+            self.fusions.append(
+                {
+                    'gene5prime':line[data_indices['fusion genes']].split(':')[0],
+                    'gene3prime':line[data_indices['fusion genes']].split(':')[1],
+                    'gene5prime_junction':int(line[data_indices['base1']]),
+                    'gene3prime_junction':int(line[data_indices['base2']])
+                }
+            )
+        fin.close()
 
         self._check_data()
 
@@ -465,12 +496,12 @@ class Bellerophontes(_Parser):
 parsers = {
     #'bellerophontes':Bellerophontes,
     #'chimerascan':Chimerascan,
-    'chimerscope':ChimeRScope.
+    'chimerscope':ChimeRScope,
     'ericscript':EricScript,
     'fusioncatcher':FusionCatcher,
     'fusionhunter':FusionHunter,
     'fusionmap':FusionMap,
-    #'jaffa':JAFFA,
+    'jaffa':JAFFA,
     #'fusionseq':FusionSeq,
     #'prada':Prada,
     #'gfusion':GFusion,

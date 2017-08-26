@@ -177,8 +177,8 @@ def batch_mode(args, agfusion_db, pyensembl_data, rename, colors):
                 agfusion_db.logger.error(e)
     else:
         agfusion_db.logger.error(
-            '\'{}\' is not an available option for -a! Choose one of the ' +
-            'following: {}.'
+            '\'{}\' is not an available option for -a! Choose one of the ' \
+            'following: {}.' \
             .format(
                 args.algorithm,
                 ','.join(agfusion.parsers.keys())
