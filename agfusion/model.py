@@ -18,11 +18,43 @@ class _Gene():
     wild-type genes or fusion gene.
     """
 
-    def __init__(self, gene=None, junction=0, pyensembl_data=None,
+    def __init__(self, genes=None, junction=0, pyensembl_data=None,
                  genome='', gene5prime=False, db=None, noncanonical=False):
+        """
+        genes : str or list
+            Provide one gene (str) or list of genes (list). In the case of a
+            list of genes, it will seach each gene until it finds a hit.
+
+        junction : int
+
+        pyensembl_data : None
+
+        genome : str
+
+        gene5prime : bool
+
+        db : None
+
+        noncanonical : bool
+        """
+
+        if type(genes)==str:
+            genes = list(genes)
+        elif type(genes)!=list:
+            db.logger.error(
+                'parameter \'gene\' to _Gene is not string or list: {}'
+                .format(genes)
+            )
+            exit()
+        if type(junction)!=int:
+            db.logger.error(
+                'parameter \'junction\' to _Gene is not int: {}'
+                .format(junction)
+            )
+            exit()
 
         self.gene_found = False
-        provided_transcript = False # indicates user if user provided transcript
+        self.provided_transcript = False # indicates user if user provided transcript
 
         self.domains = []
         self.transcripts = {} # stores transcripts and their DB keys
@@ -35,112 +67,38 @@ class _Gene():
 
         # find the appropriate Ensembl gene ID
 
-        if re.findall('^NM_',gene) or re.findall('^NR_',gene):
+        for gene in genes:
 
-            # if it is RefSeq ID
-
-            sqlite3_command = "SELECT * FROM " + self.db.build + "_refseq WHERE refseq_id==\"" + gene + "\""
-            self.db.logger.debug('SQLite - ' + sqlite3_command)
-            self.db.sqlite3_cursor.execute(
-                sqlite3_command
-            )
-            tmp = self.db.sqlite3_cursor.fetchall()
-
-            if len(tmp)==1:
-                self.transcripts[tmp[0][1]] = tmp[0][0]
-                self.db.logger.debug('Found RefSeq entry for %s' % gene)
-                self.gene_found = True
-                provided_transcript = True
-
-                #fetch the gene
-
-                transcript = self.pyensembl_data.transcript_by_id(tmp[0][1])
-                self.gene = transcript.gene
-
-            elif len(tmp)>1:
-                self.db.logger.error('Found too many RefSeq entries for %s!' % gene)
-                for i in tmp:
-                    self.db.logger.error(i)
-                sys.exit()
-            else:
-                self.db.logger.debug('Found no RefSeq entry for %s' % gene)
-
-        if gene.isdigit() and not self.gene_found:
-
-            # if it is an entrez gene ID
-
-            sqlite3_command = "SELECT * FROM " + self.db.build + " WHERE entrez_id==\"" + gene + "\""
-            self.db.logger.debug('SQLite - ' + sqlite3_command)
-            self.db.sqlite3_cursor.execute(
-                sqlite3_command
-            )
-            tmp = self.db.sqlite3_cursor.fetchall()
-
-            if len(tmp)==1:
-                self.gene = self.pyensembl_data.gene_by_id(tmp[0][1])
-                self.db.logger.debug('Found Entrez gene ID entry for %s: %s' % (gene,self.gene.id))
-                self.gene_found = True
-            elif len(tmp)>1:
-
-                self.db.logger.error('Found too many Entrez gene ID entries for %s!' % gene)
-                for i in tmp:
-                    self.db.logger.error(i)
-                sys.exit()
-            else:
-                self.db.logger.debug('Found no Entrez gene ID entry for %s' % gene)
-
-        if re.findall('(^ENS.*G)', gene.upper()) and not self.gene_found:
-
-            # if it is ensembl gene id
-
-            if gene in self.pyensembl_data.gene_ids():
-                self.gene = self.pyensembl_data.gene_by_id(gene.upper())
-                self.db.logger.debug('Found Enrez gene ID entry for %s: %s' % (gene,self.gene.id))
-                self.gene_found = True
-            else:
-                self.db.logger.debug('Cannot find Ensembl gene id %s in database!' % gene)
-
-        if re.findall('(^ENS.*T)', gene.upper()) and not self.gene_found:
-
-            # if it is ensembl transcript id
-
-            if gene in self.pyensembl_data.transcript_ids():
-                transcript = self.pyensembl_data.transcript_by_id(gene.upper())
-                self.gene = transcript.gene
-
-                self.db.logger.debug('Found Ensembl transcript entry for %s: %s' % (gene,self.gene.id))
-                self.gene_found = True
-                provided_transcript = True
-            else:
-                self.db.logger.debug('Found no Ensembl transcript entry for %s' % gene)
-
-            sqlite3_command = "SELECT * FROM " + self.db.build + "_transcript WHERE transcript_stable_id==\"" + gene + "\""
-            self.db.logger.debug('SQLite - ' + sqlite3_command)
-            self.db.sqlite3_cursor.execute(
-                sqlite3_command
-            )
-            tmp = self.db.sqlite3_cursor.fetchall()
-            self.transcripts[tmp[0][2]] = tmp[0][0]
-
-        if not self.gene_found:
-
-            # else check if it is a gene symbol
-
-            self._search_by_symbol(gene)
+            if re.findall('^NM_',gene) or re.findall('^NR_',gene):
+                self._search_by_refseq(gene)
+            if gene.isdigit() and not self.gene_found:
+                self._search_as_entrez(gene)
+            if re.findall('(^ENS.*G)', gene.upper()) and not self.gene_found:
+                self._search_as_ensembl_id(gene)
+            if re.findall('(^ENS.*T)', gene.upper()) and not self.gene_found:
+                self._search_as_ensembl_transcript_id(gene)
 
             if not self.gene_found:
-                gene = gene.capitalize()
+
+                # else check if it is a gene symbol
+
                 self._search_by_symbol(gene)
 
-            if not self.gene_found:
-                gene = gene.upper()
-                self._search_by_symbol(gene)
+                if not self.gene_found:
+                    gene = gene.capitalize()
+                    self._search_by_symbol(gene)
 
+                if not self.gene_found:
+                    gene = gene.upper()
+                    self._search_by_symbol(gene)
+
+            if self.gene_found:
+                break
 
         # if gene has not been identified yet
 
         if not self.gene_found:
-            raise exceptions.GeneIDException(gene)
+            raise exceptions.GeneIDException(','.join(genes))
 
         # else continue with processing
 
@@ -164,7 +122,7 @@ class _Gene():
 
         # get the transcripts that will be processed and annotated
 
-        if not noncanonical and not provided_transcript:
+        if not noncanonical and not self.provided_transcript:
 
             # if only want the canonical and did not specify a certain transcript
 
@@ -175,11 +133,10 @@ class _Gene():
             )
             tmp = db.sqlite3_cursor.fetchall()
             self.transcripts[tmp[0][2]] = tmp[0][0]
-        elif not noncanonical and provided_transcript:
+        elif not noncanonical and self.provided_transcript:
             pass
         else:
-
-            if provided_transcript and noncanonical:
+            if self.provided_transcript and noncanonical:
                 self.db.logger.warn("You provided a transcript ID as well as specified --noncanonical flag. Will process all the gene's transcripts.")
 
             # fetch transcript ids
@@ -193,6 +150,91 @@ class _Gene():
 
             for transcript in tmp:
                 self.transcripts[transcript[2]] = transcript[0]
+
+    def _search_as_ensembl_transcript_id(self,gene):
+        # if it is ensembl transcript id
+
+        if gene in self.pyensembl_data.transcript_ids():
+            transcript = self.pyensembl_data.transcript_by_id(gene.upper())
+            self.gene = transcript.gene
+
+            self.db.logger.debug('Found Ensembl transcript entry for %s: %s' % (gene,self.gene.id))
+            self.gene_found = True
+            self.provided_transcript = True
+        else:
+            self.db.logger.debug('Found no Ensembl transcript entry for %s' % gene)
+
+        sqlite3_command = "SELECT * FROM " + self.db.build + "_transcript WHERE transcript_stable_id==\"" + gene + "\""
+        self.db.logger.debug('SQLite - ' + sqlite3_command)
+        self.db.sqlite3_cursor.execute(
+            sqlite3_command
+        )
+        tmp = self.db.sqlite3_cursor.fetchall()
+        self.transcripts[tmp[0][2]] = tmp[0][0]
+
+    def _search_as_ensembl_id(self,gene):
+        # if it is ensembl gene id
+
+        if gene in self.pyensembl_data.gene_ids():
+            self.gene = self.pyensembl_data.gene_by_id(gene.upper())
+            self.db.logger.debug('Found Enrez gene ID entry for %s: %s' % (gene,self.gene.id))
+            self.gene_found = True
+        else:
+            self.db.logger.debug('Cannot find Ensembl gene id %s in database!' % gene)
+
+    def _search_as_entrez(self,gene):
+        # if it is an entrez gene ID
+
+        sqlite3_command = "SELECT * FROM " + self.db.build + " WHERE entrez_id==\"" + gene + "\""
+        self.db.logger.debug('SQLite - ' + sqlite3_command)
+        self.db.sqlite3_cursor.execute(
+            sqlite3_command
+        )
+        tmp = self.db.sqlite3_cursor.fetchall()
+
+        if len(tmp)==1:
+            self.gene = self.pyensembl_data.gene_by_id(tmp[0][1])
+            self.db.logger.debug('Found Entrez gene ID entry for %s: %s' % (gene,self.gene.id))
+            self.gene_found = True
+        elif len(tmp)>1:
+
+            self.db.logger.error('Found too many Entrez gene ID entries for %s!' % gene)
+            for i in tmp:
+                self.db.logger.error(i)
+            sys.exit()
+        else:
+            self.db.logger.debug('Found no Entrez gene ID entry for %s' % gene)
+
+    def _search_by_refseq(self,gene):
+
+
+        # if it is RefSeq ID
+
+        sqlite3_command = "SELECT * FROM " + self.db.build + "_refseq WHERE refseq_id==\"" + gene + "\""
+        self.db.logger.debug('SQLite - ' + sqlite3_command)
+        self.db.sqlite3_cursor.execute(
+            sqlite3_command
+        )
+        tmp = self.db.sqlite3_cursor.fetchall()
+
+        if len(tmp)==1:
+            self.transcripts[tmp[0][1]] = tmp[0][0]
+            self.db.logger.debug('Found RefSeq entry for %s' % gene)
+            self.gene_found = True
+            self.provided_transcript = True
+
+            #fetch the gene
+
+            transcript = self.pyensembl_data.transcript_by_id(tmp[0][1])
+            self.gene = transcript.gene
+
+        elif len(tmp)>1:
+            self.db.logger.error('Found too many RefSeq entries for %s!' % gene)
+            for i in tmp:
+                self.db.logger.error(i)
+            sys.exit()
+        else:
+            self.db.logger.debug('Found no RefSeq entry for %s' % gene)
 
     def _search_by_symbol(self,gene):
         if gene in self.pyensembl_data.gene_names():
@@ -231,6 +273,27 @@ class Fusion():
             db=None, pyensembl_data=None, protein_databases=None,
             noncanonical=False,
             transcripts_5prime=None, transcripts_3prime=None):
+        """
+        gene5prime : str
+
+        gene3prime : str
+
+        gene5primejunction : int
+
+        gene3primejunction : int
+
+        db : None
+
+        pyensembl_data : None
+
+        protein_databases : None
+
+        noncanonical : bool
+
+        transcripts_5prime : str
+
+        transcripts_3prime : str
+        """
 
         self.db = db
         self.pyensembl_data = pyensembl_data
@@ -238,7 +301,7 @@ class Fusion():
         # get the reference genom
 
         self.gene5prime = _Gene(
-            gene=gene5prime,
+            genes=gene5prime,
             junction=gene5primejunction,
             pyensembl_data=pyensembl_data,
             gene5prime=True,
@@ -247,7 +310,7 @@ class Fusion():
         )
 
         self.gene3prime = _Gene(
-            gene=gene3prime,
+            genes=gene3prime,
             junction=gene3primejunction,
             pyensembl_data=pyensembl_data,
             gene5prime=False,
@@ -571,7 +634,7 @@ class Fusion():
                 n+=1
 
         if n == 0:
-            self.db.logger.info('The %s fusion does not produce any protein coding transcripts. No cds.fa file will be written' % self.name)
+            self.db.logger.debug('The %s fusion does not produce any protein coding transcripts. No cds.fa file will be written' % self.name)
             return
 
         fout = open(
@@ -612,7 +675,7 @@ class Fusion():
                 n += 1
 
         if n == 0:
-            self.db.logger.info('The %s fusion does not produce any protein coding transcripts. No proteins.fa file will be written' % self.name)
+            self.db.logger.debug('The %s fusion does not produce any protein coding transcripts. No proteins.fa file will be written' % self.name)
             return
 
         fout = open(
@@ -1124,43 +1187,45 @@ class FusionTranscript(object):
         # within intron
 
         n = 0
-        n_max = len(self.transcript1.exons)
+
+        n_max = len(self.transcript1.exon_intervals)
+        exons = self.transcript1.exon_intervals
 
         if self.transcript1.strand == "+":
 
             exon_count = 0
 
-            for exon in self.transcript1.exons:
+            for exon in exons:
 
                 exon_count += 1
 
                 # is in intron?
 
-                if n == 0 and self.gene5prime.junction < exon.start:
+                if n == 0 and self.gene5prime.junction < exon[0]:
                     self.effect_5prime = 'intron (before cds)'
 
-                if n == n_max and self.gene5prime.junction > exon.end:
+                if n == n_max and self.gene5prime.junction > exon[1]:
                     self.effect_5prime = 'intron (after cds)'
-                elif self.gene5prime.junction > exon.end and self.gene5prime.junction < self.transcript1.exons[n+1].start:
+                elif self.gene5prime.junction > exon[1] and self.gene5prime.junction < exons[n+1][0]:
                     self.effect_5prime = 'intron'
 
                 n += 1
 
                 # get sequence
 
-                if self.gene5prime.junction >= exon.end:
-                    self.transcript_cdna_junction_5prime += (exon.end - exon.start + 1)
+                if self.gene5prime.junction >= exon[1]:
+                    self.transcript_cdna_junction_5prime += (exon[1] - exon[0] + 1)
                     self.gene5prime_exon_intervals.append([
-                        exon.start,
-                        exon.end,
+                        exon[0],
+                        exon[1],
                         exon_count
                     ])
-                elif self.gene5prime.junction <= exon.start:
+                elif self.gene5prime.junction <= exon[0]:
                     break
                 else:
-                    self.transcript_cdna_junction_5prime += (self.gene5prime.junction - exon.start + 1)
+                    self.transcript_cdna_junction_5prime += (self.gene5prime.junction - exon[0] + 1)
                     self.gene5prime_exon_intervals.append([
-                        exon.start,
+                        exon[0],
                         self.gene5prime.junction,
                         exon_count
                     ])
@@ -1169,38 +1234,38 @@ class FusionTranscript(object):
 
             exon_count = 0
 
-            for exon in self.transcript1.exons:
+            for exon in exons:
 
                 exon_count += 1
 
                 # is in intron?
 
-                if n == 0 and self.gene5prime.junction > exon.end:
+                if n == 0 and self.gene5prime.junction > exon[1]:
                     self.effect_5prime = 'intron (before cds)'
 
-                if n == n_max and self.gene5prime.junction < exon.start:
+                if n == n_max and self.gene5prime.junction < exon[0]:
                     self.effect_5prime = 'intron (after cds)'
-                elif self.gene5prime.junction < exon.start and self.gene5prime.junction > self.transcript1.exons[n+1].end:
+                elif self.gene5prime.junction < exon[0] and self.gene5prime.junction > exons[n+1][1]:
                     self.effect_5prime = 'intron'
 
                 n += 1
 
                 # get sequence
 
-                if self.gene5prime.junction <= exon.start:
-                    self.transcript_cdna_junction_5prime += (exon.end - exon.start + 1)
+                if self.gene5prime.junction <= exon[0]:
+                    self.transcript_cdna_junction_5prime += (exon[1] - exon[0] + 1)
                     self.gene5prime_exon_intervals.append([
-                        exon.start,
-                        exon.end,
+                        exon[0],
+                        exon[1],
                         exon_count
                     ])
-                elif self.gene5prime.junction >= exon.end:
+                elif self.gene5prime.junction >= exon[1]:
                     break
                 else:
-                    self.transcript_cdna_junction_5prime += (exon.end - self.gene5prime.junction + 1)
+                    self.transcript_cdna_junction_5prime += (exon[1] - self.gene5prime.junction + 1)
                     self.gene5prime_exon_intervals.append([
                         self.gene5prime.junction,
-                        exon.end,
+                        exon[1],
                         exon_count
                     ])
 
@@ -1221,7 +1286,8 @@ class FusionTranscript(object):
         # within intron
 
         n = 0
-        n_max = len(self.transcript2.exons)
+        n_max = len(self.transcript2.exon_intervals)
+        exons = self.transcript2.exon_intervals
 
         if self.transcript2.strand == "+":
 
@@ -1229,90 +1295,90 @@ class FusionTranscript(object):
 
             # get the exons in the fusion
 
-            for exon in self.transcript2.exons:
+            for exon in exons:
                 exon_count += 1
-                if self.gene3prime.junction >= exon.end:
+                if self.gene3prime.junction >= exon[1]:
                     continue
-                elif self.gene3prime.junction <= exon.start:
+                elif self.gene3prime.junction <= exon[0]:
                     self.gene3prime_exon_intervals.append([
-                        exon.start,
-                        exon.end,
+                        exon[0],
+                        exon[1],
                         exon_count
                     ])
                 else:
                     self.gene3prime_exon_intervals.append([
                         self.gene3prime.junction,
-                        exon.end,
+                        exon[1],
                         exon_count
                     ])
 
-            for exon in self.transcript2.exons:
+            for exon in exons:
 
                 # is in intron?
 
-                if n == 0 and self.gene3prime.junction < exon.start:
+                if n == 0 and self.gene3prime.junction < exon[0]:
                     self.effect_3prime = 'intron (before cds)'
 
-                if n == n_max and self.gene3prime.junction > exon.end:
+                if n == n_max and self.gene3prime.junction > exon[1]:
                     self.effect_3prime = 'intron (after cds)'
-                elif self.gene3prime.junction > exon.end and self.gene3prime.junction < self.transcript2.exons[n+1].start:
+                elif self.gene3prime.junction > exon[1] and self.gene3prime.junction < exons[n+1][0]:
                     self.effect_3prime = 'intron'
 
                 n += 1
 
                 # get sequence
 
-                if self.gene3prime.junction >= exon.end:
-                    self.transcript_cdna_junction_3prime += (exon.end - exon.start + 1)
-                elif self.gene3prime.junction <= exon.start:
+                if self.gene3prime.junction >= exon[1]:
+                    self.transcript_cdna_junction_3prime += (exon[1] - exon[0] + 1)
+                elif self.gene3prime.junction <= exon[0]:
                     break
                 else:
-                    self.transcript_cdna_junction_3prime += (self.gene3prime.junction - exon.start)
+                    self.transcript_cdna_junction_3prime += (self.gene3prime.junction - exon[0])
         else:
 
             exon_count = 0
 
             # get the exons in the fusion
 
-            for exon in self.transcript2.exons:
+            for exon in exons:
                 exon_count += 1
-                if self.gene3prime.junction <= exon.start:
+                if self.gene3prime.junction <= exon[0]:
                     continue
-                elif self.gene3prime.junction >= exon.end:
+                elif self.gene3prime.junction >= exon[1]:
                     self.gene3prime_exon_intervals.append([
-                        exon.start,
-                        exon.end,
+                        exon[0],
+                        exon[1],
                         exon_count
                     ])
                 else:
                     self.gene3prime_exon_intervals.append([
-                        exon.start,
+                        exon[0],
                         self.gene3prime.junction,
                         exon_count
                     ])
 
-            for exon in self.transcript2.exons:
+            for exon in exons:
 
                 # is in intron?
 
-                if n == 0 and self.gene3prime.junction > exon.end:
+                if n == 0 and self.gene3prime.junction > exon[1]:
                     self.effect_3prime = 'intron (before cds)'
 
-                if n == n_max and self.gene3prime.junction < exon.start:
+                if n == n_max and self.gene3prime.junction < exon[0]:
                     self.effect_3prime = 'intron (after cds)'
-                elif self.gene3prime.junction < exon.start and self.gene3prime.junction > self.transcript2.exons[n+1].end:
+                elif self.gene3prime.junction < exon[0] and self.gene3prime.junction > exons[n+1][1]:
                     self.effect_3prime = 'intron'
 
                 n += 1
 
                 # get sequence
 
-                if self.gene3prime.junction <= exon.start:
-                    self.transcript_cdna_junction_3prime += (exon.end - exon.start + 1)
-                elif self.gene3prime.junction >= exon.end:
+                if self.gene3prime.junction <= exon[0]:
+                    self.transcript_cdna_junction_3prime += (exon[1] - exon[0] + 1)
+                elif self.gene3prime.junction >= exon[1]:
                     break
                 else:
-                    self.transcript_cdna_junction_3prime += (exon.end - self.gene3prime.junction)
+                    self.transcript_cdna_junction_3prime += (exon[1] - self.gene3prime.junction)
 
         if self.cdna_5prime is not None:
             try:
@@ -1343,7 +1409,6 @@ class FusionTranscript(object):
             name=self.name,
             description="length=" + seq_length
         )
-
 
         # find out if the junction on either gene is with in the 5' or 3' UTR,
         # or if it exactly at the beginning or end of the UTR
