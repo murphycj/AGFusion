@@ -19,6 +19,7 @@ AGFusion automatically predicts the functional effect of the gene fusion (e.g. i
   * [Graphical parameters](#graphical-parameters)
 - [Installation](#installation)
 - [Dependencies](#dependencies)
+- [Troubleshooting](#troubleshooting)
 - [License](#license)
 - [Citing AGFusion](#citing-agfusion)
 
@@ -197,6 +198,23 @@ You can view all supported species and ensembl releases with ```agfusion downloa
 - biopython>=1.67
 - future>=0.16.0
 - pyensembl>=1.1.0
+
+# Troubleshooting
+
+**Problem:** I get a warning message like the following:
+
+```
+2017-08-28 15:02:51,377 - AGFusion - WARNING - No cDNA sequence available for AC073283.4! Will not print cDNA sequence for the AC073283.4-MSH2 fusion. You might be working with an outdated pyensembl. Update the package and rerun 'pyensembl install'
+```
+
+**Solution:** Run the following to update pyensembl package and database:
+
+```
+git clone git@github.com:hammerlab/pyensembl.git
+cd pyensembl
+sudo pip install .
+pyensembl install --release (your-release) --species (your-species)
+```
 
 # License
 
