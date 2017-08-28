@@ -342,17 +342,19 @@ class Chimerascan(_Parser):
         super(Chimerascan, self).__init__(logger)
 
         data_indices = {
-            'gene5prime':None,
-            'gene3prime':None,
-            'gene5prime_junction':None,
-            'gene3prime_junction':None,
-            'gene5prime_strand':None,
-            'gene3prime_strand':None
+            'genes5p':12,
+            'genes3p':13,
+            'start5p':1,
+            'end5p':2,
+            'start3p':4,
+            'end3p':5,
+            'strand5p':8,
+            'strand3p':9
         }
 
         fin = open(infile,'r')
         for line in fin.readlines():
-            if re.findall('^#chrom5p',line):
+            if re.findall('#chrom5p',line):
                 line = line.strip().split('\t')
                 for column in data_indices.keys():
                     try:
@@ -367,21 +369,27 @@ class Chimerascan(_Parser):
                         )
                         exit()
                 continue
-            elif gene1_ix is not None:
-                line = line.strip().split('\t')
 
-                gene_5prime_name = line[gene1_ix]
-                gene_5prime_junction = int(line[gene1_junction_ix])
-                gene_3prime_name = line[gene2_ix]
-                gene_3prime_junction = int(line[gene2_junction_ix])
-                self.fusions.append(
-                    {
-                        'gene5prime':gene_5prime_name,
-                        'gene3prime':gene_3prime_name,
-                        'gene5prime_junction':gene_5prime_junction,
-                        'gene3prime_junction':gene_3prime_junction
-                    }
-                )
+            line = line.strip().split('\t')
+
+            if line[data_indices['strand5p']]=='+':
+                gene1_junction = line[data_indices['end5p']]
+            else:
+                gene1_junction = line[data_indices['start5p']]
+
+            if line[data_indices['strand3p']]=='+':
+                gene2_junction = line[data_indices['start3p']]
+            else:
+                gene2_junction = line[data_indices['end3p']]
+
+            self.fusions.append(
+                {
+                    'gene5prime':line[data_indices['genes5p']].split(','),
+                    'gene3prime':line[data_indices['genes3p']].split(','),
+                    'gene5prime_junction':int(gene1_junction),
+                    'gene3prime_junction':int(gene2_junction)
+                }
+            )
         fin.close()
 
         self._check_data()
@@ -495,6 +503,111 @@ class Bellerophontes(_Parser):
 
         self._check_data()
 
+class BreakFusion(_Parser):
+    def __init__(self,infile,logger):
+        super(BreakFusion, self).__init__(logger)
+
+        data_indices = {
+            'POS1':1,
+            'POS2':4,
+            'RefseqGene':11
+        }
+
+        fin = open(infile,'r')
+        for line in fin.readlines():
+            if re.findall('CHR1',line):
+                line = line.strip().split('\t')
+                for column in data_indices.keys():
+                    try:
+                        data_indices[column] = line.index(column)
+                    except ValueError:
+                        logger.error(
+                            "Unrecognized {} input! Cannot find {} column."
+                            .format(
+                                self.__class__.__name__,
+                                column
+                            )
+                        )
+                        exit()
+                continue
+
+            if re.findall('Fusion',line):
+                line = line.strip().split('\t')
+                genes = line[data_indices['RefseqGene']]
+                genes = re.findall("(?<=Gene:)(.*?)(?=,)",genes)
+                if len(genes)!=1:
+                    self.logger.error('Could not parse genes from BreakFusion input line: {}'.format('\t'.join(line)))
+                genes = genes[0].split('|')
+                if len(genes)!=2:
+                    self.logger.error('Could not find two genes for BreakFusion input line: {}'.format('\t'.join(line)))
+
+                self.fusions.append(
+                    {
+                        'gene5prime':genes[0],
+                        'gene3prime':genes[1],
+                        'gene5prime_junction':int(line[data_indices['POS1']]),
+                        'gene3prime_junction':int(line[data_indices['POS2']])
+                    }
+                )
+        fin.close()
+
+        self._check_data()
+
+class InFusion(_Parser):
+    def __init__(self,infile,logger):
+        super(InFusion, self).__init__(logger)
+
+        data_indices = {
+            'break_pos1':2,
+            'break_pos2':5,
+            'genes_1':9,
+            'genes_2':10
+        }
+
+        fin = open(infile,'r')
+        n=0
+        for line in fin.readlines():
+            n+=1
+            if re.findall('#id',line):
+                line = line.strip().split('\t')
+                for column in data_indices.keys():
+                    try:
+                        data_indices[column] = line.index(column)
+                    except ValueError:
+                        logger.error(
+                            "Unrecognized {} input! Cannot find {} column."
+                            .format(
+                                self.__class__.__name__,
+                                column
+                            )
+                        )
+                        exit()
+                continue
+
+            line = line.strip().split('\t')
+
+            if line[data_indices['genes_1']]=='none' or \
+               line[data_indices['genes_2']]=='none':
+                self.logger.warn(
+                    'Skipping fusion on line {} because one or more ' \
+                    'of the provided gene names under \'gene_1\' and' \
+                    ' \'gene_2\' is listed as \'none\'.'
+                    .format(n)
+                )
+                continue
+
+            self.fusions.append(
+                {
+                    'gene5prime':line[data_indices['genes_1']].split(';'),
+                    'gene3prime':line[data_indices['genes_2']].split(';'),
+                    'gene5prime_junction':int(line[data_indices['break_pos1']]),
+                    'gene3prime_junction':int(line[data_indices['break_pos2']])
+                }
+            )
+        fin.close()
+
+        self._check_data()
+
 class NFuse(_Parser):
     def __init__(self,infile,logger):
         super(NFuse, self).__init__(logger)
@@ -515,13 +628,15 @@ class FusionEntry():
 
 parsers = {
     'bellerophontes':Bellerophontes,
-    #'chimerascan':Chimerascan,
+    'breakfusion':BreakFusion,
+    'chimerascan':Chimerascan,
     'chimerscope':ChimeRScope,
     'defuse':DeFuse,
     'ericscript':EricScript,
     'fusioncatcher':FusionCatcher,
     'fusionhunter':FusionHunter,
     'fusionmap':FusionMap,
+    'infusion':InFusion,
     'jaffa':JAFFA,
     #'fusionseq':FusionSeq,
     #'prada':Prada,
