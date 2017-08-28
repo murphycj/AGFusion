@@ -27,7 +27,7 @@ GENOME_SHORTCUTS = {
 MAX_ENSEMBL_RELEASE = 87
 
 AVAILABLE_ENSEMBL_SPECIES = {
-    'homo_sapiens':range(75,MAX_ENSEMBL_RELEASE+1),
+    'homo_sapiens':range(69,MAX_ENSEMBL_RELEASE+1),
     'mus_musculus':range(67,MAX_ENSEMBL_RELEASE+1)
 }
 
@@ -35,7 +35,24 @@ ENSEMBL_MYSQL_TABLES = {
     'homo_sapiens':{},
     'mus_musculus':{}
 }
-for i in range(75,MAX_ENSEMBL_RELEASE+1):
+
+#ENSEMBL_MYSQL_TABLES['homo_sapiens'][48] = 'homo_sapiens_core_48_36j'
+#ENSEMBL_MYSQL_TABLES['homo_sapiens'][49] = 'homo_sapiens_core_49_36k'
+#ENSEMBL_MYSQL_TABLES['homo_sapiens'][50] = 'homo_sapiens_core_50_36l'
+#ENSEMBL_MYSQL_TABLES['homo_sapiens'][51] = 'homo_sapiens_core_51_36m'
+#ENSEMBL_MYSQL_TABLES['homo_sapiens'][52] = 'homo_sapiens_core_52_36n'
+#ENSEMBL_MYSQL_TABLES['homo_sapiens'][53] = 'homo_sapiens_core_53_36o'
+#ENSEMBL_MYSQL_TABLES['homo_sapiens'][54] = 'homo_sapiens_core_54_36p'
+#ENSEMBL_MYSQL_TABLES['homo_sapiens'][55] = 'homo_sapiens_core_55_37'
+#ENSEMBL_MYSQL_TABLES['homo_sapiens'][56] = 'homo_sapiens_core_56_37a'
+#ENSEMBL_MYSQL_TABLES['homo_sapiens'][57] = 'homo_sapiens_core_57_37b'
+#ENSEMBL_MYSQL_TABLES['homo_sapiens'][58] = 'homo_sapiens_core_58_37c'
+#ENSEMBL_MYSQL_TABLES['homo_sapiens'][59] = 'homo_sapiens_core_59_37d'
+#ENSEMBL_MYSQL_TABLES['homo_sapiens'][60] = 'homo_sapiens_core_60_37e'
+#ENSEMBL_MYSQL_TABLES['homo_sapiens'][61] = 'homo_sapiens_core_61_37f'
+#ENSEMBL_MYSQL_TABLES['homo_sapiens'][62] = 'homo_sapiens_core_62_37g'
+
+for i in range(63,MAX_ENSEMBL_RELEASE+1):
     if i < 76:
         ENSEMBL_MYSQL_TABLES['homo_sapiens'][i] = 'homo_sapiens_core_' + str(i) + '_37'
     else:

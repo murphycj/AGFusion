@@ -194,15 +194,10 @@ class AGFusionDBBManager():
                 self.build + '_' + protein_annotation
             )
 
-            sqlite3_command = "CREATE TABLE " + self.build + "_" + \
-                protein_annotation + " (" + \
-                "translation_id text," + \
-                "stable_id text," + \
-                "hit_id text," + \
-                "seq_start integer," + \
-                "seq_end integer," + \
-                "hit_description text," + \
-                "hit_name text);"
+            sqlite3_command = "CREATE TABLE {}_{} (" \
+                "translation_id text,stable_id text,hit_id text," \
+                "seq_start integer,seq_end integer,hit_description text," \
+                "hit_name text);".format(self.build,protein_annotation)
 
             self.logger.info('SQLite - ' + sqlite3_command)
 
@@ -218,7 +213,10 @@ class AGFusionDBBManager():
 
         # fetch all gene stable ids
 
-        mysql_command = "SELECT gene.gene_id, gene.stable_id, gene.canonical_transcript_id FROM gene;"
+        if self.release < 65:
+            mysql_command = "SELECT gene.gene_id, gene_stable_id.stable_id, gene.canonical_transcript_id  FROM gene, gene_stable_id WHERE gene.gene_id = gene_stable_id.gene_id;"
+        else:
+            mysql_command = "SELECT gene.gene_id, gene.stable_id, gene.canonical_transcript_id FROM gene;"
 
         self.logger.info('MySQL - ' + mysql_command)
 
@@ -289,7 +287,11 @@ class AGFusionDBBManager():
 
         # Fetch all transcripts
 
-        mysql_command = "SELECT transcript.transcript_id, transcript.gene_id, transcript.stable_id FROM transcript;"
+        if self.release < 65:
+            mysql_command = "SELECT transcript.transcript_id, transcript.gene_id, transcript_stable_id.stable_id FROM transcript, transcript_stable_id WHERE transcript.transcript_id = transcript_stable_id.transcript_id;"
+        else:
+            mysql_command = "SELECT transcript.transcript_id, transcript.gene_id, transcript.stable_id FROM transcript;"
+
         self.logger.info('MySQL - ' + mysql_command)
         self.ensembl_cursor.execute(
             mysql_command
@@ -336,7 +338,10 @@ class AGFusionDBBManager():
 
         # fetch RefSeq IDS
 
-        mysql_command = "SELECT transcript.transcript_id, transcript.stable_id, xref.display_label FROM transcript, object_xref, xref, external_db WHERE transcript.transcript_id = object_xref.ensembl_id AND object_xref.ensembl_object_type = \'Transcript\' AND object_xref.xref_id = xref.xref_id AND xref.external_db_id = external_db.external_db_id AND external_db.db_name = \'RefSeq_mRNA\';"
+        if self.release < 65:
+            mysql_command = "SELECT transcript.transcript_id, transcript_stable_id.stable_id, xref.display_label FROM transcript, transcript_stable_id, object_xref, xref, external_db WHERE transcript.transcript_id = transcript_stable_id.transcript_id and transcript.transcript_id = object_xref.ensembl_id AND object_xref.ensembl_object_type = \'Transcript\' AND object_xref.xref_id = xref.xref_id AND xref.external_db_id = external_db.external_db_id AND external_db.db_name = \'RefSeq_mRNA\';"
+        else:
+            mysql_command = "SELECT transcript.transcript_id, transcript.stable_id, xref.display_label FROM transcript, object_xref, xref, external_db WHERE transcript.transcript_id = object_xref.ensembl_id AND object_xref.ensembl_object_type = \'Transcript\' AND object_xref.xref_id = xref.xref_id AND xref.external_db_id = external_db.external_db_id AND external_db.db_name = \'RefSeq_mRNA\';"
         self.logger.info('MySQL - ' + mysql_command)
         self.ensembl_cursor.execute(
             mysql_command
@@ -364,7 +369,11 @@ class AGFusionDBBManager():
     def fetch_protein_annotation(self):
 
         for protein_annotation in PROTEIN_ANNOTATIONS:
-            mysql_command = "SELECT translation.translation_id, translation.stable_id, protein_feature.hit_name, protein_feature.seq_start, protein_feature.seq_end, protein_feature.hit_description FROM analysis, analysis_description, protein_feature, translation WHERE protein_feature.translation_id = translation.translation_id AND protein_feature.analysis_id = analysis.analysis_id AND analysis.analysis_id = analysis_description.analysis_id AND analysis.logic_name = \'" + protein_annotation + "\';"
+
+            if self.release < 70:
+                mysql_command = "SELECT translation.translation_id, translation_stable_id.stable_id, protein_feature.hit_name, protein_feature.seq_start, protein_feature.seq_end FROM analysis, analysis_description, protein_feature, translation, translation_stable_id WHERE translation_stable_id.translation_id = translation.translation_id AND protein_feature.translation_id = translation.translation_id AND protein_feature.analysis_id = analysis.analysis_id AND analysis.analysis_id = analysis_description.analysis_id AND analysis.logic_name = \'" + protein_annotation + "\';"
+            else:
+                mysql_command = "SELECT translation.translation_id, translation.stable_id, protein_feature.hit_name, protein_feature.seq_start, protein_feature.seq_end, protein_feature.hit_description FROM analysis, analysis_description, protein_feature, translation WHERE protein_feature.translation_id = translation.translation_id AND protein_feature.analysis_id = analysis.analysis_id AND analysis.analysis_id = analysis_description.analysis_id AND analysis.logic_name = \'" + protein_annotation + "\';"
 
             self.logger.info('MySQL - ' + mysql_command)
 
@@ -373,6 +382,9 @@ class AGFusionDBBManager():
             )
 
             data = list(self.ensembl_cursor.fetchall())
+
+            if self.release < 70:
+                data = [i + (None,) for i in data]
 
             if protein_annotation=='pfam':
                 for i in range(0,len(data)):
