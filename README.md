@@ -203,9 +203,8 @@ You can view all supported species and ensembl releases with ```agfusion downloa
 
 **Problem:** I get a warning message like the following:
 
-```
-2017-08-28 15:02:51,377 - AGFusion - WARNING - No cDNA sequence available for AC073283.4! Will not print cDNA sequence for the AC073283.4-MSH2 fusion. You might be working with an outdated pyensembl. Update the package and rerun 'pyensembl install'
-```
+
+> 2017-08-28 15:02:51,377 - AGFusion - WARNING - No cDNA sequence available for AC073283.4! Will not print cDNA sequence for the AC073283.4-MSH2 fusion. You might be working with an outdated pyensembl. Update the package and rerun 'pyensembl install'
 
 **Solution:** Run the following to update pyensembl package and database:
 
