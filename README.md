@@ -85,12 +85,15 @@ agfusion annotate \
 You can provide as input output files from fusion-finding algorithms. Currently supported algorithms are:
 
 * Bellerophontes
+* BreakFusion
+* ChimeraScan
 * ChimeRScope
 * deFuse
 * EricScript
 * FusionCatcher
 * FusionHunter
 * FusionMap
+* InFusion
 * JAFFA
 * MapSplice (only if --gene-gtf specified)
 * STAR-Fusion
