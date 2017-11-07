@@ -39,7 +39,7 @@ class _Gene():
         """
 
         if type(genes)==str:
-            genes = list(genes)
+            genes = [genes]
         elif type(genes)!=list:
             db.logger.error(
                 'parameter \'gene\' to _Gene is not string or list: {}'

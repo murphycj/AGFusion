@@ -169,11 +169,11 @@ def batch_mode(args, agfusion_db, pyensembl_data, rename, colors):
                     scale=None,
                     batch_out_dir=args.out
                 )
-            except exceptions.GeneIDException, e:
+            except exceptions.GeneIDException as e:
                 agfusion_db.logger.error(e)
-            except exceptions.JunctionException, e:
+            except exceptions.JunctionException as e:
                 agfusion_db.logger.error(e)
-            except exceptions.TooManyGenesException, e:
+            except exceptions.TooManyGenesException as e:
                 agfusion_db.logger.error(e)
     else:
         agfusion_db.logger.error(
