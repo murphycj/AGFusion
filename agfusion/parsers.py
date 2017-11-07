@@ -37,7 +37,9 @@ class STARFusion(_Parser):
         for line in fin.readlines():
             if re.findall('^#',line):
                 line = line.rstrip().split('\t')
-                assert line[0]=='#FusionName', 'Unrecognized STAR-Fusion input'
+                if line[0]!='#FusionName' and line[0]!='#fusion_name':
+                    raise AssertionError('Unrecognized STAR-Fusion input for first column in header. Should be #FusionName or #fusion_name.')
+
                 assert line[4]=='LeftGene', 'Unrecognized STAR-Fusion input'
                 assert line[5]=='LeftBreakpoint', 'Unrecognized STAR-Fusion input'
                 assert line[6]=='RightGene', 'Unrecognized STAR-Fusion input'
@@ -54,12 +56,12 @@ class STARFusion(_Parser):
             gene_3prime_junction = int(line[7].split(':')[1])
             self.fusions.append(
                 {
-                    'ensembl_5prime':gene_5prime,
-                    'ensembl_3prime':gene_3prime,
+                    'gene5prime':gene_5prime,
+                    'gene3prime':gene_3prime,
                     'alternative_name_5prime':gene_5prime_name,
                     'alternative_name_3prime':gene_3prime_name,
-                    'junction_5prime':gene_5prime_junction,
-                    'junction_3prime':gene_3prime_junction
+                    'gene5prime_junction':gene_5prime_junction,
+                    'gene3prime_junction':gene_3prime_junction
                 }
             )
         fin.close()
@@ -85,12 +87,12 @@ class EricScript(_Parser):
                 gene_3prime_junction = int(line[6])
                 self.fusions.append(
                     {
-                        'ensembl_5prime':None,
-                        'ensembl_3prime':None,
+                        'gene5prime':None,
+                        'gene3prime':None,
                         'alternative_name_5prime':gene_5prime_name,
                         'alternative_name_3prime':gene_3prime_name,
-                        'junction_5prime':gene_5prime_junction,
-                        'junction_3prime':gene_3prime_junction
+                        'gene5prime_junction':gene_5prime_junction,
+                        'gene3prime_junction':gene_3prime_junction
                     }
                 )
         fin.close()
@@ -114,12 +116,12 @@ class FusionCatcher(_Parser):
             line = line.strip().split('\t')
             self.fusions.append(
                 {
-                    'ensembl_5prime':line[10],
-                    'ensembl_3prime':line[11],
+                    'gene5prime':line[10],
+                    'gene3prime':line[11],
                     'alternative_name_5prime':line[0],
                     'alternative_name_3prime':line[1],
-                    'junction_5prime':int(line[8].split(':')[1]),
-                    'junction_3prime':int(line[9].split(':')[1])
+                    'gene5prime_junction':int(line[8].split(':')[1]),
+                    'gene3prime_junction':int(line[9].split(':')[1])
                 }
             )
         fin.close()
@@ -141,12 +143,12 @@ class FusionHunter(_Parser):
                 if gene1 is not None and gene2 is not None:
                     self.fusions.append(
                         {
-                            'ensembl_5prime':None,
-                            'ensembl_3prime':None,
+                            'gene5prime':None,
+                            'gene3prime':None,
                             'alternative_name_5prime':gene1,
                             'alternative_name_3prime':gene2,
-                            'junction_5prime':int(gene1_junction),
-                            'junction_3prime':int(gene2_junction)
+                            'gene5prime_junction':int(gene1_junction),
+                            'gene3prime_junction':int(gene2_junction)
                         }
                     )
 
@@ -160,12 +162,12 @@ class FusionHunter(_Parser):
                 if gene1 is not None and gene2 is not None:
                     self.fusions.append(
                         {
-                            'ensembl_5prime':None,
-                            'ensembl_3prime':None,
+                            'gene5prime':None,
+                            'gene3prime':None,
                             'alternative_name_5prime':gene1,
                             'alternative_name_3prime':gene2,
-                            'junction_5prime':int(gene1_junction),
-                            'junction_3prime':int(gene2_junction)
+                            'gene5prime_junction':int(gene1_junction),
+                            'gene3prime_junction':int(gene2_junction)
                         }
                     )
 
@@ -193,12 +195,12 @@ class FusionHunter(_Parser):
         if gene1 is not None and gene2 is not None:
             self.fusions.append(
                 {
-                    'ensembl_5prime':None,
-                    'ensembl_3prime':None,
+                    'gene5prime':None,
+                    'gene3prime':None,
                     'alternative_name_5prime':gene1,
                     'alternative_name_3prime':gene2,
-                    'junction_5prime':int(gene1_junction),
-                    'junction_3prime':int(gene2_junction)
+                    'gene5prime_junction':int(gene1_junction),
+                    'gene3prime_junction':int(gene2_junction)
                 }
             )
 
@@ -224,12 +226,12 @@ class FusionMap(_Parser):
                 gene_3prime_junction = int(line[8])
                 self.fusions.append(
                     {
-                        'ensembl_5prime':None,
-                        'ensembl_3prime':None,
+                        'gene5prime':None,
+                        'gene3prime':None,
                         'alternative_name_5prime':gene_5prime_name,
                         'alternative_name_3prime':gene_3prime_name,
-                        'junction_5prime':gene_5prime_junction,
-                        'junction_3prime':gene_3prime_junction
+                        'gene5prime_junction':gene_5prime_junction,
+                        'gene3prime_junction':gene_3prime_junction
                     }
                 )
         fin.close()
@@ -255,12 +257,12 @@ class MapSplice(_Parser):
                 gene_3prime_junction = int(line[2])
                 self.fusions.append(
                     {
-                        'ensembl_5prime':None,
-                        'ensembl_3prime':None,
+                        'gene5prime':None,
+                        'gene3prime':None,
                         'alternative_name_5prime':gene_5prime_name,
                         'alternative_name_3prime':gene_3prime_name,
-                        'junction_5prime':gene_5prime_junction,
-                        'junction_3prime':gene_3prime_junction
+                        'gene5prime_junction':gene_5prime_junction,
+                        'gene3prime_junction':gene_3prime_junction
                     }
                 )
         fin.close()
@@ -283,12 +285,12 @@ class TopHatFusion(_Parser):
             gene_3prime_junction = int(line[6])
             self.fusions.append(
                 {
-                    'ensembl_5prime':gene_5prime,
-                    'ensembl_3prime':gene_3prime,
+                    'gene5prime':gene_5prime,
+                    'gene3prime':gene_3prime,
                     'alternative_name_5prime':gene_5prime_name,
                     'alternative_name_3prime':gene_3prime_name,
-                    'junction_5prime':gene_5prime_junction,
-                    'junction_3prime':gene_3prime_junction
+                    'gene5prime_junction':gene_5prime_junction,
+                    'gene3prime_junction':gene_3prime_junction
                 }
             )
         fin.close()
