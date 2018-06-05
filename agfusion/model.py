@@ -1152,7 +1152,7 @@ class FusionTranscript(object):
                 elif self.gene3prime.junction <= cds[0]:
                     break
                 else:
-                    self.transcript_cds_junction_3prime += (self.gene3prime.junction - cds[0] + 1)
+                    self.transcript_cds_junction_3prime += (self.gene3prime.junction - cds[0])
         else:
             for cds in self.transcript2.coding_sequence_position_ranges:
                 if self.gene3prime.junction <= cds[0]:

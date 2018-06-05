@@ -3,11 +3,115 @@ import unittest
 import agfusion
 from agfusion import utils
 import pyensembl
-from Bio import SeqIO
+from Bio import SeqIO, Seq, Alphabet
 
 data = pyensembl.EnsemblRelease(84,'mouse')
 db = agfusion.AGFusionDB(abspath(join(curdir,'agfusion.mus_musculus.84.db')))
 db.build = 'mus_musculus_84'
+
+data_human = pyensembl.EnsemblRelease(75,'human')
+db_human = agfusion.AGFusionDB(abspath(join(curdir,'agfusion.homo_sapiens.75.db')))
+db_human.build = 'homo_sapiens_75'
+
+
+class TestSequencePrediction_human(unittest.TestCase):
+    def test_1(self):
+        """
+        test CDS and prortein correct for junction that is on exon boundaries and
+        produces an out-of-frame protein.
+        """
+
+        #test the dna and protein coding sequences are correct by comparing
+        #with manually generally sequences
+
+        fusion = agfusion.Fusion(
+            gene5prime="TMEM87B",
+            gene5primejunction=112843681,
+            gene3prime="MERTK",
+            gene3primejunction=112722768,
+            db=db_human,
+            pyensembl_data=data_human,
+            protein_databases=['pfam', 'tmhmm'],
+            noncanonical=False
+        )
+
+        fusion.save_transcript_cdna('TMEM87B-MERTK-case0')
+        fusion.save_transcript_cds('TMEM87B-MERTK-case0')
+        fusion.save_proteins('TMEM87B-MERTK-case0')
+        #fusion.save_images('DLG1-BRAF_mouse')
+
+        test_cds = open('./data/test-human-case-0.txt','r').read()
+        test_protein = Seq.Seq(test_cds,alphabet=Alphabet.generic_dna).translate()
+        test_protein = test_protein[0:test_protein.find('*')]
+
+        trans=fusion.transcripts['ENST00000283206-ENST00000295408']
+
+        assert test_cds==trans.cds.seq, "cds is wrongly predicted for human fusion (case 0)"
+        assert test_protein==trans.protein.seq, "protein is wrongly predicted for human fusion (case 0)"
+
+    def test_2(self):
+        """
+        """
+
+        #test the dna and protein coding sequences are correct by comparing
+        #with manually generally sequences
+
+        fusion = agfusion.Fusion(
+            gene5prime="TMEM87B",
+            gene5primejunction=112843681,
+            gene3prime="MERTK",
+            gene3primejunction=112722769,
+            db=db_human,
+            pyensembl_data=data_human,
+            protein_databases=['pfam', 'tmhmm'],
+            noncanonical=False
+        )
+
+        fusion.save_transcript_cdna('TMEM87B-MERTK-case2')
+        fusion.save_transcript_cds('TMEM87B-MERTK-case2')
+        fusion.save_proteins('TMEM87B-MERTK-case2')
+        #fusion.save_images('DLG1-BRAF_mouse')
+
+        test_cds = open('./data/test-human-case-2.txt','r').read()
+        test_protein = Seq.Seq(test_cds,alphabet=Alphabet.generic_dna).translate()
+        test_protein = test_protein[0:test_protein.find('*')]
+
+        trans=fusion.transcripts['ENST00000283206-ENST00000295408']
+
+        assert test_cds==trans.cds.seq, "cds is wrongly predicted for human fusion (case 2)"
+        assert test_protein==trans.protein.seq, "protein is wrongly predicted for human fusion (case 2)"
+
+    def test_3(self):
+        """
+        """
+
+        #test the dna and protein coding sequences are correct by comparing
+        #with manually generally sequences
+
+        fusion = agfusion.Fusion(
+            gene5prime="TMEM87B",
+            gene5primejunction=112843681,
+            gene3prime="MERTK",
+            gene3primejunction=112722771,
+            db=db_human,
+            pyensembl_data=data_human,
+            protein_databases=['pfam', 'tmhmm'],
+            noncanonical=False
+        )
+
+        fusion.save_transcript_cdna('TMEM87B-MERTK-case3')
+        fusion.save_transcript_cds('TMEM87B-MERTK-case3')
+        fusion.save_proteins('TMEM87B-MERTK-case3')
+        #fusion.save_images('DLG1-BRAF_mouse')
+
+        test_cds = open('./data/test-human-case-3.txt','r').read()
+        test_protein = Seq.Seq(test_cds,alphabet=Alphabet.generic_dna).translate()
+        test_protein = test_protein[0:test_protein.find('*')]
+
+        trans=fusion.transcripts['ENST00000283206-ENST00000295408']
+
+        assert test_cds==trans.cds.seq, "cds is wrongly predicted for human fusion (case 3)"
+        assert test_protein==trans.protein.seq, "protein is wrongly predicted for human fusion (case 3)"
 
 class TestSequencePrediction(unittest.TestCase):
     def test_1(self):
@@ -273,13 +377,17 @@ class TestBatch(unittest.TestCase):
 
 class TestFusionCatcher(unittest.TestCase):
     def test_1(self):
+
+        agfusion_db = agfusion.AGFusionDB("agfusion.homo_sapiens.84.db", debug=False)
+
+
         all_fusions = ['Adamts9-Ano2','Trp53-Sat2','1700112E06Rik-Runx1','Runx1-1700112E06Rik','Rell1-Lhfpl3','Phc1-Smarca2','Lrrc8d-Gbp11','C920009B18Rik-H60b']
-        for fusion in agfusion.parsers['fusioncatcher']('./data/FusionsFindingAlgorithms/FusionCatcher/final-list_candidate-fusion-genes.txt'):
+        for fusion in agfusion.parsers['fusioncatcher']('./data/FusionsFindingAlgorithms/FusionCatcher/final-list_candidate-fusion-genes.txt',db.logger):
             fusion = agfusion.Fusion(
-                gene5prime=fusion['ensembl_5prime'],
-                gene5primejunction=fusion['junction_5prime'],
-                gene3prime=fusion['ensembl_3prime'],
-                gene3primejunction=fusion['junction_3prime'],
+                gene5prime=fusion['gene5prime'],
+                gene5primejunction=fusion['gene5prime_junction'],
+                gene3prime=fusion['gene3prime'],
+                gene3primejunction=fusion['gene3prime_junction'],
                 db=db,
                 pyensembl_data=data,
                 protein_databases=['pfam'],
@@ -289,13 +397,14 @@ class TestFusionCatcher(unittest.TestCase):
 
 class TestSTARFusion(unittest.TestCase):
     def test_1(self):
+
         all_fusions = ['Adamts9-Ano2','Trp53-Sat2','1700112E06Rik-Runx1','Runx1-1700112E06Rik','Rell1-Lhfpl3','Phc1-Smarca2','Lrrc8d-Gbp11','C920009B18Rik-H60b']
-        for fusion in agfusion.parsers['fusioncatcher']('./data/FusionsFindingAlgorithms/FusionCatcher/final-list_candidate-fusion-genes.txt'):
+        for fusion in agfusion.parsers['fusioncatcher']('./data/FusionsFindingAlgorithms/FusionCatcher/final-list_candidate-fusion-genes.txt',db.logger):
             fusion = agfusion.Fusion(
-                gene5prime=fusion['ensembl_5prime'],
-                gene5primejunction=fusion['junction_5prime'],
-                gene3prime=fusion['ensembl_3prime'],
-                gene3primejunction=fusion['junction_3prime'],
+                gene5prime=fusion['gene5prime'],
+                gene5primejunction=fusion['gene5prime_junction'],
+                gene3prime=fusion['gene3prime'],
+                gene3primejunction=fusion['gene3prime_junction'],
                 db=db,
                 pyensembl_data=data,
                 protein_databases=['pfam'],
