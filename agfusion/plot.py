@@ -285,9 +285,9 @@ class PlotFusionExons(_PlotExons):
         for exon in self.transcript.gene3prime_exon_intervals:
 
             if self.transcript.transcript2.strand == '+':
-                start = exon[0] - self.transcript.transcript2.start + \
+                start = exon[0] - self.transcript.gene3prime.junction + \
                     distance_to_add
-                end = exon[1] - self.transcript.transcript2.start + \
+                end = exon[1] - self.transcript.gene3prime.junction + \
                     distance_to_add
             else:
 
@@ -344,7 +344,7 @@ class PlotFusionExons(_PlotExons):
         self.ax.add_line(plt.Line2D(
             (
                 self.offset,
-                self.offset+gene5prime_length
+                self.offset + gene5prime_length
             ),
             (0.5, 0.5),
             color='black'
@@ -352,8 +352,8 @@ class PlotFusionExons(_PlotExons):
         )
         self.ax.add_line(plt.Line2D(
             (
-                self.offset+gene5prime_length,
-                self.offset+gene5prime_length+gene3prime_length
+                self.offset + gene5prime_length,
+                self.offset + gene5prime_length + gene3prime_length
             ),
             (0.5, 0.5),
             color='red'
