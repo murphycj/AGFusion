@@ -16,15 +16,15 @@ AGFUSION_DB_URL = "https://github.com/murphycj/AGFusionDB/raw/master/agfusion."
 # by pyensembl
 
 GENOME_SHORTCUTS = {
-    'GRCm38':['mus_musculus',87],
-    'mm10':['mus_musculus',87],
+    'GRCm38':['mus_musculus',92],
+    'mm10':['mus_musculus',92],
     'mm9':['mus_musculus',67],
-    'GRCh38':['homo_sapiens',91],
-    'hg38':['homo_sapiens',91],
+    'GRCh38':['homo_sapiens',92],
+    'hg38':['homo_sapiens',92],
     'hg19':['homo_sapiens',75]
 }
 
-MAX_ENSEMBL_RELEASE = 91
+MAX_ENSEMBL_RELEASE = 92
 
 AVAILABLE_ENSEMBL_SPECIES = {
     'homo_sapiens':range(69,MAX_ENSEMBL_RELEASE+1),

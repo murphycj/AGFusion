@@ -251,9 +251,9 @@ def add_common_flags(parser):
         'feature databases to include when visualizing proteins. ' +
         'Options are: pfam, smart, superfamily, tigrfam, pfscan (Prosite_profiles), ' +
         'tmhmm (i.e. transmembrane), seg (low_complexity regions), ncoils ' +
-        '(coiled coil regions), prints ' +
+        '(coiled coil regions), prints, ' +
         'pirsf, and signalp (signal peptide regions) ' +
-        '(default includes pfam and tmhmm).'
+        '(default: --protein_databases pfam and tmhmm).'
     )
     parser.add_argument(
         '--recolor',
