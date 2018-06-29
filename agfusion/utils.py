@@ -19,12 +19,12 @@ GENOME_SHORTCUTS = {
     'GRCm38':['mus_musculus',87],
     'mm10':['mus_musculus',87],
     'mm9':['mus_musculus',67],
-    'GRCh38':['homo_sapiens',87],
-    'hg38':['homo_sapiens',87],
+    'GRCh38':['homo_sapiens',91],
+    'hg38':['homo_sapiens',91],
     'hg19':['homo_sapiens',75]
 }
 
-MAX_ENSEMBL_RELEASE = 87
+MAX_ENSEMBL_RELEASE = 91
 
 AVAILABLE_ENSEMBL_SPECIES = {
     'homo_sapiens':range(69,MAX_ENSEMBL_RELEASE+1),
