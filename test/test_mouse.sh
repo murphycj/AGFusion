@@ -3,7 +3,7 @@ agfusion annotate \
   --gene3prime DNM3 \
   --junction5prime 130167703 \
   --junction3prime 162019992 \
-  --db agfusion.mus_musculus.84.db \
+  -db agfusion.mus_musculus.84.db \
   --out FGFR2-DNM3
 
 agfusion annotate \
@@ -11,7 +11,7 @@ agfusion annotate \
   --gene3prime ENSMUSG00000002413 \
   --junction5prime 31684294 \
   --junction3prime 39648486 \
-  --db agfusion.mus_musculus.84.db \
+  -db agfusion.mus_musculus.84.db \
   --out DLG1-BRAF
 
 agfusion annotate \
