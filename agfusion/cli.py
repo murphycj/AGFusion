@@ -125,6 +125,7 @@ def annotate(gene5prime, junction5prime, gene3prime, junction3prime,
 
     fusion.save_images(
         out_dir=outdir,
+        file_type=args.type,
         scale=scale,
         colors=colors,
         rename=rename,
@@ -580,6 +581,16 @@ def main():
                 )
 
             rename[pair[0]] = pair[1]
+
+    # check image file type is valid
+
+    if args.type not in ['png','pdf','jpeg']:
+        agfusion_db.logger.error(
+            "ERROR - provided an incorrect image file type: {}."
+            .format(args.type)
+        )
+        exit()
+
 
     if args.subparser_name == 'annotate':
         annotate(

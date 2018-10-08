@@ -562,6 +562,9 @@ class _PlotProtein(_Plot):
             if domain_name in self.exclude:
                 continue
 
+            if domain_name in self.rename:
+                domain_name = self.rename[domain_name]
+
             color = '#3385ff'
             if domain_name in self.colors:
                 color = self.colors[domain_name]
