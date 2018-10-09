@@ -551,22 +551,10 @@ def main():
         )
         exit()
 
+    # parse the re-coloring and re-naming
+
     colors = {}
     rename = {}
-
-    if args.recolor is not None:
-        for i in args.recolor:
-            pair = i.split(';')
-
-            assert len(pair) == 2, " did not properly specify --colors"
-
-            if pair[0] in colors:
-                agfusion_db.logger.warn(
-                    "You specified colors for {} twice."
-                    .format(pair[0])
-                )
-
-            colors[pair[0]] = pair[1]
 
     if args.rename is not None:
         for i in args.rename:
@@ -581,6 +569,23 @@ def main():
                 )
 
             rename[pair[0]] = pair[1]
+
+    if args.recolor is not None:
+        for i in args.recolor:
+            pair = i.split(';')
+
+            assert len(pair) == 2, " did not properly specify --colors"
+
+            if pair[0] in colors:
+                agfusion_db.logger.warn(
+                    "You specified colors for {} twice."
+                    .format(pair[0])
+                )
+
+            if pair[0] in rename:
+                colors[rename[pair[0]]] = pair[1]
+            else:
+                colors[pair[0]] = pair[1]
 
     # check image file type is valid
 
