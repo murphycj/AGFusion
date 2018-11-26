@@ -10,7 +10,7 @@ agfusion_db = os.path.join(
     'agfusion.db'
 )
 
-AGFUSION_DB_URL = "https://github.com/murphycj/AGFusionDB/raw/master/agfusion."
+AGFUSION_DB_URL = "https://s3.amazonaws.com/agfusion/agfusion."
 
 # this is mostly contigent on the maximum ensembl release supported
 # by pyensembl
