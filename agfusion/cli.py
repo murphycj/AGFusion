@@ -40,6 +40,7 @@ def list_available_databases():
             )
     exit()
 
+
 def downloaddb(args):
     """
     Download the AGFusion database from github
@@ -81,6 +82,7 @@ def downloaddb(args):
         shutil.copyfileobj(f_in, f_out)
 
     remove(file_path)
+
 
 def annotate(gene5prime, junction5prime, gene3prime, junction3prime,
              agfusion_db, pyensembl_data, args, outdir=None, colors=None,
@@ -139,6 +141,7 @@ def annotate(gene5prime, junction5prime, gene3prime, junction3prime,
         )
     fusion.save_tables(out_dir=outdir)
 
+
 def batch_mode(args, agfusion_db, pyensembl_data, rename, colors):
     """
     Batch mode for annotation fusions from output from a fusion-finding
@@ -154,7 +157,8 @@ def batch_mode(args, agfusion_db, pyensembl_data, rename, colors):
         )
 
     if args.algorithm in agfusion.parsers:
-        for fusion in agfusion.parsers[args.algorithm](args.file,agfusion_db.logger):
+        for fusion in agfusion.parsers[args.algorithm](args.file,
+                                                       agfusion_db.logger):
 
             try:
                 annotate(
@@ -178,14 +182,14 @@ def batch_mode(args, agfusion_db, pyensembl_data, rename, colors):
                 agfusion_db.logger.error(e)
     else:
         agfusion_db.logger.error(
-            '\'{}\' is not an available option for -a! Choose one of the ' \
-            'following: {}.' \
-            .format(
+            ('\'{}\' is not an available option for -a! Choose one of the ' +
+             'following: {}.').format(
                 args.algorithm,
                 ','.join(agfusion.parsers.keys())
             )
         )
         exit()
+
 
 def builddb(args):
     """
@@ -213,6 +217,7 @@ def builddb(args):
     agfusion_db.logger.info('Fetching protein annotation data...')
 
     agfusion_db.fetch_protein_annotation()
+
 
 def add_common_flags(parser):
     """
@@ -589,13 +594,12 @@ def main():
 
     # check image file type is valid
 
-    if args.type not in ['png','pdf','jpeg']:
+    if args.type not in ['png', 'pdf', 'jpeg']:
         agfusion_db.logger.error(
             "ERROR - provided an incorrect image file type: {}."
             .format(args.type)
         )
         exit()
-
 
     if args.subparser_name == 'annotate':
         annotate(

@@ -32,7 +32,7 @@ class _Parser(object):
 
 
 class STARFusion(_Parser):
-    def __init__(self, infile,logger):
+    def __init__(self, infile, logger):
         super(STARFusion, self).__init__(logger)
 
         fin = open(infile, 'r')
@@ -45,9 +45,11 @@ class STARFusion(_Parser):
                         'in header. Should be #FusionName or #fusion_name.')
 
                 assert line[4] == 'LeftGene', 'Unrecognized STAR-Fusion input'
-                assert line[5] == 'LeftBreakpoint', 'Unrecognized STAR-Fusion input'
+                assert line[5] == 'LeftBreakpoint', 'Unrecognized ' + \
+                    'STAR-Fusion input'
                 assert line[6] == 'RightGene', 'Unrecognized STAR-Fusion input'
-                assert line[7] == 'RightBreakpoint', 'Unrecognized STAR-Fusion input'
+                assert line[7] == 'RightBreakpoint', 'Unrecognized ' + \
+                    'STAR-Fusion input'
                 continue
 
             line = line.strip().split('\t')
@@ -637,8 +639,56 @@ class InFusion(_Parser):
                 {
                     'gene5prime': line[data_indices['genes_1']].split(';'),
                     'gene3prime': line[data_indices['genes_2']].split(';'),
-                    'gene5prime_junction': int(line[data_indices['break_pos1']]),
-                    'gene3prime_junction': int(line[data_indices['break_pos2']])
+                    'gene5prime_junction': int(
+                        line[data_indices['break_pos1']]),
+                    'gene3prime_junction': int(
+                        line[data_indices['break_pos2']])
+                }
+            )
+        fin.close()
+
+        self._check_data()
+
+
+class FusionInspector(_Parser):
+    def __init__(self, infile, logger):
+        super(FusionInspector, self).__init__(logger)
+
+        fin = open(infile, 'r')
+        for line in fin.readlines():
+            if re.findall('^#', line):
+                line = line.rstrip().split('\t')
+                if line[0] != '#FusionName' and line[0] != '#fusion_name':
+                    raise AssertionError(
+                        'Unrecognized FusionInspector input for first column' +
+                        ' in header. Should be #FusionName or #fusion_name.')
+
+                assert line[3] == 'LeftGene', 'Unrecognized ' + \
+                    'FusionInspector input'
+                assert line[5] == 'LeftBreakpoint', 'Unrecognized ' + \
+                    'FusionInspector input'
+                assert line[6] == 'RightGene', 'Unrecognized ' + \
+                    'FusionInspector input'
+                assert line[8] == 'RightBreakpoint', 'Unrecognized ' + \
+                    'FusionInspector input'
+                continue
+
+            line = line.strip().split('\t')
+
+            gene_5prime = line[3].split('^')[1].split('.')[0]
+            gene_5prime_name = line[3].split('^')[0]
+            gene_5prime_junction = int(line[5].split(':')[1])
+            gene_3prime = line[6].split('^')[1].split('.')[0]
+            gene_3prime_name = line[6].split('^')[0]
+            gene_3prime_junction = int(line[8].split(':')[1])
+            self.fusions.append(
+                {
+                    'gene5prime': gene_5prime,
+                    'gene3prime': gene_3prime,
+                    'alternative_name_5prime': gene_5prime_name,
+                    'alternative_name_3prime': gene_3prime_name,
+                    'gene5prime_junction': gene_5prime_junction,
+                    'gene3prime_junction': gene_3prime_junction
                 }
             )
         fin.close()
