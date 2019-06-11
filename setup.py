@@ -26,6 +26,7 @@ setup(
     license='MIT',
     url='https://github.com/murphycj/AGFusion',
     long_description=README,
+    long_description_content_type='text/markdown',
     include_package_data=True,
     scripts=['bin/agfusion'],
     install_requires=[

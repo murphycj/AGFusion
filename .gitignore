@@ -6,4 +6,6 @@ test/*.db
 test/*.sh
 test/data
 submit_to_pip.sh
+agfusion.egg-info/
+dist/
 *pyc

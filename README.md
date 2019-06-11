@@ -38,12 +38,12 @@ You just need to provide the two fusion gene partners (gene symbol, Ensembl ID, 
 Example usage from the command line:
 
 ```
-agfusion annotate \
-  --gene5prime DLG1 \
-  --gene3prime BRAF \
-  --junction5prime 31684294 \
-  --junction3prime 39648486 \
-  -db agfusion.mus_musculus.87.db \
+agfusion annotate
+  --gene5prime DLG1
+  --gene3prime BRAF
+  --junction5prime 31684294
+  --junction3prime 39648486
+  -db agfusion.mus_musculus.87.db
   -o DLG1-BRAF
 ```
 
@@ -61,13 +61,13 @@ You can additionally plot the wild-type proteins and exon structures for each ge
 
 ```
 agfusion annotate \
-  -g5 ENSMUSG00000022770 \
-  -g3 ENSMUSG00000002413 \
-  -j5 31684294 \
-  -j3 39648486 \
-  -db agfusion.mus_musculus.87.db \
-  -o DLG1-BRAF \
-  --WT
+   -g5 ENSMUSG00000022770 \
+   -g3 ENSMUSG00000002413 \
+   -j5 31684294 \
+   -j3 39648486 \
+   -db agfusion.mus_musculus.87.db \
+   -o DLG1-BRAF \
+   --WT
 ```
 
 ### Canonical gene isoforms
@@ -168,13 +168,13 @@ First you need to install pyensembl (and the other dependencies listed at the bo
 
 ```
 For GRCh38/hg38:
-pyensembl install --species homo_sapiens --release 87 
+pyensembl install --species homo_sapiens --release 87
 
 For GRCh37/hg19:
-pyensembl install --species homo_sapiens --release 75 
+pyensembl install --species homo_sapiens --release 75
 
 For GRCm38/mm10:
-pyensembl install --species mus_musculus --release 87 
+pyensembl install --species mus_musculus --release 87
 ```
 
 Then you can install AGFusion:
