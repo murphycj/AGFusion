@@ -711,19 +711,20 @@ class Fusion():
             'w'
         )
         fout.write(
-            '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
-            (
+            ','.join(['{}']*11).format(
                 "5\'_gene",
                 "3\'_gene",
                 "5\'_transcript",
                 "3\'_transcript",
+                "5\'_strand",
+                "3\'_strand",
                 "5\'_transcript_biotype",
                 "3\'_transcript_biotype",
                 "Fusion_effect",
                 "Protein_length",
                 "Protein_weight_(kD)"
-            )
-        )
+            ) + '\n')
+
         for name, transcript in list(self.transcripts.items()):
 
             if transcript.protein_length is None:
@@ -737,19 +738,18 @@ class Fusion():
                 molecular_weight = transcript.molecular_weight
 
             fout.write(
-                '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
-                (
+                ','.join(['{}']*11).format(
                     transcript.gene5prime.gene.gene_name,
                     transcript.gene3prime.gene.gene_name,
                     transcript.transcript1.id,
                     transcript.transcript2.id,
+                    transcript.transcript1.strand,
+                    transcript.transcript2.strand,
                     transcript.transcript1.biotype,
                     transcript.transcript2.biotype,
                     transcript.effect,
                     protein_length,
-                    molecular_weight
-                )
-            )
+                    molecular_weight))
         fout.close()
 
         # write table containing protein domains for each fusion isoform
@@ -762,36 +762,36 @@ class Fusion():
             'w'
         )
         fout.write(
-            '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
-            (
+            ','.join(['{}']*11).format(
                 "5\'_gene",
                 "3\'_gene",
                 "5\'_transcript",
                 "3\'_transcript",
+                "5\'_strand",
+                "3\'_strand",
                 "Domain_ID",
                 "Domain_name",
                 "Domain_description",
                 "Protein_start",
                 "Protein_end"
-            )
-        )
+            ) + '\n')
 
         for name, transcript in list(self.transcripts.items()):
             for domain in transcript.domains['fusion']:
                 fout.write(
-                    '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
-                    (
+                    ','.join(['{}']*11).format(
                         transcript.gene5prime.gene.gene_name,
                         transcript.gene3prime.gene.gene_name,
                         transcript.transcript1.id,
                         transcript.transcript2.id,
+                        transcript.transcript1.strand,
+                        transcript.transcript2.strand,
                         domain[0],
                         domain[1],
                         domain[2],
                         domain[3],
                         domain[4]
-                    )
-                )
+                    ) + '\n')
         fout.close()
 
         # write tables of exon structure
@@ -804,51 +804,52 @@ class Fusion():
             'w'
         )
         fout.write(
-            '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
-            (
+            ','.join(['{}']*11).format(
                 "5\'_gene",
                 "3\'_gene",
                 "5\'_transcript",
                 "3\'_transcript",
+                "5\'_strand",
+                "3\'_strand",
                 "exon_gene_source",
                 "exon_number",
                 "exon_chr",
                 "exon_start",
                 "exon_end"
-            )
-        )
+            ) + '\n')
+
         for name, transcript in list(self.transcripts.items()):
             for exon in transcript.gene5prime_exon_intervals:
                 fout.write(
-                    '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
-                    (
+                    ','.join(['{}']*11).format(
                         transcript.gene5prime.gene.gene_name,
                         transcript.gene3prime.gene.gene_name,
                         transcript.transcript1.id,
                         transcript.transcript2.id,
+                        transcript.transcript1.strand,
+                        transcript.transcript2.strand,
                         '\'5 gene',
                         exon[2],
                         transcript.transcript1.contig,
                         exon[0],
                         exon[1]
-                    )
-                )
+                    ) + '\n')
 
             for exon in transcript.gene3prime_exon_intervals:
                 fout.write(
-                    '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
-                    (
+                    ','.join(['{}']*11).format(
                         transcript.gene5prime.gene.gene_name,
                         transcript.gene3prime.gene.gene_name,
                         transcript.transcript1.id,
                         transcript.transcript2.id,
+                        transcript.transcript1.strand,
+                        transcript.transcript2.strand,
                         '\'3 gene',
                         exon[2],
                         transcript.transcript2.contig,
                         exon[0],
                         exon[1]
-                    )
-                )
+                    ) + '\n')
 
         fout.close()
 
@@ -1108,12 +1109,16 @@ class FusionTranscript(object):
             protein_seq,
             id=self.protein_names,
             name=self.protein_names,
-            description="length=" + str(self.protein_length) + \
-                ", kD: " + str(self.molecular_weight) + \
-                ", transcripts: " + str(self.name) + \
-                ", genes: " + str(self.gene_names) + \
-                ", effect: " + self.effect
-        )
+            description=("length: {}, kD: {}, transcripts: {}, strands: {}/{}, "
+                         "genes: {}, effect: {}").format(
+                            self.protein_length,
+                            self.molecular_weight,
+                            self.name,
+                            self.transcript1.strand,
+                            self.transcript2.strand,
+                            self.gene_names,
+                            self.effect
+                         ))
 
     def _fetch_transcript_cds(self):
         """
@@ -1173,10 +1178,13 @@ class FusionTranscript(object):
             Seq.Seq(seq,generic_dna),
             id=self.name,
             name=self.name,
-            description="length=" + str(len(self.cds_5prime + self.cds_3prime)) + \
-                ", genes: " + \
-                str(self.transcript1.gene.name) + '-' + \
-                str(self.transcript2.gene.name)
+            description="length: {}, genes: {}/{}, strands: {}/{}".format(
+                len(self.cds_5prime + self.cds_3prime),
+                self.transcript1.gene.name,
+                self.transcript2.gene.name,
+                self.transcript1.gene.strand,
+                self.transcript2.gene.strand
+            )
         )
 
     def _fetch_transcript_cdna(self):
@@ -1605,12 +1613,15 @@ class FusionTranscript(object):
 
         # append information to cdna fasta headers
 
-        self.cdna.description += "; 5' location: " + self.effect_5prime + \
-            "; 3' location: " + self.effect_3prime + \
-            "; Has protein coding potential: " + str(self.has_coding_potential)
+        self.cdna.description += "; locations: {}/{};".format(
+            self.effect_5prime, self.effect_3prime)
+        self.cdna.description += " strands: {}/{};".format(
+            self.transcript1.strand, self.transcript2.strand)
+        self.cdna.description += " Has protein coding potential: {};".format(
+            self.has_coding_potential)
 
         if not self.has_coding_potential:
-            self.cdna.description += "; Reason: " + ', '.join(reasons)
+            self.cdna.description += " Reason: {}".format(', '.join(reasons))
 
         # if the fusion transcript has coding potential then
         # fetch its CDS and protein sequences and annotate it
