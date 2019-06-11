@@ -15,16 +15,16 @@ AGFUSION_DB_URL = "https://s3.amazonaws.com/agfusion/agfusion."
 # this is mostly contigent on the maximum ensembl release supported
 # by pyensembl
 
+MAX_ENSEMBL_RELEASE = 95
+
 GENOME_SHORTCUTS = {
-    'GRCm38':['mus_musculus',92],
-    'mm10':['mus_musculus',92],
+    'GRCm38':['mus_musculus',MAX_ENSEMBL_RELEASE],
+    'mm10':['mus_musculus',MAX_ENSEMBL_RELEASE],
     'mm9':['mus_musculus',67],
-    'GRCh38':['homo_sapiens',92],
-    'hg38':['homo_sapiens',92],
+    'GRCh38':['homo_sapiens',MAX_ENSEMBL_RELEASE],
+    'hg38':['homo_sapiens',MAX_ENSEMBL_RELEASE],
     'hg19':['homo_sapiens',75]
 }
-
-MAX_ENSEMBL_RELEASE = 92
 
 AVAILABLE_ENSEMBL_SPECIES = {
     'homo_sapiens':range(69,MAX_ENSEMBL_RELEASE+1),
