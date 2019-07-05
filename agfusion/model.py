@@ -1081,11 +1081,18 @@ class FusionTranscript(object):
         else:
             self.effect = 'out-of-frame'
 
-        #translate CDS into protein and remove everything after the stop codon
+        # check if CDS's length is multiple of 3, if not then print warning
 
-        #trim the CDS sequence if fusion is out-of-frame
+        if (len(self.cds.seq) % 3) !=0:
+            self.db.logger.warn(
+                'Fusion isoform CDS lenght is not a multiple of 3!')
+
+        # translate CDS into protein and remove everything after the stop codon
 
         if self.effect == 'out-of-frame':
+
+            # trim the CDS sequence if fusion is out-of-frame
+
             seq = self.cds.seq[0:3*int(len(self.cds.seq)/3)]
 
             protein_seq = seq.translate()
@@ -1093,9 +1100,6 @@ class FusionTranscript(object):
         else:
             protein_seq = self.cds.seq.translate()
             protein_seq = protein_seq[0:protein_seq.find('*')]
-
-        if (len(self.cds.seq) % 3) !=0:
-            self.db.logger.warn('Fusion isoform effect is not out-of-frame but CDS is not a multiple of 3!')
 
         # predict molecular weight
 
