@@ -1085,7 +1085,7 @@ class FusionTranscript(object):
 
         if (len(self.cds.seq) % 3) !=0:
             self.db.logger.warn(
-                'Fusion isoform CDS lenght is not a multiple of 3!')
+                'Length of fusion isoform CDS is not a multiple of 3!')
 
         # translate CDS into protein and remove everything after the stop codon
 
