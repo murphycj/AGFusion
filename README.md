@@ -229,4 +229,4 @@ MIT license
 
 # Citing AGFusion
 
-Manuscript under review. You can cite bioRxiv for now: http://dx.doi.org/10.1101/080903
+You can cite bioRxiv: http://dx.doi.org/10.1101/080903
