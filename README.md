@@ -38,12 +38,12 @@ You just need to provide the two fusion gene partners (gene symbol, Ensembl ID, 
 Example usage from the command line:
 
 ```
-agfusion annotate
-  --gene5prime DLG1
-  --gene3prime BRAF
-  --junction5prime 31684294
-  --junction3prime 39648486
-  -db agfusion.mus_musculus.87.db
+agfusion annotate \
+  --gene5prime DLG1 \
+  --gene3prime BRAF \
+  --junction5prime 31684294 \
+  --junction3prime 39648486 \
+  -db agfusion.mus_musculus.87.db \
   -o DLG1-BRAF
 ```
 
