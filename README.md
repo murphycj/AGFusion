@@ -11,7 +11,7 @@ Some other things to know:
 * AGFusion automatically predicts the functional effect of the gene fusion (e.g. in-frame, out-of-frame, etc.).
 * Annotation is by default done only for canonical gene isoforms, but there is the option to annotate all gene non-canonical isoform combinations.
 * All gene and protein annotation is from Ensembl
-* Supports up to Ensembl release 92
+* Supports up to Ensembl release 95
 
 
 ## Table of Contents
@@ -38,12 +38,12 @@ You just need to provide the two fusion gene partners (gene symbol, Ensembl ID, 
 Example usage from the command line:
 
 ```
-agfusion annotate
-  --gene5prime DLG1
-  --gene3prime BRAF
-  --junction5prime 31684294
-  --junction3prime 39648486
-  -db agfusion.mus_musculus.87.db
+agfusion annotate \
+  --gene5prime DLG1 \
+  --gene3prime BRAF \
+  --junction5prime 31684294 \
+  --junction3prime 39648486 \
+  -db agfusion.mus_musculus.87.db \
   -o DLG1-BRAF
 ```
 
