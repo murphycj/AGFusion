@@ -749,7 +749,7 @@ class Fusion():
                     transcript.transcript2.biotype,
                     transcript.effect,
                     protein_length,
-                    molecular_weight))
+                    molecular_weight) + '\n')
         fout.close()
 
         # write table containing protein domains for each fusion isoform
