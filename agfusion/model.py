@@ -706,7 +706,7 @@ class Fusion():
         fout = open(
             os.path.join(
                 out_dir,
-                self.name + '.fusion_transcripts.txt'
+                self.name + '.fusion_transcripts.csv'
             ),
             'w'
         )
@@ -757,7 +757,7 @@ class Fusion():
         fout = open(
             os.path.join(
                 out_dir,
-                self.name + '.protein_domains.txt'
+                self.name + '.protein_domains.csv'
             ),
             'w'
         )
@@ -799,7 +799,7 @@ class Fusion():
         fout = open(
             os.path.join(
                 out_dir,
-                self.name + '.exons.txt'
+                self.name + '.exons.csv'
             ),
             'w'
         )
