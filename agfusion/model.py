@@ -318,7 +318,8 @@ class Fusion():
             noncanonical=noncanonical
         )
 
-        self.name = self.gene5prime.gene.name + '-' + self.gene3prime.gene.name
+        self.name = self.gene5prime.gene.name + '_' + self.gene3prime.gene.name
+        self.name = self.name.replace("/", "-")
 
         # fetch which are canonical transcripts
 
@@ -347,7 +348,7 @@ class Fusion():
 
             # skip if the junction is outside the range of either transcript
 
-            name = transcript1.id + '-' + transcript2.id
+            name = transcript1.id + '_' + transcript2.id
 
             if not transcript1.contains(transcript1.contig,self.gene5prime.junction,self.gene5prime.junction):
                 self.transcripts[name] = FusionTranscript(
@@ -444,11 +445,11 @@ class Fusion():
         if plot_WT:
             gene5prime_WT = os.path.join(
                 out_dir,
-                self.gene5prime.gene.gene_name
+                self.gene5prime.gene.gene_name.replace('/','-')
             )
             gene3prime_WT = os.path.join(
                 out_dir,
-                self.gene3prime.gene.gene_name
+                self.gene3prime.gene.gene_name.replace('/','-')
             )
             if not os.path.exists(gene5prime_WT):
                 os.mkdir(gene5prime_WT)
@@ -873,8 +874,9 @@ class FusionTranscript(object):
         self.protein_databases = protein_databases
         self.db = db
 
-        self.name = self.transcript1.id + '-' + self.transcript2.id
-        self.gene_names = self.gene5prime.gene.name + '-' + self.gene3prime.gene.name
+        self.name = self.transcript1.id + '_' + self.transcript2.id
+        self.gene_names = self.gene5prime.gene.name + '_' + self.gene3prime.gene.name
+        self.gene_names = self.gene_names.replace("/", "-")
 
         self.cds = None
         self.transcript_cds_junction_5prime = None
