@@ -386,48 +386,6 @@ class Fusion():
                     protein_databases=protein_databases,
                 )
 
-    def output_to_html(
-            self, fontsize=12, dpi=90, colors={}, rename={},
-            width=8, height=2, scale=0, mpld3=None):
-        """
-        Write figures into html format for plotting in web tool rather
-        than writing figures to file
-
-        Needs the mpld3 package to be used
-        """
-
-        dict_of_plots = list()
-        plot_key = dict()
-
-        for name, transcript in list(self.transcripts.items()):
-
-            if not transcript.has_coding_potential:
-                continue
-
-            fig = plt.figure(figsize=(width, height), dpi=dpi, frameon=False)
-
-            self._draw(
-                fig=fig,
-                name=name,
-                transcript=transcript,
-                scale=scale,
-                fontsize=fontsize,
-                colors=[],
-                rename=[]
-            )
-
-            single_chart = dict()
-            single_chart['id'] = name
-            single_chart['json'] = json.dumps(mpld3.fig_to_dict(fig))
-            dict_of_plots.append(single_chart)
-
-            plot_key[name] = transcript.name
-
-            plt.close(fig)
-            plt.clf()
-
-        return dict_of_plots, plot_key
-
     def save_images(
             self, out_dir='', file_type='png', fontsize=12, dpi=100,
             colors={}, rename={}, width=8, height=2, scale=0,
