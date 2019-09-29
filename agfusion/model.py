@@ -883,7 +883,7 @@ class FusionTranscript(object):
         self.transcript_cds_junction_3prime = None
         self.gene5prime_cds_intervals = []
         self.gene3prime_cds_intervals = []
-        self.cds_3prime = None
+        self.cds_5prime = None
         self.cds_3prime = None
 
         self.cdna = None
