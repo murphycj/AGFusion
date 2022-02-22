@@ -6,7 +6,6 @@ import sys
 from agfusion import utils, exceptions, plot
 import pandas
 from Bio import Seq, SeqIO, SeqRecord, SeqUtils
-from Bio.Alphabet import generic_dna, generic_protein
 
 # matplotlib.rcParams['interactive'] = False
 
@@ -562,12 +561,12 @@ class Fusion():
                 if middlestar:
                     temp = str(transcript.cdna.seq)
                     temp = temp[:transcript.transcript_cdna_junction_5prime] + '*' + temp[transcript.transcript_cdna_junction_5prime:]
-                    transcript.cdna.seq = Seq.Seq(temp,generic_dna)
+                    transcript.cdna.seq = Seq.Seq(temp)
 
                 SeqIO.write(transcript.cdna,fout,"fasta")
             else:
                 cdna = SeqRecord.SeqRecord(
-                    Seq.Seq("",generic_dna),
+                    Seq.Seq(""),
                     id=transcript.name,
                     name=transcript.name,
                     description="No cDNA, fusion junction outside transcript(s) boundary"
@@ -611,7 +610,7 @@ class Fusion():
                 if middlestar:
                     temp = str(transcript.cds.seq)
                     temp = temp[:transcript.transcript_cds_junction_5prime] + '*' + temp[transcript.transcript_cds_junction_5prime:]
-                    transcript.cds.seq = Seq.Seq(temp,generic_dna)
+                    transcript.cds.seq = Seq.Seq(temp)
 
                 SeqIO.write(transcript.cds,fout,"fasta")
 
@@ -652,7 +651,7 @@ class Fusion():
                 if middlestar:
                     temp = str(transcript.protein.seq)
                     temp = temp[:transcript.transcript_protein_junction_5prime] + '*' + temp[transcript.transcript_protein_junction_5prime:]
-                    transcript.protein.seq = Seq.Seq(temp,generic_protein)
+                    transcript.protein.seq = Seq.Seq(temp)
 
                 SeqIO.write(transcript.protein,fout,"fasta")
 
@@ -1063,7 +1062,7 @@ class FusionTranscript(object):
 
         # predict molecular weight
 
-        self.molecular_weight = SeqUtils.molecular_weight(protein_seq)/1000.
+        self.molecular_weight = SeqUtils.molecular_weight(protein_seq, seq_type='protein')/1000.
 
         # convert to a sequence record
 
@@ -1139,7 +1138,7 @@ class FusionTranscript(object):
             seq = self.cds_5prime + self.cds_3prime
 
         self.cds = SeqRecord.SeqRecord(
-            Seq.Seq(seq,generic_dna),
+            Seq.Seq(seq),
             id=self.name,
             name=self.name,
             description="length: {}, genes: {}/{}, strands: {}/{}".format(
@@ -1380,7 +1379,7 @@ class FusionTranscript(object):
             seq_length = 'NA'
 
         self.cdna = SeqRecord.SeqRecord(
-            Seq.Seq(seq, generic_dna),
+            Seq.Seq(seq),
             id=self.name,
             name=self.name,
             description="length=" + seq_length
