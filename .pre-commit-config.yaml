@@ -10,6 +10,10 @@ repos:
     hooks:
     -   id: black
         exclude: test/data/
+        args:
+          - "--line-length=100"
+          - "--config"
+          - "./pyproject.toml"
 - repo: local
   hooks:
     - id: pylint
