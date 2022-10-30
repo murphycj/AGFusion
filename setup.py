@@ -14,26 +14,26 @@ if mo:
 else:
     raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
-README = open('README.md').read()
+README = open("README.md").read()
 
 setup(
     version=verstr,
-    name='agfusion',
+    name="agfusion",
     packages=find_packages(),
     description="Python package to annotate and visualize gene fusions.",
-    author='Charles Murphy',
-    author_email='murphy.charlesj@gmail.com',
-    license='MIT',
-    url='https://github.com/murphycj/AGFusion',
+    author="Charles Murphy",
+    author_email="murphy.charlesj@gmail.com",
+    license="MIT",
+    url="https://github.com/murphycj/AGFusion",
     long_description=README,
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
     include_package_data=True,
-    scripts=['bin/agfusion'],
+    scripts=["bin/agfusion"],
     install_requires=[
-        'matplotlib>=1.5.0',
-        'pandas>=0.18.1',
-        'biopython>=1.67',
-        'future>=0.16.0',
-        'pyensembl>=1.1.0'
-    ]
+        "matplotlib>=1.5.0",
+        "pandas>=0.18.1",
+        "biopython>=1.67",
+        "future>=0.16.0",
+        "pyensembl>=1.1.0",
+    ],
 )
