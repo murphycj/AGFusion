@@ -9,3 +9,4 @@ submit_to_pip.sh
 agfusion.egg-info/
 dist/
 *pyc
+build/

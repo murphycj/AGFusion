@@ -417,6 +417,11 @@ disable=raw-checker-failed,
         deprecated-pragma,
         use-symbolic-message-instead,
         consider-using-with,
+        no-name-in-module,
+        E0611,
+        too-many-arguments,
+        wrong-import-position,
+        wrong-import-order,
         R1732
 
 # Enable the message, report, category or checker with the given id(s). You can

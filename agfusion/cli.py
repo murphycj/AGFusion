@@ -1,41 +1,41 @@
-"""
+""" cli.py
 Command line interface
 """
 
-from os.path import split, exists, join
-from os import mkdir, remove
 import argparse
 import gzip
 import shutil
+import sys
+from os import mkdir, remove
+from os.path import exists, join, split
+
 from future.standard_library import install_aliases
 
 install_aliases()
-from urllib.request import urlopen
 from urllib.error import HTTPError
+from urllib.request import urlopen
 
 import pyensembl
-import agfusion
-from agfusion import exceptions
-from agfusion.utils import AGFUSION_DB_URL, AVAILABLE_ENSEMBL_SPECIES, GENOME_SHORTCUTS
+
+from agfusion import database, exceptions, model, parsers, utils, version
 
 
 def list_available_databases():
     """
     List the available databases that can be downloaded.
-    """
+    #"""
 
     print("\n")
-    print("{:<10}\t\t{:<5}\t\t{:<20}".format("Species", "Release", "Shortcut(s)"))
-    for species, releases in AVAILABLE_ENSEMBL_SPECIES.items():
+    print("Species\t\tRelease\t\tShortbut(s)")
+    for species, releases in utils.AVAILABLE_ENSEMBL_SPECIES.items():
         for release in releases:
             shortcut = []
-            for genome, data in GENOME_SHORTCUTS.items():
+            for genome, data in utils.GENOME_SHORTCUTS.items():
                 if species in data and release in data:
                     shortcut.append(genome)
-            print(
-                "{:<10}\t\t{:<5}\t\t{:<20}".format(species, release, ",".join(shortcut))
-            )
-    exit()
+            shortcut = ",".join(shortcut)
+            print("{species:<10}\t\t{release:<5}\t\t{shortcut:<20}")
+    sys.exit(1)
 
 
 def downloaddb(args):
@@ -44,38 +44,36 @@ def downloaddb(args):
     """
 
     if args.genome is not None:
-        if args.genome not in GENOME_SHORTCUTS:
+        if args.genome not in utils.GENOME_SHORTCUTS:
             print("Invalid genome shortcut! Use -a to see available shortcuts.")
-            exit()
+            sys.exit(1)
         else:
-            species = GENOME_SHORTCUTS[args.genome][0]
-            release = str(GENOME_SHORTCUTS[args.genome][1])
+            species = utils.GENOME_SHORTCUTS[args.genome][0]
+            release = str(utils.GENOME_SHORTCUTS[args.genome][1])
     else:
         if args.species is None or args.release is None:
             print("Specify --species and --release or --genome!")
-            exit()
+            sys.exit(1)
         species = args.species
         release = str(args.release)
 
     file_path = join(args.dir, "agfusion." + species + "." + release + ".db.gz")
 
-    print("Downloading the AGFusion database to {}...".format(file_path))
+    print(f"Downloading the AGFusion database to {file_path}...")
 
-    db_url = AGFUSION_DB_URL + species + "." + release + ".db.gz"
+    db_url = utils.AGFUSION_DB_URL + species + "." + release + ".db.gz"
 
     try:
         response = urlopen(db_url)
     except HTTPError:
-        print("Was unable to downloade the file {}!".format(db_url))
-        exit()
+        print(f"Was unable to downloade the file {db_url}!")
+        sys.exit(1)
 
     fout = open(file_path, "wb")
     fout.write(response.read())
     fout.close()
 
-    with gzip.open(file_path, "rb") as f_in, open(
-        file_path.replace(".gz", ""), "wb"
-    ) as f_out:
+    with gzip.open(file_path, "rb") as f_in, open(file_path.replace(".gz", ""), "wb") as f_out:
         shutil.copyfileobj(f_in, f_out)
 
     remove(file_path)
@@ -99,7 +97,7 @@ def annotate(
     Annotate the gene fusion
     """
 
-    fusion = agfusion.Fusion(
+    fusion = model.Fusion(
         gene5prime=gene5prime,
         gene5primejunction=junction5prime,
         gene3prime=gene3prime,
@@ -153,12 +151,10 @@ def batch_mode(args, agfusion_db, pyensembl_data, rename, colors):
     if not exists(args.out):
         mkdir(args.out)
     else:
-        agfusion_db.logger.warn(
-            "Output directory {} already exists! Overwriting...".format(args.out)
-        )
+        agfusion_db.logger.warn(f"Output directory {args.out} already exists! Overwriting...")
 
-    if args.algorithm in agfusion.parsers:
-        for fusion in agfusion.parsers[args.algorithm](args.file, agfusion_db.logger):
+    if args.algorithm in parsers:
+        for fusion in parsers[args.algorithm](args.file, agfusion_db.logger):
 
             try:
                 annotate(
@@ -174,20 +170,21 @@ def batch_mode(args, agfusion_db, pyensembl_data, rename, colors):
                     scale=None,
                     batch_out_dir=args.out,
                 )
-            except exceptions.GeneIDException as e:
-                agfusion_db.logger.error(e)
-            except exceptions.JunctionException as e:
-                agfusion_db.logger.error(e)
-            except exceptions.TooManyGenesException as e:
-                agfusion_db.logger.error(e)
+            except exceptions.GeneIDException as error:
+                agfusion_db.logger.error(error)
+            except exceptions.JunctionException as error:
+                agfusion_db.logger.error(error)
+            except exceptions.TooManyGenesException as error:
+                agfusion_db.logger.error(error)
     else:
+        available = ",".join(parsers.keys())
         agfusion_db.logger.error(
             (
-                "'{}' is not an available option for -a! Choose one of the "
-                + "following: {}."
-            ).format(args.algorithm, ",".join(agfusion.parsers.keys()))
+                f"'{args.algorithm}' is not an available option for -a! Choose one of the "
+                + f"following: {available}."
+            )
         )
-        exit()
+        sys.exit(1)
 
 
 def builddb(args):
@@ -195,7 +192,7 @@ def builddb(args):
     Build a AGFusion database
     """
 
-    agfusion_db = agfusion.AGFusionDBBManager(
+    agfusion_db = database.AGFusionDBBManager(
         args.dir, args.species, args.release, args.pfam, args.server
     )
 
@@ -226,9 +223,7 @@ def add_common_flags(parser):
         required=True,
         help="Path to the AGFusion database (e.g. --db /path/to/agfusion.homo_sapiens.87.db)",
     )
-    parser.add_argument(
-        "-o", "--out", type=str, required=True, help="Directory to save results"
-    )
+    parser.add_argument("-o", "--out", type=str, required=True, help="Directory to save results")
     parser.add_argument(
         "-nc",
         "--noncanonical",
@@ -324,8 +319,7 @@ def add_common_flags(parser):
         "--WT",
         action="store_true",
         required=False,
-        help="(Optional) Include this to plot wild-type architechtures "
-        + "of the 5' and 3' genes",
+        help="(Optional) Include this to plot wild-type architechtures " + "of the 5' and 3' genes",
     )
     parser.add_argument(
         "-ms",
@@ -350,9 +344,11 @@ def add_common_flags(parser):
     )
 
 
-def main():
-    """
-    Main function for processing command line options
+def build_cli():
+    """Build the CLI.
+
+    Returns:
+        argparse.Arguments: Parsed arguments.
     """
 
     parser = argparse.ArgumentParser(description="Annotate Gene Fusion (AGFusion)")
@@ -400,8 +396,7 @@ def main():
 
     batch_parser = subparsers.add_parser(
         "batch",
-        help="Annotate fusions from an output file from a fusion "
-        + "finding algorithm.",
+        help="Annotate fusions from an output file from a fusion " + "finding algorithm.",
     )
     batch_parser.add_argument(
         "-f",
@@ -416,7 +411,7 @@ def main():
         type=str,
         required=True,
         help="The fusion-finding algorithm. Can be one of the following: "
-        + ", ".join(agfusion.parsers.keys())
+        + ", ".join(parsers.keys())
         + ".",
     )
     add_common_flags(batch_parser)
@@ -500,20 +495,70 @@ def main():
 
     # agfusion version number
 
-    parser.add_argument(
-        "-v", "--version", action="version", version=agfusion.__version__
-    )
+    parser.add_argument("-v", "--version", action="version", version=version.__version__)
     args = parser.parse_args()
+
+    return args
+
+
+def parse_names_and_colors(args, agfusion_db):
+    """parse the re-coloring and re-naming
+
+    Args:
+        args (argparse.Namespace): arguments
+        agfusion_db (object): AGFusion datapase pointer
+
+    Returns:
+        list[dict]: re-mapping of colors and name
+    """
+
+    colors = {}
+    rename = {}
+
+    if args.rename is not None:
+        for i in args.rename:
+            pair = i.split(";")
+
+            assert len(pair) == 2, " did not properly specify --rename"
+
+            if pair[0] in rename:
+                agfusion_db.logger.warn(f"WARNING - you rename {pair[0]} twice.")
+
+            rename[pair[0]] = pair[1]
+
+    if args.recolor is not None:
+        for i in args.recolor:
+            pair = i.split(";")
+
+            assert len(pair) == 2, " did not properly specify --colors"
+
+            if pair[0] in colors:
+                agfusion_db.logger.warn(f"You specified colors for {pair[0]} twice.")
+
+            if pair[0] in rename:
+                colors[rename[pair[0]]] = pair[1]
+            else:
+                colors[pair[0]] = pair[1]
+
+    return colors, rename
+
+
+def main():
+    """
+    Main function for processing command line options
+    """
+
+    args = build_cli()
 
     if args.subparser_name == "build":
         builddb(args)
-        exit()
+        sys.exit(1)
     elif args.subparser_name == "download":
         if args.available:
             list_available_databases()
         else:
             downloaddb(args)
-        exit()
+        sys.exit(1)
 
     # single or batch mode
 
@@ -527,9 +572,9 @@ def main():
     species = db_file.split(".")[1]
     release = db_file.split(".")[2]
 
-    assert species in AVAILABLE_ENSEMBL_SPECIES, "unsupported species!"
+    assert species in utils.AVAILABLE_ENSEMBL_SPECIES, "unsupported species!"
 
-    agfusion_db = agfusion.AGFusionDB(args.database, debug=args.debug)
+    agfusion_db = database.AGFusionDB(args.database, debug=args.debug)
     agfusion_db.build = species + "_" + str(release)
 
     # get the pyensembl data
@@ -541,51 +586,17 @@ def main():
     except ValueError:
         agfusion_db.logger.error(
             "Missing pyensembl data. Run pyensembl install --release "
-            + "{} --species {}".format(release, species)
+            + f"{release} --species {species}"
         )
-        exit()
+        sys.exit(1)
 
-    # parse the re-coloring and re-naming
-
-    colors = {}
-    rename = {}
-
-    if args.rename is not None:
-        for i in args.rename:
-            pair = i.split(";")
-
-            assert len(pair) == 2, " did not properly specify --rename"
-
-            if pair[0] in rename:
-                agfusion_db.logger.warn(
-                    "WARNING - you rename {} twice.".format(pair[0])
-                )
-
-            rename[pair[0]] = pair[1]
-
-    if args.recolor is not None:
-        for i in args.recolor:
-            pair = i.split(";")
-
-            assert len(pair) == 2, " did not properly specify --colors"
-
-            if pair[0] in colors:
-                agfusion_db.logger.warn(
-                    "You specified colors for {} twice.".format(pair[0])
-                )
-
-            if pair[0] in rename:
-                colors[rename[pair[0]]] = pair[1]
-            else:
-                colors[pair[0]] = pair[1]
+    colors, rename = parse_names_and_colors(args, agfusion_db)
 
     # check image file type is valid
 
     if args.type not in ["png", "pdf", "jpeg"]:
-        agfusion_db.logger.error(
-            "ERROR - provided an incorrect image file type: {}.".format(args.type)
-        )
-        exit()
+        agfusion_db.logger.error(f"ERROR - provided an incorrect image file type: {args.type}.")
+        sys.exit(1)
 
     if args.subparser_name == "annotate":
         annotate(
