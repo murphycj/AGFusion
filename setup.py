@@ -1,23 +1,24 @@
-import os
-import re
-import shutil
-import site
+"""
+AGFusion is a python package to annotate and visualize gene fusions.
+"""
 
-from setuptools import setup, find_packages
+import re
+
+from setuptools import find_packages, setup
 
 VERSIONFILE = "agfusion/_version.py"
-verstrline = open(VERSIONFILE, "rt").read()
+version = open(VERSIONFILE, "rt", encoding="utf8").read()
 VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
-mo = re.search(VSRE, verstrline, re.M)
+mo = re.search(VSRE, version, re.M)
 if mo:
-    verstr = mo.group(1)
+    version = mo.group(1)
 else:
-    raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
+    raise RuntimeError(f"Unable to find version string in {VERSIONFILE}.")
 
-README = open("README.md").read()
+README = open("README.md", encoding="utf8").read()
 
 setup(
-    version=verstr,
+    version=version,
     name="agfusion",
     packages=find_packages(),
     description="Python package to annotate and visualize gene fusions.",

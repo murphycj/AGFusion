@@ -22,3 +22,12 @@ repos:
           "-rn", # Only display messages
           "-sn", # Don't display the score
         ]
+    - id: isort
+      name: iSort - Sorts imports.
+      description: Sorts your import for you.
+      entry: isort
+      language: python
+      types: [python]
+      require_serial: true
+      additional_dependencies:
+        - isort
