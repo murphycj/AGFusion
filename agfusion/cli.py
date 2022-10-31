@@ -35,7 +35,7 @@ def list_available_databases():
                     shortcut.append(genome)
             shortcut = ",".join(shortcut)
             print("{species:<10}\t\t{release:<5}\t\t{shortcut:<20}")
-    sys.exit(1)
+    sys.exit(0)
 
 
 def downloaddb(args):
@@ -66,7 +66,7 @@ def downloaddb(args):
     try:
         response = urlopen(db_url)
     except HTTPError:
-        print(f"Was unable to downloade the file {db_url}!")
+        print(f"Was unable to download the file {db_url}!")
         sys.exit(1)
 
     fout = open(file_path, "wb")
@@ -552,13 +552,13 @@ def main():
 
     if args.subparser_name == "build":
         builddb(args)
-        sys.exit(1)
+        sys.exit(0)
     elif args.subparser_name == "download":
         if args.available:
             list_available_databases()
         else:
             downloaddb(args)
-        sys.exit(1)
+        sys.exit(0)
 
     # single or batch mode
 
