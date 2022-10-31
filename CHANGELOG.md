@@ -1,3 +1,7 @@
+# Unreleased
+- Added CI/CD.
+- Added black and pylint for code formatting.
+
 # Version 1.25
 - Fix README.
 

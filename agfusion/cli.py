@@ -153,8 +153,8 @@ def batch_mode(args, agfusion_db, pyensembl_data, rename, colors):
     else:
         agfusion_db.logger.warn(f"Output directory {args.out} already exists! Overwriting...")
 
-    if args.algorithm in parsers:
-        for fusion in parsers[args.algorithm](args.file, agfusion_db.logger):
+    if args.algorithm in parsers.parsers:
+        for fusion in parsers.parsers[args.algorithm](args.file, agfusion_db.logger):
 
             try:
                 annotate(
@@ -177,7 +177,7 @@ def batch_mode(args, agfusion_db, pyensembl_data, rename, colors):
             except exceptions.TooManyGenesException as error:
                 agfusion_db.logger.error(error)
     else:
-        available = ",".join(parsers.keys())
+        available = ",".join(parsers.parsers.keys())
         agfusion_db.logger.error(
             (
                 f"'{args.algorithm}' is not an available option for -a! Choose one of the "
@@ -411,7 +411,7 @@ def build_cli():
         type=str,
         required=True,
         help="The fusion-finding algorithm. Can be one of the following: "
-        + ", ".join(parsers.keys())
+        + ", ".join(parsers.parsers.keys())
         + ".",
     )
     add_common_flags(batch_parser)

@@ -10,3 +10,4 @@ agfusion.egg-info/
 dist/
 *pyc
 build/
+*.db

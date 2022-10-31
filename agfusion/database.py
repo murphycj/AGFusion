@@ -3,12 +3,16 @@
 import logging
 import sqlite3
 import sys
-from os.path import abspath, exists, join, utils
+from os.path import abspath, exists, join
+
+from agfusion import utils
+
+logger = logging.getLogger("AGFusion")
 
 try:
     import MySQLdb
 except ImportError:
-    print("Could not import MySQLdb.")
+    logger.debug("Could not import MySQLdb.")
 
 
 class AGFusionDB:

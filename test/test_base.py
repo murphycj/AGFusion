@@ -5,7 +5,6 @@ from os.path import abspath, curdir, join
 
 import pyensembl
 from Bio import Seq, SeqIO
-from Bio.Alphabet import generic_dna
 
 from agfusion import database, model, parsers
 
@@ -47,7 +46,7 @@ class TestSequencePredictionHuman(unittest.TestCase):
         # fusion.save_images('DLG1-BRAF_mouse')
 
         test_cds = open("./data/test-human-case-0.txt", "r").read()
-        test_protein = Seq.Seq(test_cds, generic_dna).translate()
+        test_protein = Seq.Seq(test_cds, {"molecule_type": "DNA"}).translate()
         test_protein = test_protein[0 : test_protein.find("*")]
 
         trans = fusion.transcripts["ENST00000283206-ENST00000295408"]
@@ -80,7 +79,7 @@ class TestSequencePredictionHuman(unittest.TestCase):
         # fusion.save_images('DLG1-BRAF_mouse')
 
         test_cds = open("./data/test-human-case-2.txt", "r").read()
-        test_protein = Seq.Seq(test_cds, generic_dna).translate()
+        test_protein = Seq.Seq(test_cds, {"molecule_type": "DNA"}).translate()
         test_protein = test_protein[0 : test_protein.find("*")]
 
         trans = fusion.transcripts["ENST00000283206-ENST00000295408"]
@@ -113,7 +112,7 @@ class TestSequencePredictionHuman(unittest.TestCase):
         # fusion.save_images('DLG1-BRAF_mouse')
 
         test_cds = open("./data/test-human-case-3.txt", "r").read()
-        test_protein = Seq.Seq(test_cds, generic_dna).translate()
+        test_protein = Seq.Seq(test_cds, {"molecule_type": "DNA"}).translate()
         test_protein = test_protein[0 : test_protein.find("*")]
 
         trans = fusion.transcripts["ENST00000283206-ENST00000295408"]
@@ -464,7 +463,7 @@ class TestFusionCatcher(unittest.TestCase):
             "Lrrc8d-Gbp11",
             "C920009B18Rik-H60b",
         ]
-        for fusion in parsers["fusioncatcher"](
+        for fusion in parsers.parsers["fusioncatcher"](
             "./data/FusionsFindingAlgorithms/FusionCatcher/final-list_candidate-fusion-genes.txt",
             db.logger,
         ):
@@ -497,7 +496,7 @@ class TestSTARFusion(unittest.TestCase):
             "Lrrc8d-Gbp11",
             "C920009B18Rik-H60b",
         ]
-        for fusion in parsers["fusioncatcher"](
+        for fusion in parsers.parsers["fusioncatcher"](
             "./data/FusionsFindingAlgorithms/FusionCatcher/final-list_candidate-fusion-genes.txt",
             db.logger,
         ):

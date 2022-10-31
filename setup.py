@@ -6,7 +6,7 @@ import re
 
 from setuptools import find_packages, setup
 
-VERSIONFILE = "agfusion/_version.py"
+VERSIONFILE = "agfusion/version.py"
 version = open(VERSIONFILE, "rt", encoding="utf8").read()
 VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
 mo = re.search(VSRE, version, re.M)

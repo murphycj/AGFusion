@@ -7,7 +7,6 @@ import re
 import sys
 
 from Bio import Seq, SeqIO, SeqRecord, SeqUtils
-from Bio.Alphabet import generic_dna, generic_protein
 
 from agfusion import exceptions, plot, utils
 
@@ -46,12 +45,12 @@ class _Gene:
         noncanonical : bool
         """
 
-        if isinstance(genes) == str:
+        if isinstance(genes, str):
             genes = [genes]
-        elif isinstance(genes) != list:
+        elif not isinstance(genes, list):
             db.logger.error(f"parameter 'gene' to _Gene is not string or list: {genes}")
             sys.exit(1)
-        if isinstance(junction) != int:
+        if not isinstance(junction, int):
             db.logger.error(f"parameter 'junction' to _Gene is not int: {junction}")
             sys.exit(1)
 
@@ -579,12 +578,12 @@ class Fusion:
                         + "*"
                         + temp[transcript.transcript_cdna_junction_5prime :]
                     )
-                    transcript.cdna.seq = Seq.Seq(temp, generic_dna)
+                    transcript.cdna.seq = Seq.Seq(temp, {"molecule_type": "DNA"})
 
                 SeqIO.write(transcript.cdna, fout, "fasta")
             else:
                 cdna = SeqRecord.SeqRecord(
-                    Seq.Seq("", generic_dna),
+                    Seq.Seq("", {"molecule_type": "DNA"}),
                     id=transcript.name,
                     name=transcript.name,
                     description="No cDNA, fusion junction outside transcript(s) boundary",
@@ -629,7 +628,7 @@ class Fusion:
                         + "*"
                         + temp[transcript.transcript_cds_junction_5prime :]
                     )
-                    transcript.cds.seq = Seq.Seq(temp, generic_dna)
+                    transcript.cds.seq = Seq.Seq(temp, {"molecule_type": "DNA"})
 
                 SeqIO.write(transcript.cds, fout, "fasta")
 
@@ -671,7 +670,7 @@ class Fusion:
                         + "*"
                         + temp[transcript.transcript_protein_junction_5prime :]
                     )
-                    transcript.protein.seq = Seq.Seq(temp, generic_protein)
+                    transcript.protein.seq = Seq.Seq(temp, {"molecule_type": "protein"})
 
                 SeqIO.write(transcript.protein, fout, "fasta")
 
@@ -1191,7 +1190,7 @@ class FusionTranscript:
         seq_length = len(self.cds_5prime + self.cds_3prime)
 
         self.cds = SeqRecord.SeqRecord(
-            Seq.Seq(seq, generic_dna),
+            Seq.Seq(seq, {"molecule_type": "DNA"}),
             id=self.name,
             name=self.name,
             description=f"length: {seq_length}, "
@@ -1410,7 +1409,7 @@ class FusionTranscript:
             seq_length = "NA"
 
         self.cdna = SeqRecord.SeqRecord(
-            Seq.Seq(seq, generic_dna),
+            Seq.Seq(seq, {"molecule_type": "DNA"}),
             id=self.name,
             name=self.name,
             description="length=" + seq_length,
