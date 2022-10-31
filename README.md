@@ -211,7 +211,7 @@ You can view all supported species and ensembl releases with ```agfusion downloa
 
 # Troubleshooting
 
-**Problem:** I get a warning message like the following:
+**(1) Problem:** I get a warning message like the following:
 
 
 > 2017-08-28 15:02:51,377 - AGFusion - WARNING - No cDNA sequence available for AC073283.4! Will not print cDNA sequence for the AC073283.4-MSH2 fusion. You might be working with an outdated pyensembl. Update the package and rerun 'pyensembl install'
@@ -224,6 +224,20 @@ cd pyensembl
 sudo pip install .
 pyensembl install --release (your-release) --species (your-species)
 ```
+
+**(2) Problem:** Cannot run `agfusion download` due to `URLError`.
+When downloading the database you may run into this error:
+```
+urllib.error.URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1108)>
+```
+
+**Solution:**
+A potential solution for Mac users is from [here](https://stackoverflow.com/questions/27835619/urllib-and-ssl-certificate-verify-failed-error). You can run the following command:
+
+```
+/Applications/Python\ 3.8/Install\ Certificates.command
+```
+
 
 # License
 
