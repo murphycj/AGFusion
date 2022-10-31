@@ -17,7 +17,7 @@ from urllib.request import urlopen
 
 import pyensembl
 
-from agfusion import database, exceptions, model, parsers, utils, version
+from agfusion import __version__, database, exceptions, model, parsers, utils
 
 
 def list_available_databases():
@@ -495,7 +495,7 @@ def build_cli():
 
     # agfusion version number
 
-    parser.add_argument("-v", "--version", action="version", version=version.__version__)
+    parser.add_argument("-v", "--version", action="version", version=__version__)
     args = parser.parse_args()
 
     return args
