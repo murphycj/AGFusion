@@ -1,6 +1,8 @@
 # Unreleased
-- Added CI/CD.
-- Added black and pylint for code formatting.
+- Add Github actions for CI/CD and deploying to PyPi.
+- Fix unit tests.
+- Add black and pylint code formatting.
+- Update README.
 
 # Version 1.25
 - Fix README.
