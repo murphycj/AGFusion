@@ -24,4 +24,5 @@ jobs:
           pyensembl install --release 75 --species homo_sapiens
       - name: Test with pytest
         run: |
+          cd test
           pytest
