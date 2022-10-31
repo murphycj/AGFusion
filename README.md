@@ -1,3 +1,9 @@
+[![test](https://img.shields.io/github/v/release/murphycj/agfusion)](https://img.shields.io/github/v/release/murphycj/agfusion)
+[![test](https://img.shields.io/github/last-commit/murphycj/agfusion)](https://img.shields.io/github/last-commit/murphycj/agfusion)
+[![Downloads](https://pepy.tech/badge/agfusion)](https://pepy.tech/project/agfusion)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
+
+
 # Annotate Gene Fusion (AGFusion)
 **Checkout the webapp:** [https://www.agfusion.app](https://www.agfusion.app)
 
