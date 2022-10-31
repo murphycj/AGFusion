@@ -1,8 +1,8 @@
 # Unreleased
-- Add Github actions for CI/CD and deploying to PyPi.
-- Fix unit tests.
-- Add black and pylint code formatting.
-- Update README.
+- Add Github actions for CI/CD and deploying to PyPi (#43).
+- Fix unit tests (#43).
+- Add black and pylint code formatting (#43).
+- Update README (#43).
 
 # Version 1.25
 - Fix README.
