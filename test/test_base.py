@@ -45,11 +45,11 @@ class TestSequencePredictionHuman(unittest.TestCase):
         fusion.save_proteins("TMEM87B-MERTK-case0")
         # fusion.save_images('DLG1-BRAF_mouse')
 
-        test_cds = open("./data/test-human-case-0.txt", "r").read()
-        test_protein = Seq.Seq(test_cds, {"molecule_type": "DNA"}).translate()
+        test_cds = open("./data/test-human-case-0.txt", "r").read().strip()
+        test_protein = Seq.Seq(test_cds).translate()
         test_protein = test_protein[0 : test_protein.find("*")]
 
-        trans = fusion.transcripts["ENST00000283206-ENST00000295408"]
+        trans = fusion.transcripts["ENST00000283206_ENST00000295408"]
 
         assert test_cds == trans.cds.seq, "cds is wrongly predicted for human fusion (case 0)"
         assert (
@@ -78,11 +78,11 @@ class TestSequencePredictionHuman(unittest.TestCase):
         fusion.save_proteins("TMEM87B-MERTK-case2")
         # fusion.save_images('DLG1-BRAF_mouse')
 
-        test_cds = open("./data/test-human-case-2.txt", "r").read()
-        test_protein = Seq.Seq(test_cds, {"molecule_type": "DNA"}).translate()
+        test_cds = open("./data/test-human-case-2.txt", "r").read().strip()
+        test_protein = Seq.Seq(test_cds).translate()
         test_protein = test_protein[0 : test_protein.find("*")]
 
-        trans = fusion.transcripts["ENST00000283206-ENST00000295408"]
+        trans = fusion.transcripts["ENST00000283206_ENST00000295408"]
 
         assert test_cds == trans.cds.seq, "cds is wrongly predicted for human fusion (case 2)"
         assert (
@@ -111,11 +111,11 @@ class TestSequencePredictionHuman(unittest.TestCase):
         fusion.save_proteins("TMEM87B-MERTK-case3")
         # fusion.save_images('DLG1-BRAF_mouse')
 
-        test_cds = open("./data/test-human-case-3.txt", "r").read()
-        test_protein = Seq.Seq(test_cds, {"molecule_type": "DNA"}).translate()
+        test_cds = open("./data/test-human-case-3.txt", "r").read().strip()
+        test_protein = Seq.Seq(test_cds).translate()
         test_protein = test_protein[0 : test_protein.find("*")]
 
-        trans = fusion.transcripts["ENST00000283206-ENST00000295408"]
+        trans = fusion.transcripts["ENST00000283206_ENST00000295408"]
 
         assert test_cds == trans.cds.seq, "cds is wrongly predicted for human fusion (case 3)"
         assert (
@@ -155,12 +155,12 @@ class TestSequencePrediction(unittest.TestCase):
         test_cds = SeqIO.parse(open("./data/Dlg1-Braf_cds_manual.fa", "r"), "fasta")
 
         expected_transcript_combinations = [
-            "ENSMUST00000100001-ENSMUST00000002487",
-            "ENSMUST00000064477-ENSMUST00000002487",
-            "ENSMUST00000115205-ENSMUST00000002487",
-            "ENSMUST00000023454-ENSMUST00000002487",
-            "ENSMUST00000115201-ENSMUST00000002487",
-            "ENSMUST00000132176-ENSMUST00000002487",
+            "ENSMUST00000100001_ENSMUST00000002487",
+            "ENSMUST00000064477_ENSMUST00000002487",
+            "ENSMUST00000115205_ENSMUST00000002487",
+            "ENSMUST00000023454_ENSMUST00000002487",
+            "ENSMUST00000115201_ENSMUST00000002487",
+            "ENSMUST00000132176_ENSMUST00000002487",
         ]
 
         assert (
@@ -200,7 +200,7 @@ class TestSequencePrediction(unittest.TestCase):
         )
 
         assert (
-            str(fusion.transcripts["ENSMUST00000002487-ENSMUST00000002487"].cds.seq) == cds
+            str(fusion.transcripts["ENSMUST00000002487_ENSMUST00000002487"].cds.seq) == cds
         ), "Test 2: CDS wrong"
 
     def test_3(self):
@@ -223,7 +223,7 @@ class TestSequencePrediction(unittest.TestCase):
         cds = "ATGCCGGTCCGGAAGCAAGAATTTGCAGCCTTCAAGTAG"
 
         assert (
-            str(fusion.transcripts["ENSMUST00000064477-ENSMUST00000002487"].cds.seq) == cds
+            str(fusion.transcripts["ENSMUST00000064477_ENSMUST00000002487"].cds.seq) == cds
         ), "Test 3: CDS wrong"
 
     def test_mouse_4(self):
@@ -253,7 +253,7 @@ class TestSequencePrediction(unittest.TestCase):
         )
 
         assert (
-            str(fusion.transcripts["ENSMUST00000064477-ENSMUST00000064477"].cdna.seq) == cdna
+            str(fusion.transcripts["ENSMUST00000064477_ENSMUST00000064477"].cdna.seq) == cdna
         ), "Test 4: cDNA wrong"
 
     def test_mouse_5(self):
@@ -281,7 +281,7 @@ class TestSequencePrediction(unittest.TestCase):
         )
 
         assert (
-            str(fusion.transcripts["ENSMUST00000064477-ENSMUST00000002487"].cdna.seq) == cdna
+            str(fusion.transcripts["ENSMUST00000064477_ENSMUST00000002487"].cdna.seq) == cdna
         ), "Test 10: incorrect cDNA"
 
 
@@ -305,11 +305,11 @@ class TestEffectPrediciton(unittest.TestCase):
         )
 
         assert (
-            fusion.transcripts["ENSMUST00000064477-ENSMUST00000002487"].effect_5prime
+            fusion.transcripts["ENSMUST00000064477_ENSMUST00000002487"].effect_5prime
             == "CDS (start)"
         ), "Test 5: not CDS start"
         assert (
-            fusion.transcripts["ENSMUST00000064477-ENSMUST00000002487"].effect_3prime == "CDS"
+            fusion.transcripts["ENSMUST00000064477_ENSMUST00000002487"].effect_3prime == "CDS"
         ), "Test 5: not CDS"
 
     def test_mouse_2(self):
@@ -327,11 +327,11 @@ class TestEffectPrediciton(unittest.TestCase):
         )
 
         assert (
-            fusion.transcripts["ENSMUST00000064477-ENSMUST00000002487"].effect_5prime
+            fusion.transcripts["ENSMUST00000064477_ENSMUST00000002487"].effect_5prime
             == "5UTR (end)"
         ), "Test 6: Not found in 5'UTR-end"
         assert (
-            fusion.transcripts["ENSMUST00000064477-ENSMUST00000002487"].effect_3prime
+            fusion.transcripts["ENSMUST00000064477_ENSMUST00000002487"].effect_3prime
             == "3UTR (start)"
         ), "Test 6: Not found in at 3'UTR beginning"
 
@@ -349,10 +349,10 @@ class TestEffectPrediciton(unittest.TestCase):
             noncanonical=True,
         )
         assert (
-            fusion.transcripts["ENSMUST00000064477-ENSMUST00000002487"].effect_5prime == "5UTR"
+            fusion.transcripts["ENSMUST00000064477_ENSMUST00000002487"].effect_5prime == "5UTR"
         ), "Test 7: Not found in 5'UTR"
         assert (
-            fusion.transcripts["ENSMUST00000064477-ENSMUST00000002487"].effect_3prime
+            fusion.transcripts["ENSMUST00000064477_ENSMUST00000002487"].effect_3prime
             == "3UTR (start)"
         ), "Test 7: Not found in at 3'UTR beginning"
 
@@ -371,11 +371,11 @@ class TestEffectPrediciton(unittest.TestCase):
         )
 
         assert (
-            fusion.transcripts["ENSMUST00000064477-ENSMUST00000064477"].effect_5prime
+            fusion.transcripts["ENSMUST00000064477_ENSMUST00000064477"].effect_5prime
             == "5UTR (end)"
         ), "Test 8: Not found in 5'UTR-end"
         assert (
-            fusion.transcripts["ENSMUST00000064477-ENSMUST00000064477"].effect_3prime
+            fusion.transcripts["ENSMUST00000064477_ENSMUST00000064477"].effect_3prime
             == "3UTR (start)"
         ), "Test 8: Not found in at 3'UTR beginning"
 
@@ -394,11 +394,11 @@ class TestEffectPrediciton(unittest.TestCase):
         )
 
         assert (
-            fusion.transcripts["ENSMUST00000002487-ENSMUST00000002487"].effect_5prime
+            fusion.transcripts["ENSMUST00000002487_ENSMUST00000002487"].effect_5prime
             == "5UTR (end)"
         ), "Test 9: Not found in 5'UTR-end"
         assert (
-            fusion.transcripts["ENSMUST00000002487-ENSMUST00000002487"].effect_3prime
+            fusion.transcripts["ENSMUST00000002487_ENSMUST00000002487"].effect_3prime
             == "3UTR (start)"
         ), "Test 9: Not found in at 3'UTR beginning"
 
@@ -415,7 +415,7 @@ class TestEffectPrediciton(unittest.TestCase):
             protein_databases=["pfam", "tmhmm"],
             noncanonical=True,
         )
-        transcript = fusion.transcripts["ENSMUST00000023454-ENSMUST00000002487"]
+        transcript = fusion.transcripts["ENSMUST00000023454_ENSMUST00000002487"]
 
         assert (
             transcript.effect_5prime == "intron (cds)"
@@ -437,7 +437,7 @@ class TestEffectPrediciton(unittest.TestCase):
             protein_databases=["pfam", "tmhmm"],
             noncanonical=True,
         )
-        transcript = fusion.transcripts["ENSMUST00000023454-ENSMUST00000002487"]
+        transcript = fusion.transcripts["ENSMUST00000023454_ENSMUST00000002487"]
 
         assert (
             transcript.effect_5prime == "intron (before cds)"
@@ -454,14 +454,14 @@ class TestFusionCatcher(unittest.TestCase):
         """Test basic parsing."""
 
         all_fusions = [
-            "Adamts9-Ano2",
-            "Trp53-Sat2",
-            "1700112E06Rik-Runx1",
-            "Runx1-1700112E06Rik",
-            "Rell1-Lhfpl3",
-            "Phc1-Smarca2",
-            "Lrrc8d-Gbp11",
-            "C920009B18Rik-H60b",
+            "Adamts9_Ano2",
+            "Trp53_Sat2",
+            "1700112E06Rik_Runx1",
+            "Runx1_1700112E06Rik",
+            "Rell1_Lhfpl3",
+            "Phc1_Smarca2",
+            "Lrrc8d_Gbp11",
+            "C920009B18Rik_H60b",
         ]
         for fusion in parsers.parsers["fusioncatcher"](
             "./data/FusionsFindingAlgorithms/FusionCatcher/final-list_candidate-fusion-genes.txt",
@@ -487,14 +487,14 @@ class TestSTARFusion(unittest.TestCase):
         """Test basic parsing."""
 
         all_fusions = [
-            "Adamts9-Ano2",
-            "Trp53-Sat2",
-            "1700112E06Rik-Runx1",
-            "Runx1-1700112E06Rik",
-            "Rell1-Lhfpl3",
-            "Phc1-Smarca2",
-            "Lrrc8d-Gbp11",
-            "C920009B18Rik-H60b",
+            "Adamts9_Ano2",
+            "Trp53_Sat2",
+            "1700112E06Rik_Runx1",
+            "Runx1_1700112E06Rik",
+            "Rell1_Lhfpl3",
+            "Phc1_Smarca2",
+            "Lrrc8d_Gbp11",
+            "C920009B18Rik_H60b",
         ]
         for fusion in parsers.parsers["fusioncatcher"](
             "./data/FusionsFindingAlgorithms/FusionCatcher/final-list_candidate-fusion-genes.txt",

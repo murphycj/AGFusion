@@ -146,7 +146,7 @@ class _Gene:
             pass
         else:
             if self.provided_transcript and noncanonical:
-                self.db_pointer.logger.warn(
+                self.db_pointer.logger.warning(
                     "You provided a transcript ID as well as specified "
                     "--noncanonical flag. Will process all the gene's transcripts."
                 )
@@ -578,12 +578,12 @@ class Fusion:
                         + "*"
                         + temp[transcript.transcript_cdna_junction_5prime :]
                     )
-                    transcript.cdna.seq = Seq.Seq(temp, {"molecule_type": "DNA"})
+                    transcript.cdna.seq = Seq.Seq(temp)
 
                 SeqIO.write(transcript.cdna, fout, "fasta")
             else:
                 cdna = SeqRecord.SeqRecord(
-                    Seq.Seq("", {"molecule_type": "DNA"}),
+                    Seq.Seq(""),
                     id=transcript.name,
                     name=transcript.name,
                     description="No cDNA, fusion junction outside transcript(s) boundary",
@@ -628,7 +628,7 @@ class Fusion:
                         + "*"
                         + temp[transcript.transcript_cds_junction_5prime :]
                     )
-                    transcript.cds.seq = Seq.Seq(temp, {"molecule_type": "DNA"})
+                    transcript.cds.seq = Seq.Seq(temp)
 
                 SeqIO.write(transcript.cds, fout, "fasta")
 
@@ -670,7 +670,7 @@ class Fusion:
                         + "*"
                         + temp[transcript.transcript_protein_junction_5prime :]
                     )
-                    transcript.protein.seq = Seq.Seq(temp, {"molecule_type": "protein"})
+                    transcript.protein.seq = Seq.Seq(temp)
 
                 SeqIO.write(transcript.protein, fout, "fasta")
 
@@ -1098,7 +1098,7 @@ class FusionTranscript:
         # check if CDS's length is multiple of 3, if not then print warning
 
         if (len(self.cds.seq) % 3) != 0:
-            self.db_pointer.logger.warn("Length of fusion isoform CDS is not a multiple of 3!")
+            self.db_pointer.logger.warning("Length of fusion isoform CDS is not a multiple of 3!")
 
         # translate CDS into protein and remove everything after the stop codon
 
@@ -1116,7 +1116,7 @@ class FusionTranscript:
 
         # predict molecular weight
 
-        self.molecular_weight = SeqUtils.molecular_weight(protein_seq) / 1000.0
+        self.molecular_weight = SeqUtils.molecular_weight(protein_seq, seq_type="protein") / 1000.0
 
         # convert to a sequence record
 
@@ -1190,7 +1190,7 @@ class FusionTranscript:
         seq_length = len(self.cds_5prime + self.cds_3prime)
 
         self.cds = SeqRecord.SeqRecord(
-            Seq.Seq(seq, {"molecule_type": "DNA"}),
+            Seq.Seq(seq),
             id=self.name,
             name=self.name,
             description=f"length: {seq_length}, "
@@ -1289,7 +1289,7 @@ class FusionTranscript:
         try:
             self.cdna_5prime = self.transcript1.sequence[0 : self.transcript_cdna_junction_5prime]
         except TypeError:
-            self.db_pointer.logger.warn(
+            self.db_pointer.logger.warning(
                 f"No cDNA sequence available for {self.gene5prime.gene.name}! "
                 f"Will not print cDNA sequence for the {self.gene_names} fusion. "
                 "You might be working with an outdated pyensembl. "
@@ -1394,7 +1394,7 @@ class FusionTranscript:
                     self.transcript_cdna_junction_3prime : :
                 ]
             except TypeError:
-                self.db_pointer.logger.warn(
+                self.db_pointer.logger.warning(
                     f"No cDNA sequence available for {self.gene3prime.gene.name}! "
                     f"Will not print cDNA sequence for the {self.gene_names} fusion. "
                     "You might be working with an outdated pyensembl. "
@@ -1409,7 +1409,7 @@ class FusionTranscript:
             seq_length = "NA"
 
         self.cdna = SeqRecord.SeqRecord(
-            Seq.Seq(seq, {"molecule_type": "DNA"}),
+            Seq.Seq(seq),
             id=self.name,
             name=self.name,
             description="length=" + seq_length,
