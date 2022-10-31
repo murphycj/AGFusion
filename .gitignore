@@ -4,8 +4,11 @@ doc/_static/**
 test/DLG1-BRAF/*
 test/*.db
 test/*.sh
-test/data
+test/TMEM*
+test/DLG1*
 submit_to_pip.sh
 agfusion.egg-info/
 dist/
 *pyc
+build/
+*.db

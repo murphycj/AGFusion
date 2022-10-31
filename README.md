@@ -1,7 +1,14 @@
+[![test](https://img.shields.io/github/v/release/murphycj/agfusion)](https://img.shields.io/github/v/release/murphycj/agfusion)
+[![test](https://img.shields.io/github/last-commit/murphycj/agfusion)](https://img.shields.io/github/last-commit/murphycj/agfusion)
+[![Downloads](https://pepy.tech/badge/agfusion)](https://pepy.tech/project/agfusion)
+[![Unit tests](https://github.com/murphycj/AGFusion/actions/workflows/test.yaml/badge.svg)](https://github.com/murphycj/AGFusion/actions/workflows/test.yaml)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
+
+
 # Annotate Gene Fusion (AGFusion)
 **Checkout the webapp:** [https://www.agfusion.app](https://www.agfusion.app)
 
-AGFusion is a python package for annotating gene fusions from the human or mouse genomes. AGFusion simply needs the reference genome, the two gene partners, and the fusion junction coordinates as input, and outputs the following:
+AGFusion (pronounced 'A G Fusion') is a python package for annotating gene fusions from the human or mouse genomes. AGFusion simply needs the reference genome, the two gene partners, and the fusion junction coordinates as input, and outputs the following:
 
 * FASTA files of cDNA, CDS, and protein sequences.
 * Visualizes the protein domain and exon architectures of the fusion transcripts.
