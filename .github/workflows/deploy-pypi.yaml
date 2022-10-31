@@ -1,4 +1,4 @@
-name: Publish MultiQC to PyPI
+name: Publish AGFusion to PyPI
 on:
   release:
     types: [published]
