@@ -1,30 +1,36 @@
-from os.path import join, expanduser, curdir, abspath
+"""Unit tests.
+"""
 import unittest
-import agfusion
-from agfusion import utils
+from os.path import abspath, curdir, join
+
 import pyensembl
-from Bio import SeqIO, Seq, Alphabet
+from Bio import Seq, SeqIO
+from Bio.Alphabet import generic_dna
+
+from agfusion import database, model, parsers
 
 data = pyensembl.EnsemblRelease(84, "mouse")
-db = agfusion.AGFusionDB(abspath(join(curdir, "agfusion.mus_musculus.84.db")))
+db = database.AGFusionDB(abspath(join(curdir, "agfusion.mus_musculus.84.db")))
 db.build = "mus_musculus_84"
 
 data_human = pyensembl.EnsemblRelease(75, "human")
-db_human = agfusion.AGFusionDB(abspath(join(curdir, "agfusion.homo_sapiens.75.db")))
+db_human = database.AGFusionDB(abspath(join(curdir, "agfusion.homo_sapiens.75.db")))
 db_human.build = "homo_sapiens_75"
 
 
-class TestSequencePrediction_human(unittest.TestCase):
+class TestSequencePredictionHuman(unittest.TestCase):
+    """Test correctly predict human fusions"""
+
     def test_1(self):
         """
-        test CDS and prortein correct for junction that is on exon boundaries and
+        test CDS and protein correct for junction that is on exon boundaries and
         produces an out-of-frame protein.
         """
 
         # test the dna and protein coding sequences are correct by comparing
         # with manually generally sequences
 
-        fusion = agfusion.Fusion(
+        fusion = model.Fusion(
             gene5prime="TMEM87B",
             gene5primejunction=112843681,
             gene3prime="MERTK",
@@ -41,25 +47,23 @@ class TestSequencePrediction_human(unittest.TestCase):
         # fusion.save_images('DLG1-BRAF_mouse')
 
         test_cds = open("./data/test-human-case-0.txt", "r").read()
-        test_protein = Seq.Seq(test_cds, alphabet=Alphabet.generic_dna).translate()
+        test_protein = Seq.Seq(test_cds, generic_dna).translate()
         test_protein = test_protein[0 : test_protein.find("*")]
 
         trans = fusion.transcripts["ENST00000283206-ENST00000295408"]
 
-        assert (
-            test_cds == trans.cds.seq
-        ), "cds is wrongly predicted for human fusion (case 0)"
+        assert test_cds == trans.cds.seq, "cds is wrongly predicted for human fusion (case 0)"
         assert (
             test_protein == trans.protein.seq
         ), "protein is wrongly predicted for human fusion (case 0)"
 
     def test_2(self):
-        """ """
+        """
+        test the dna and protein coding sequences are correct by comparing
+        with manually generally sequences
+        """
 
-        # test the dna and protein coding sequences are correct by comparing
-        # with manually generally sequences
-
-        fusion = agfusion.Fusion(
+        fusion = model.Fusion(
             gene5prime="TMEM87B",
             gene5primejunction=112843681,
             gene3prime="MERTK",
@@ -76,25 +80,23 @@ class TestSequencePrediction_human(unittest.TestCase):
         # fusion.save_images('DLG1-BRAF_mouse')
 
         test_cds = open("./data/test-human-case-2.txt", "r").read()
-        test_protein = Seq.Seq(test_cds, alphabet=Alphabet.generic_dna).translate()
+        test_protein = Seq.Seq(test_cds, generic_dna).translate()
         test_protein = test_protein[0 : test_protein.find("*")]
 
         trans = fusion.transcripts["ENST00000283206-ENST00000295408"]
 
-        assert (
-            test_cds == trans.cds.seq
-        ), "cds is wrongly predicted for human fusion (case 2)"
+        assert test_cds == trans.cds.seq, "cds is wrongly predicted for human fusion (case 2)"
         assert (
             test_protein == trans.protein.seq
         ), "protein is wrongly predicted for human fusion (case 2)"
 
     def test_3(self):
-        """ """
+        """
+        test the dna and protein coding sequences are correct by comparing
+        with manually generally sequences
+        """
 
-        # test the dna and protein coding sequences are correct by comparing
-        # with manually generally sequences
-
-        fusion = agfusion.Fusion(
+        fusion = model.Fusion(
             gene5prime="TMEM87B",
             gene5primejunction=112843681,
             gene3prime="MERTK",
@@ -111,20 +113,20 @@ class TestSequencePrediction_human(unittest.TestCase):
         # fusion.save_images('DLG1-BRAF_mouse')
 
         test_cds = open("./data/test-human-case-3.txt", "r").read()
-        test_protein = Seq.Seq(test_cds, alphabet=Alphabet.generic_dna).translate()
+        test_protein = Seq.Seq(test_cds, generic_dna).translate()
         test_protein = test_protein[0 : test_protein.find("*")]
 
         trans = fusion.transcripts["ENST00000283206-ENST00000295408"]
 
-        assert (
-            test_cds == trans.cds.seq
-        ), "cds is wrongly predicted for human fusion (case 3)"
+        assert test_cds == trans.cds.seq, "cds is wrongly predicted for human fusion (case 3)"
         assert (
             test_protein == trans.protein.seq
         ), "protein is wrongly predicted for human fusion (case 3)"
 
 
 class TestSequencePrediction(unittest.TestCase):
+    """Test correctly predict sequence content."""
+
     def test_1(self):
         """
         test CDS and cDNA correct for junction that is on exon boundaries and
@@ -134,7 +136,7 @@ class TestSequencePrediction(unittest.TestCase):
         # test the dna and protein coding sequences are correct by comparing
         # with manually generally sequences
 
-        fusion = agfusion.Fusion(
+        fusion = model.Fusion(
             gene5prime="ENSMUSG00000022770",
             gene5primejunction=31684294,
             gene3prime="ENSMUSG00000002413",
@@ -163,21 +165,17 @@ class TestSequencePrediction(unittest.TestCase):
         ]
 
         assert (
-            len(
-                set(fusion.transcripts.keys()).intersection(
-                    set(expected_transcript_combinations)
-                )
-            )
+            len(set(fusion.transcripts.keys()).intersection(set(expected_transcript_combinations)))
             == 6
         ), "Test 1: unexpected number protein coding transcripts."
 
         for seq in test_cdna:
             trans = fusion.transcripts[str(seq.id)]
-            assert seq.seq == trans.cdna.seq, "cDNA is wrongly predicted: %s" % seq.id
+            assert seq.seq == trans.cdna.seq, f"cDNA is wrongly predicted: {seq.id}"
 
         for seq in test_cds:
             trans = fusion.transcripts[str(seq.id)]
-            assert seq.seq == trans.cds.seq, "cds is wrongly predicted: %s" % seq.id
+            assert seq.seq == trans.cds.seq, f"cds is wrongly predicted: {seq.id}"
 
     def test_2(self):
         """
@@ -185,7 +183,7 @@ class TestSequencePrediction(unittest.TestCase):
         genes on reverse strand
         """
 
-        fusion = agfusion.Fusion(
+        fusion = model.Fusion(
             gene5prime="ENSMUSG00000002413",
             gene5primejunction=39725110,
             gene3prime="ENSMUSG00000002413",
@@ -203,8 +201,7 @@ class TestSequencePrediction(unittest.TestCase):
         )
 
         assert (
-            str(fusion.transcripts["ENSMUST00000002487-ENSMUST00000002487"].cds.seq)
-            == cds
+            str(fusion.transcripts["ENSMUST00000002487-ENSMUST00000002487"].cds.seq) == cds
         ), "Test 2: CDS wrong"
 
     def test_3(self):
@@ -213,7 +210,7 @@ class TestSequencePrediction(unittest.TestCase):
         one the forward and one gene on the reverse strand
         """
 
-        fusion = agfusion.Fusion(
+        fusion = model.Fusion(
             gene5prime="ENSMUSG00000022770",
             gene5primejunction=31664869,
             gene3prime="ENSMUSG00000002413",
@@ -227,8 +224,7 @@ class TestSequencePrediction(unittest.TestCase):
         cds = "ATGCCGGTCCGGAAGCAAGAATTTGCAGCCTTCAAGTAG"
 
         assert (
-            str(fusion.transcripts["ENSMUST00000064477-ENSMUST00000002487"].cds.seq)
-            == cds
+            str(fusion.transcripts["ENSMUST00000064477-ENSMUST00000002487"].cds.seq) == cds
         ), "Test 3: CDS wrong"
 
     def test_mouse_4(self):
@@ -236,7 +232,7 @@ class TestSequencePrediction(unittest.TestCase):
         Test cDNA correctly produced for junctions being in UTRs
         """
 
-        fusion = agfusion.Fusion(
+        fusion = model.Fusion(
             gene5prime="ENSMUSG00000022770",
             gene5primejunction=31664851,
             gene3prime="ENSMUSG00000022770",
@@ -258,13 +254,13 @@ class TestSequencePrediction(unittest.TestCase):
         )
 
         assert (
-            str(fusion.transcripts["ENSMUST00000064477-ENSMUST00000064477"].cdna.seq)
-            == cdna
+            str(fusion.transcripts["ENSMUST00000064477-ENSMUST00000064477"].cdna.seq) == cdna
         ), "Test 4: cDNA wrong"
 
     def test_mouse_5(self):
+        """Test transcript constructed correctly (mouse)"""
 
-        fusion = agfusion.Fusion(
+        fusion = model.Fusion(
             gene5prime="ENSMUSG00000022770",
             gene5primejunction=31664850,
             gene3prime="ENSMUSG00000002413",
@@ -286,18 +282,19 @@ class TestSequencePrediction(unittest.TestCase):
         )
 
         assert (
-            str(fusion.transcripts["ENSMUST00000064477-ENSMUST00000002487"].cdna.seq)
-            == cdna
+            str(fusion.transcripts["ENSMUST00000064477-ENSMUST00000002487"].cdna.seq) == cdna
         ), "Test 10: incorrect cDNA"
 
 
 class TestEffectPrediciton(unittest.TestCase):
+    """Test correctly predict junction location annotation and fusion effect."""
+
     def test_mouse_1(self):
         """
         Test that AGFusion determines if the effect on each individual transcript
         """
 
-        fusion = agfusion.Fusion(
+        fusion = model.Fusion(
             gene5prime="ENSMUSG00000022770",
             gene5primejunction=31664852,
             gene3prime="ENSMUSG00000002413",
@@ -313,13 +310,13 @@ class TestEffectPrediciton(unittest.TestCase):
             == "CDS (start)"
         ), "Test 5: not CDS start"
         assert (
-            fusion.transcripts["ENSMUST00000064477-ENSMUST00000002487"].effect_3prime
-            == "CDS"
+            fusion.transcripts["ENSMUST00000064477-ENSMUST00000002487"].effect_3prime == "CDS"
         ), "Test 5: not CDS"
 
     def test_mouse_2(self):
+        """Test junction location annotated"""
 
-        fusion = agfusion.Fusion(
+        fusion = model.Fusion(
             gene5prime="ENSMUSG00000022770",
             gene5primejunction=31664851,
             gene3prime="ENSMUSG00000002413",
@@ -340,8 +337,9 @@ class TestEffectPrediciton(unittest.TestCase):
         ), "Test 6: Not found in at 3'UTR beginning"
 
     def test_mouse_3(self):
+        """Test junction location annotated"""
 
-        fusion = agfusion.Fusion(
+        fusion = model.Fusion(
             gene5prime="ENSMUSG00000022770",
             gene5primejunction=31664850,
             gene3prime="ENSMUSG00000002413",
@@ -352,8 +350,7 @@ class TestEffectPrediciton(unittest.TestCase):
             noncanonical=True,
         )
         assert (
-            fusion.transcripts["ENSMUST00000064477-ENSMUST00000002487"].effect_5prime
-            == "5UTR"
+            fusion.transcripts["ENSMUST00000064477-ENSMUST00000002487"].effect_5prime == "5UTR"
         ), "Test 7: Not found in 5'UTR"
         assert (
             fusion.transcripts["ENSMUST00000064477-ENSMUST00000002487"].effect_3prime
@@ -361,8 +358,9 @@ class TestEffectPrediciton(unittest.TestCase):
         ), "Test 7: Not found in at 3'UTR beginning"
 
     def test_mouse_4(self):
+        """Test junction location annotated"""
 
-        fusion = agfusion.Fusion(
+        fusion = model.Fusion(
             gene5prime="ENSMUSG00000022770",
             gene5primejunction=31664851,
             gene3prime="ENSMUSG00000022770",
@@ -383,8 +381,9 @@ class TestEffectPrediciton(unittest.TestCase):
         ), "Test 8: Not found in at 3'UTR beginning"
 
     def test_mouse_5(self):
+        """Test junction location annotated"""
 
-        fusion = agfusion.Fusion(
+        fusion = model.Fusion(
             gene5prime="ENSMUSG00000002413",
             gene5primejunction=39725296,
             gene3prime="ENSMUSG00000002413",
@@ -405,8 +404,9 @@ class TestEffectPrediciton(unittest.TestCase):
         ), "Test 9: Not found in at 3'UTR beginning"
 
     def test_mouse_6(self):
+        """Test junction location annotated"""
 
-        fusion = agfusion.Fusion(
+        fusion = model.Fusion(
             gene5prime="ENSMUSG00000022770",
             gene5primejunction=31743271,
             gene3prime="ENSMUSG00000002413",
@@ -416,18 +416,19 @@ class TestEffectPrediciton(unittest.TestCase):
             protein_databases=["pfam", "tmhmm"],
             noncanonical=True,
         )
-        t = fusion.transcripts["ENSMUST00000023454-ENSMUST00000002487"]
+        transcript = fusion.transcripts["ENSMUST00000023454-ENSMUST00000002487"]
 
-        assert t.effect_5prime == "intron (cds)", (
-            "Test 11: incorrect 5' effect: %s" % t.effect_5prime
-        )
-        assert t.effect_3prime == "intron (cds)", (
-            "Test 11: incorrect 3' effect: %s" % t.effect_3prime
-        )
+        assert (
+            transcript.effect_5prime == "intron (cds)"
+        ), f"Test 11: incorrect 5' effect: {transcript.effect_5prime}"
+        assert (
+            transcript.effect_3prime == "intron (cds)"
+        ), f"Test 11: incorrect 3' effect: {transcript.effect_3prime}"
 
     def test_mouse_7(self):
+        """Test junction location annotated"""
 
-        fusion = agfusion.Fusion(
+        fusion = model.Fusion(
             gene5prime="ENSMUSG00000022770",
             gene5primejunction=31664820,
             gene3prime="ENSMUSG00000002413",
@@ -437,27 +438,21 @@ class TestEffectPrediciton(unittest.TestCase):
             protein_databases=["pfam", "tmhmm"],
             noncanonical=True,
         )
-        t = fusion.transcripts["ENSMUST00000023454-ENSMUST00000002487"]
+        transcript = fusion.transcripts["ENSMUST00000023454-ENSMUST00000002487"]
 
-        assert t.effect_5prime == "intron (before cds)", (
-            "Test 12: incorrect 5' effect: %s" % t.effect_5prime
-        )
-        assert t.effect_3prime == "intron (cds)", (
-            "Test 12: incorrect 3' effect: %s" % t.effect_3prime
-        )
-
-
-class TestBatch(unittest.TestCase):
-    def test_1(self):
         assert (
-            "fusioncatcheR" not in agfusion.parsers
-        ), "fusioncatcheR found in parsers!"
+            transcript.effect_5prime == "intron (before cds)"
+        ), f"Test 12: incorrect 5' effect: {transcript.effect_5prime}"
+        assert (
+            transcript.effect_3prime == "intron (cds)"
+        ), f"Test 12: incorrect 3' effect: {transcript.effect_3prime}"
 
 
 class TestFusionCatcher(unittest.TestCase):
-    def test_1(self):
+    """Test parse FusionCatcher parse."""
 
-        agfusion_db = agfusion.AGFusionDB("agfusion.homo_sapiens.84.db", debug=False)
+    def test_1(self):
+        """Test basic parsing."""
 
         all_fusions = [
             "Adamts9-Ano2",
@@ -469,11 +464,11 @@ class TestFusionCatcher(unittest.TestCase):
             "Lrrc8d-Gbp11",
             "C920009B18Rik-H60b",
         ]
-        for fusion in agfusion.parsers["fusioncatcher"](
+        for fusion in parsers["fusioncatcher"](
             "./data/FusionsFindingAlgorithms/FusionCatcher/final-list_candidate-fusion-genes.txt",
             db.logger,
         ):
-            fusion = agfusion.Fusion(
+            fusion = model.Fusion(
                 gene5prime=fusion["gene5prime"],
                 gene5primejunction=fusion["gene5prime_junction"],
                 gene3prime=fusion["gene3prime"],
@@ -483,11 +478,14 @@ class TestFusionCatcher(unittest.TestCase):
                 protein_databases=["pfam"],
                 noncanonical=False,
             )
-            assert fusion.name in all_fusions, "%s not in list!" % fusion.name
+            assert fusion.name in all_fusions, f"{fusion.name} not in list!"
 
 
 class TestSTARFusion(unittest.TestCase):
+    """Test parse STAR Fusion"""
+
     def test_1(self):
+        """Test basic parsing."""
 
         all_fusions = [
             "Adamts9-Ano2",
@@ -499,11 +497,11 @@ class TestSTARFusion(unittest.TestCase):
             "Lrrc8d-Gbp11",
             "C920009B18Rik-H60b",
         ]
-        for fusion in agfusion.parsers["fusioncatcher"](
+        for fusion in parsers["fusioncatcher"](
             "./data/FusionsFindingAlgorithms/FusionCatcher/final-list_candidate-fusion-genes.txt",
             db.logger,
         ):
-            fusion = agfusion.Fusion(
+            fusion = model.Fusion(
                 gene5prime=fusion["gene5prime"],
                 gene5primejunction=fusion["gene5prime_junction"],
                 gene3prime=fusion["gene3prime"],
@@ -513,12 +511,7 @@ class TestSTARFusion(unittest.TestCase):
                 protein_databases=["pfam"],
                 noncanonical=False,
             )
-            assert fusion.name in all_fusions, "%s not in list!" % fusion.name
-
-
-class TestTopHatFusion(unittest.TestCase):
-    def test_1(self):
-        pass
+            assert fusion.name in all_fusions, f"{fusion.name} not in list!"
 
 
 if __name__ == "__main__":

@@ -1,19 +1,22 @@
+"""Classes for plotting.
+"""
 import matplotlib
 
 matplotlib.use("Agg")
+
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import matplotlib.pyplot
-from itertools import cycle
+from matplotlib import patches
 
 # this is so I can plot graphics on a headless server
 
-matplotlib.pyplot.ioff()
+plt.ioff()
 
 HORIZONTAL_LEVELS = [1, 2, 3, 4]
 
 
-class _Plot(object):
+class _Plot:
+    """Base plotting class"""
+
     def __init__(self, filename="", height=0, width=0, dpi=0, fontsize=12, scale=0):
 
         self.filename = filename
@@ -22,14 +25,15 @@ class _Plot(object):
         self.height = height
         self.dpi = dpi
         self.fontsize = fontsize
+        self.normalize = None
+        self.offset = None
 
-        self.fig = plt.figure(
-            figsize=(self.width, self.height), dpi=self.dpi, frameon=False
-        )
-        self.ax = self.fig.add_subplot(111)
-        self.rr = self.fig.canvas.get_renderer()
+        self.fig = plt.figure(figsize=(self.width, self.height), dpi=self.dpi, frameon=False)
+        self.axis = self.fig.add_subplot(111)
+        self.renderer = self.fig.canvas.get_renderer()
 
     def save(self):
+        """Save plot to file."""
 
         self.fig.savefig(self.filename, dpi=self.dpi, bbox_inches="tight")
 
@@ -48,15 +52,21 @@ class _Plot(object):
 
         self.offset = 0.05 + (1.0 - float(seq_length) / self.normalize) * 0.45
 
-        assert (
-            self.normalize >= seq_length
-        ), "length normalization should be >= protein length"
+        assert self.normalize >= seq_length, "length normalization should be >= protein length"
 
 
 class _PlotExons(_Plot):
-    def __init__(self, *args, **kwargs):
-        super(_PlotExons, self).__init__(*args, **kwargs)
+    """Base class for plotting exon structure."""
+
+    def __init__(self):
+        super().__init__()
         self.vertical_offset = 0.15
+        self.left_marker_line = None
+        self.left_marker_text = None
+        self.right_marker_line = None
+        self.right_marker_text = None
+        self.basepair_length = None
+        self.line_end = None
 
     def _draw_length_markers(self, basepair_length):
         # plot protein length markers
@@ -65,7 +75,7 @@ class _PlotExons(_Plot):
 
         self.line_end = basepair_length / float(self.normalize) * 0.9 + self.offset
 
-        self.ax.text(
+        self.axis.text(
             0.5,
             0.1,
             "Base pair position (kbp)",
@@ -73,7 +83,7 @@ class _PlotExons(_Plot):
             fontsize=self.fontsize,
         )
 
-        self.ax.add_line(
+        self.axis.add_line(
             plt.Line2D(
                 (self.offset, self.offset + self.basepair_length),
                 (0.2 + self.vertical_offset, 0.2 + self.vertical_offset),
@@ -83,14 +93,14 @@ class _PlotExons(_Plot):
 
         # left marker
 
-        self.left_marker_line = self.ax.add_line(
+        self.left_marker_line = self.axis.add_line(
             plt.Line2D(
                 (self.offset, self.offset),
                 (0.15 + self.vertical_offset, 0.2 + self.vertical_offset),
                 color="black",
             )
         )
-        self.left_marker_text = self.ax.text(
+        self.left_marker_text = self.axis.text(
             self.offset,
             0.05 + self.vertical_offset,
             "0",
@@ -102,7 +112,7 @@ class _PlotExons(_Plot):
 
         for i in range(1, basepair_length + 1):
             if (i % 10000) == 0:
-                self.left_marker_line = self.ax.add_line(
+                self.left_marker_line = self.axis.add_line(
                     plt.Line2D(
                         (
                             self.offset + (i / float(self.normalize) * 0.9),
@@ -115,7 +125,7 @@ class _PlotExons(_Plot):
 
         # right marker
 
-        self.right_marker_line = self.ax.add_line(
+        self.right_marker_line = self.axis.add_line(
             plt.Line2D(
                 (
                     self.offset + self.basepair_length,
@@ -125,7 +135,7 @@ class _PlotExons(_Plot):
                 color="black",
             )
         )
-        self.right_marker_text = self.ax.text(
+        self.right_marker_text = self.axis.text(
             self.offset + self.basepair_length,
             0.05 + self.vertical_offset,
             str(basepair_length / 1000),
@@ -135,8 +145,10 @@ class _PlotExons(_Plot):
 
 
 class PlotWTExons(_PlotExons):
-    def __init__(self, ensembl_transcript, *args, **kwargs):
-        super(PlotWTExons, self).__init__(*args, **kwargs)
+    """Class for plotting wild-type exon structure."""
+
+    def __init__(self, ensembl_transcript):
+        super().__init__()
         self.ensembl_transcript = ensembl_transcript
 
     def _draw_main_body(self, name_symbols, name_isoform):
@@ -150,14 +162,12 @@ class PlotWTExons(_PlotExons):
             * 0.9
         )
 
-        self.ax.add_line(
+        self.axis.add_line(
             plt.Line2D((self.offset, self.offset + length), (0.5, 0.5), color="black")
         )
 
-        self.ax.text(
-            0.5, 0.9, name_symbols, horizontalalignment="center", fontsize=self.fontsize
-        )
-        self.ax.text(
+        self.axis.text(0.5, 0.9, name_symbols, horizontalalignment="center", fontsize=self.fontsize)
+        self.axis.text(
             0.5,
             0.83,
             name_isoform,
@@ -181,9 +191,8 @@ class PlotWTExons(_PlotExons):
 
             exon_start = (int(start) / float(self.normalize)) * 0.9 + self.offset
             exon_end = (int(end) / float(self.normalize)) * 0.9 + self.offset
-            exon_center = (exon_end - exon_start) / 2.0 + exon_start
 
-            self.ax.add_patch(
+            self.axis.add_patch(
                 patches.Rectangle(
                     (
                         exon_start,
@@ -196,29 +205,34 @@ class PlotWTExons(_PlotExons):
             )
 
     def draw(self):
+        """Draw the figure"""
+
         self._scale(self.ensembl_transcript.end - self.ensembl_transcript.start)
         self._draw_exons()
-        self._draw_length_markers(
-            self.ensembl_transcript.end - self.ensembl_transcript.start
-        )
-        self._draw_main_body(
-            self.ensembl_transcript.gene.gene_name, self.ensembl_transcript.id
-        )
-        self.ax.axis("off")
-        self.ax.set_xlim(0, 1)
-        self.ax.set_ylim(0, 1)
+        self._draw_length_markers(self.ensembl_transcript.end - self.ensembl_transcript.start)
+        self._draw_main_body(self.ensembl_transcript.gene.gene_name, self.ensembl_transcript.id)
+        self.axis.axis("off")
+        self.axis.set_xlim(0, 1)
+        self.axis.set_ylim(0, 1)
 
 
 class PlotFusionExons(_PlotExons):
-    def __init__(self, transcript, *args, **kwargs):
-        super(PlotFusionExons, self).__init__(*args, **kwargs)
+    """Class for plotting fusion exon structure."""
+
+    def __init__(self, transcript):
+        super().__init__()
         self.transcript = transcript
 
     def _draw_fusion_junction(self, junction_location):
+        """Get coordinates and draw fusion junction.
+
+        Args:
+            junction_location (int): location of junction
+        """
 
         junction_location_norm = junction_location / float(self.normalize) * 0.9
 
-        self.ax.add_line(
+        self.axis.add_line(
             plt.Line2D(
                 (
                     self.offset + junction_location_norm,
@@ -228,7 +242,7 @@ class PlotFusionExons(_PlotExons):
                 color="black",
             )
         )
-        self.right_marker_text = self.ax.text(
+        self.right_marker_text = self.axis.text(
             self.offset + junction_location_norm,
             0.05 + self.vertical_offset,
             str(junction_location / 1000),
@@ -237,6 +251,8 @@ class PlotFusionExons(_PlotExons):
         )
 
     def _draw_exons(self):
+        """Get coordinates and draw exons."""
+
         for exon in self.transcript.gene5prime_exon_intervals:
 
             if self.transcript.transcript1.strand == "+":
@@ -252,9 +268,8 @@ class PlotFusionExons(_PlotExons):
 
             exon_start = (int(start) / float(self.normalize)) * 0.9 + self.offset
             exon_end = (int(end) / float(self.normalize)) * 0.9 + self.offset
-            exon_center = (exon_end - exon_start) / 2.0 + exon_start
 
-            self.ax.add_patch(
+            self.axis.add_patch(
                 patches.Rectangle(
                     (
                         exon_start,
@@ -271,9 +286,7 @@ class PlotFusionExons(_PlotExons):
                 self.transcript.gene5prime.junction - self.transcript.transcript1.start
             )
         else:
-            distance_to_add = (
-                self.transcript.transcript1.end - self.transcript.gene5prime.junction
-            )
+            distance_to_add = self.transcript.transcript1.end - self.transcript.gene5prime.junction
 
         for exon in self.transcript.gene3prime_exon_intervals:
 
@@ -285,16 +298,13 @@ class PlotFusionExons(_PlotExons):
                 # this is so the transcription direction is not plotted
                 # in reverse for genes on minus strand
 
-                start = (
-                    self.transcript.gene3prime.junction - exon[1]
-                ) + distance_to_add
+                start = (self.transcript.gene3prime.junction - exon[1]) + distance_to_add
                 end = (self.transcript.gene3prime.junction - exon[0]) + distance_to_add
 
             exon_start = (int(start) / float(self.normalize)) * 0.9 + self.offset
             exon_end = (int(end) / float(self.normalize)) * 0.9 + self.offset
-            exon_center = (exon_end - exon_start) / 2.0 + exon_start
 
-            self.ax.add_patch(
+            self.axis.add_patch(
                 patches.Rectangle(
                     (
                         exon_start,
@@ -306,7 +316,7 @@ class PlotFusionExons(_PlotExons):
                 )
             )
 
-    def _draw_main_body(self, name_symbols, name_isoform, length):
+    def _draw_main_body(self, name_symbols, name_isoform):
         """
         main protein frame
         """
@@ -316,10 +326,7 @@ class PlotFusionExons(_PlotExons):
 
         if self.transcript.transcript1.strand == "+":
             gene5prime_length = (
-                (
-                    self.transcript.gene5prime.junction
-                    - self.transcript.transcript1.start
-                )
+                (self.transcript.gene5prime.junction - self.transcript.transcript1.start)
                 / float(self.normalize)
                 * 0.9
             )
@@ -338,22 +345,19 @@ class PlotFusionExons(_PlotExons):
             )
         else:
             gene3prime_length = (
-                (
-                    self.transcript.gene3prime.junction
-                    - self.transcript.transcript2.start
-                )
+                (self.transcript.gene3prime.junction - self.transcript.transcript2.start)
                 / float(self.normalize)
                 * 0.9
             )
 
-        self.ax.add_line(
+        self.axis.add_line(
             plt.Line2D(
                 (self.offset, self.offset + gene5prime_length),
                 (0.5, 0.5),
                 color="black",
             )
         )
-        self.ax.add_line(
+        self.axis.add_line(
             plt.Line2D(
                 (
                     self.offset + gene5prime_length,
@@ -364,10 +368,8 @@ class PlotFusionExons(_PlotExons):
             )
         )
 
-        self.ax.text(
-            0.5, 0.9, name_symbols, horizontalalignment="center", fontsize=self.fontsize
-        )
-        self.ax.text(
+        self.axis.text(0.5, 0.9, name_symbols, horizontalalignment="center", fontsize=self.fontsize)
+        self.axis.text(
             0.5,
             0.83,
             name_isoform,
@@ -376,6 +378,7 @@ class PlotFusionExons(_PlotExons):
         )
 
     def draw(self):
+        """Draw the figure."""
 
         if self.transcript.transcript1.strand == "+":
             gene5prime_length = (
@@ -404,31 +407,59 @@ class PlotFusionExons(_PlotExons):
             + "-"
             + self.transcript.transcript2.gene.gene_name,
             self.transcript.transcript1.id + "-" + self.transcript.transcript2.id,
-            gene5prime_length + gene3prime_length,
         )
-        self.ax.axis("off")
-        self.ax.set_xlim(0, 1)
-        self.ax.set_ylim(0, 1)
+        self.axis.axis("off")
+        self.axis.set_xlim(0, 1)
+        self.axis.set_ylim(0, 1)
 
 
 class _PlotProtein(_Plot):
+    """Base class for plotting protein structure."""
+
     def __init__(
         self,
         transcript=None,
         colors=None,
         rename=None,
         no_domain_labels=False,
-        exclude=[],
-        *args,
-        **kwargs
+        exclude=None,
     ):
-        super(_PlotProtein, self).__init__(*args, **kwargs)
+        super().__init__()
         self.transcript = transcript
-        self.colors = colors
-        self.rename = rename
+        self.colors = {} if colors is None else colors
+        self.rename = {} if rename is None else rename
         self.no_domain_labels = no_domain_labels
         self.exclude = exclude
         self.vertical_offset = 0.55
+        self.protein_frame_length = None
+        self.line_end = None
+        self.left_marker_text = None
+        self.left_marker_line = None
+        self.right_marker_text = None
+        self.right_marker_line = None
+        self.levels_plotted = None
+
+    def _get_domain_name(self, domain):
+        """use domain name if available, otherwise use its ID
+
+        Returns:
+            str: domain name
+        """
+
+        if domain[1] is None:
+            domain_name = str(domain[0])
+        else:
+            domain_name = str(domain[1])
+
+        return domain_name
+
+    def _get_domain_coordinates(self, domain):
+
+        domain_start = (int(domain[3]) / float(self.normalize)) * 0.9 + self.offset
+        domain_end = (int(domain[4]) / float(self.normalize)) * 0.9 + self.offset
+        domain_center = (domain_end - domain_start) / 2.0 + domain_start
+
+        return domain_start, domain_end, domain_center
 
     def _draw_domains(self, domains):
         # plot domains
@@ -444,22 +475,15 @@ class _PlotProtein(_Plot):
 
         for domain in domains:
 
-            # use domain name if available, otherwise use its ID
+            domain_name = self._get_domain_name(domain)
 
-            if domain[1] is None:
-                domain_name = str(domain[0])
-            else:
-                domain_name = str(domain[1])
-
-            if domain_name in self.exclude:
+            if self.exclude and domain_name in self.exclude:
                 continue
 
             if domain_name in self.rename:
                 domain_name = self.rename[domain_name]
 
-            domain_start = (int(domain[3]) / float(self.normalize)) * 0.9 + self.offset
-            domain_end = (int(domain[4]) / float(self.normalize)) * 0.9 + self.offset
-            domain_center = (domain_end - domain_start) / 2.0 + domain_start
+            domain_start, domain_end, domain_center = self._get_domain_coordinates(domain)
 
             if not self.no_domain_labels:
 
@@ -469,7 +493,6 @@ class _PlotProtein(_Plot):
                 # closest to the protein domain structure or be
                 # on the same level as the label it overlaps with the least
 
-                # domain_stack_level = cycle()
                 overlaps = {i: 0.0 for i in HORIZONTAL_LEVELS}
                 overlaps_all_levels = True
                 min_overlap = [float("inf"), HORIZONTAL_LEVELS[0]]
@@ -479,7 +502,7 @@ class _PlotProtein(_Plot):
 
                     level_pos = self.vertical_offset - 0.15 - (level - 1.0) * 0.1
 
-                    tmp_domain_label = self.ax.text(
+                    tmp_domain_label = self.axis.text(
                         domain_center,
                         level_pos,
                         domain_name,
@@ -488,17 +511,14 @@ class _PlotProtein(_Plot):
                         fontsize=self.fontsize,
                     )
                     tmp_domain_label_box = tmp_domain_label.get_window_extent(
-                        renderer=self.rr
+                        renderer=self.renderer
                     )
 
                     # check to see if it overlaps with anything
 
                     if len(domain_label_boxes[level]) > 0:
                         max_overlap = max(
-                            [
-                                i.x1 - tmp_domain_label_box.x0
-                                for i in domain_label_boxes[level]
-                            ]
+                            i.x1 - tmp_domain_label_box.x0 for i in domain_label_boxes[level]
                         )
 
                         if max_overlap > 0.0:
@@ -535,11 +555,9 @@ class _PlotProtein(_Plot):
 
                 if overlaps_all_levels:
 
-                    level_pos = (
-                        self.vertical_offset - 0.15 - (min_overlap[1] - 1.0) * 0.1
-                    )
+                    level_pos = self.vertical_offset - 0.15 - (min_overlap[1] - 1.0) * 0.1
 
-                    tmp_domain_label = self.ax.text(
+                    tmp_domain_label = self.axis.text(
                         domain_center,
                         level_pos,
                         domain_name,
@@ -548,7 +566,7 @@ class _PlotProtein(_Plot):
                         fontsize=self.fontsize,
                     )
                     tmp_domain_label_box = tmp_domain_label.get_window_extent(
-                        renderer=self.rr
+                        renderer=self.renderer
                     )
 
                     domain_labels[min_overlap[1]].append(tmp_domain_label)
@@ -565,8 +583,8 @@ class _PlotProtein(_Plot):
         # and replot all labels.
 
         for level, label in list(domain_labels.items()):
-            for ll in label:
-                ll.remove()
+            for lab in label:
+                lab.remove()
 
         self.levels_plotted = HORIZONTAL_LEVELS.index(lowest_level_plotted)
         self.vertical_offset += 0.05 * self.levels_plotted
@@ -574,13 +592,9 @@ class _PlotProtein(_Plot):
         domain_count = 0
 
         for domain in domains:
+            domain_name = self._get_domain_name(domain)
 
-            if domain[1] is None:
-                domain_name = str(domain[0])
-            else:
-                domain_name = str(domain[1])
-
-            if domain_name in self.exclude:
+            if self.exclude and domain_name in self.exclude:
                 continue
 
             if domain_name in self.rename:
@@ -590,11 +604,9 @@ class _PlotProtein(_Plot):
             if domain_name in self.colors:
                 color = self.colors[domain_name]
 
-            domain_start = (int(domain[3]) / float(self.normalize)) * 0.9 + self.offset
-            domain_end = (int(domain[4]) / float(self.normalize)) * 0.9 + self.offset
-            domain_center = (domain_end - domain_start) / 2.0 + domain_start
+            domain_start, domain_end, domain_center = self._get_domain_coordinates(domain)
 
-            self.ax.add_patch(
+            self.axis.add_patch(
                 patches.Rectangle(
                     (
                         domain_start,
@@ -613,7 +625,7 @@ class _PlotProtein(_Plot):
 
             level_pos = self.vertical_offset - 0.15 - (level - 1.0) * 0.1
 
-            tmp_domain_label = self.ax.text(
+            tmp_domain_label = self.axis.text(
                 domain_center,
                 level_pos,
                 domain_name,
@@ -625,11 +637,15 @@ class _PlotProtein(_Plot):
             domain_count += 1
 
     def _draw_protein_length_markers(self, protein_length):
-        # plot protein length markers
+        """plot protein length markers
+
+        Args:
+            protein_length (int): length of the protein
+        """
 
         self.line_end = protein_length / float(self.normalize) * 0.9 + self.offset
 
-        self.ax.text(
+        self.axis.text(
             0.5,
             self.vertical_offset - (0.5 + self.levels_plotted * 0.1),
             "Amino acid position",
@@ -638,7 +654,7 @@ class _PlotProtein(_Plot):
             fontsize=self.fontsize,
         )
 
-        self.ax.add_line(
+        self.axis.add_line(
             plt.Line2D(
                 (self.offset, self.offset + self.protein_frame_length),
                 (
@@ -651,7 +667,7 @@ class _PlotProtein(_Plot):
 
         # left marker
 
-        self.left_marker_line = self.ax.add_line(
+        self.left_marker_line = self.axis.add_line(
             plt.Line2D(
                 (self.offset, self.offset),
                 (
@@ -661,7 +677,7 @@ class _PlotProtein(_Plot):
                 color="black",
             )
         )
-        self.left_marker_text = self.ax.text(
+        self.left_marker_text = self.axis.text(
             self.offset,
             self.vertical_offset - (0.43 + self.levels_plotted * 0.05),
             "0",
@@ -674,7 +690,7 @@ class _PlotProtein(_Plot):
 
         for i in range(1, protein_length + 1):
             if (i % 100) == 0:
-                self.left_marker_line = self.ax.add_line(
+                self.left_marker_line = self.axis.add_line(
                     plt.Line2D(
                         (
                             self.offset + (i / float(self.normalize) * 0.9),
@@ -690,7 +706,7 @@ class _PlotProtein(_Plot):
 
         # right marker
 
-        self.right_marker_line = self.ax.add_line(
+        self.right_marker_line = self.axis.add_line(
             plt.Line2D(
                 (
                     self.offset + self.protein_frame_length,
@@ -704,7 +720,7 @@ class _PlotProtein(_Plot):
             )
         )
 
-        self.right_marker_text = self.ax.text(
+        self.right_marker_text = self.axis.text(
             self.offset + self.protein_frame_length,
             self.vertical_offset - (0.43 + self.levels_plotted * 0.05),
             str(protein_length),
@@ -715,10 +731,10 @@ class _PlotProtein(_Plot):
 
     def _draw_main_body(self, name_symbols, name_isoform):
         """
-        main protein frame
+        Draw the main protein frame.
         """
 
-        self.ax.add_patch(
+        self.axis.add_patch(
             patches.Rectangle(
                 (self.offset, self.vertical_offset),
                 self.protein_frame_length,
@@ -727,7 +743,7 @@ class _PlotProtein(_Plot):
             )
         )
 
-        self.ax.text(
+        self.axis.text(
             0.5,
             0.95,
             name_symbols,
@@ -735,7 +751,7 @@ class _PlotProtein(_Plot):
             fontsize=self.fontsize,
         )
 
-        self.ax.text(
+        self.axis.text(
             0.5,
             0.88,
             name_isoform,
@@ -745,25 +761,21 @@ class _PlotProtein(_Plot):
 
 
 class PlotFusionProtein(_PlotProtein):
-    def __init__(self, *args, **kwargs):
-        super(PlotFusionProtein, self).__init__(*args, **kwargs)
+    """Class for plotting fusion protein structure."""
+
+    def __init__(self):
+        super().__init__()
 
     def _draw_junction(self):
-        # add the junction
+        """Get coordinates and draw the junction."""
 
-        self.ax.add_line(
+        self.axis.add_line(
             plt.Line2D(
                 (
-                    (
-                        self.transcript.transcript_protein_junction_5prime
-                        / float(self.normalize)
-                    )
+                    (self.transcript.transcript_protein_junction_5prime / float(self.normalize))
                     * 0.9
                     + self.offset,
-                    (
-                        self.transcript.transcript_protein_junction_5prime
-                        / float(self.normalize)
-                    )
+                    (self.transcript.transcript_protein_junction_5prime / float(self.normalize))
                     * 0.9
                     + self.offset,
                 ),
@@ -783,28 +795,20 @@ class PlotFusionProtein(_PlotProtein):
         ) * 0.9 + self.offset
         junction_label_vertical_offset = 0.0
 
-        right_marker_text_box = self.right_marker_text.get_window_extent(
-            renderer=self.rr
-        )
-        left_marker_text_box = self.left_marker_text.get_window_extent(renderer=self.rr)
+        right_marker_text_box = self.right_marker_text.get_window_extent(renderer=self.renderer)
+        left_marker_text_box = self.left_marker_text.get_window_extent(renderer=self.renderer)
 
         while overlaps:
 
             # middle_marker_line_1/2/3 are to draw angled line
 
-            middle_marker_line_1 = self.ax.add_line(
+            middle_marker_line_1 = self.axis.add_line(
                 plt.Line2D(
                     (
-                        (
-                            self.transcript.transcript_protein_junction_5prime
-                            / float(self.normalize)
-                        )
+                        (self.transcript.transcript_protein_junction_5prime / float(self.normalize))
                         * 0.9
                         + self.offset,
-                        (
-                            self.transcript.transcript_protein_junction_5prime
-                            / float(self.normalize)
-                        )
+                        (self.transcript.transcript_protein_junction_5prime / float(self.normalize))
                         * 0.9
                         + self.offset,
                     ),
@@ -818,14 +822,11 @@ class PlotFusionProtein(_PlotProtein):
                 )
             )
 
-            middle_marker_line_2 = self.ax.add_line(
+            middle_marker_line_2 = self.axis.add_line(
                 plt.Line2D(
                     (
                         line_offset,
-                        (
-                            self.transcript.transcript_protein_junction_5prime
-                            / float(self.normalize)
-                        )
+                        (self.transcript.transcript_protein_junction_5prime / float(self.normalize))
                         * 0.9
                         + self.offset,
                     ),
@@ -841,7 +842,7 @@ class PlotFusionProtein(_PlotProtein):
                 )
             )
 
-            middle_marker_line_3 = self.ax.add_line(
+            middle_marker_line_3 = self.axis.add_line(
                 plt.Line2D(
                     (line_offset, line_offset),
                     (
@@ -856,7 +857,7 @@ class PlotFusionProtein(_PlotProtein):
                 )
             )
 
-            middle_marker_text = self.ax.text(
+            middle_marker_text = self.axis.text(
                 text_offset,
                 self.vertical_offset
                 - (0.45 + self.levels_plotted * 0.05)
@@ -869,9 +870,7 @@ class PlotFusionProtein(_PlotProtein):
 
             # detect if text overlaps
 
-            middle_marker_text_box = middle_marker_text.get_window_extent(
-                renderer=self.rr
-            )
+            middle_marker_text_box = middle_marker_text.get_window_extent(renderer=self.renderer)
 
             # if overlaps then offset the junction text to the left
 
@@ -905,10 +904,10 @@ class PlotFusionProtein(_PlotProtein):
                 overlaps = False
 
     def draw(self):
+        """Draw figure."""
+
         self._scale(self.transcript.protein_length)
-        self.protein_frame_length = (
-            self.transcript.protein_length / float(self.normalize) * 0.9
-        )
+        self.protein_frame_length = self.transcript.protein_length / float(self.normalize) * 0.9
         self._draw_domains(self.transcript.domains["fusion"])
         self._draw_protein_length_markers(self.transcript.protein_length)
         self._draw_junction()
@@ -918,37 +917,32 @@ class PlotFusionProtein(_PlotProtein):
             + " - "
             + self.transcript.gene3prime.gene.gene_name
         )
-        name_isoform = (
-            self.transcript.transcript1.id + " - " + self.transcript.transcript2.id
-        )
+        name_isoform = self.transcript.transcript1.id + " - " + self.transcript.transcript2.id
         self._draw_main_body(name_symbols, name_isoform)
 
-        self.ax.axis("off")
-        self.ax.set_xlim(0, 1)
-        self.ax.set_ylim(0, 1)
+        self.axis.axis("off")
+        self.axis.set_xlim(0, 1)
+        self.axis.set_ylim(0, 1)
 
 
 class PlotWTProtein(_PlotProtein):
-    def __init__(self, ensembl_transcript, *args, **kwargs):
-        super(PlotWTProtein, self).__init__(*args, **kwargs)
+    """Class for plotting wildtype protein structure."""
+
+    def __init__(self, ensembl_transcript):
+        super().__init__()
         self.ensembl_transcript = ensembl_transcript
 
     def draw(self):
+        """Draw figure."""
+
         self._scale(len(self.ensembl_transcript.coding_sequence) / 3)
         self.protein_frame_length = (
-            len(self.ensembl_transcript.coding_sequence)
-            / 3
-            / float(self.normalize)
-            * 0.9
+            len(self.ensembl_transcript.coding_sequence) / 3 / float(self.normalize) * 0.9
         )
         self._draw_domains(self.transcript.domains[self.ensembl_transcript.id])
-        self._draw_protein_length_markers(
-            int(len(self.ensembl_transcript.coding_sequence) / 3)
-        )
-        self._draw_main_body(
-            self.ensembl_transcript.gene.gene_name, self.ensembl_transcript.id
-        )
+        self._draw_protein_length_markers(int(len(self.ensembl_transcript.coding_sequence) / 3))
+        self._draw_main_body(self.ensembl_transcript.gene.gene_name, self.ensembl_transcript.id)
 
-        self.ax.axis("off")
-        self.ax.set_xlim(0, 1)
-        self.ax.set_ylim(0, 1)
+        self.axis.axis("off")
+        self.axis.set_xlim(0, 1)
+        self.axis.set_ylim(0, 1)

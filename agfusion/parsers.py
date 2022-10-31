@@ -3,9 +3,12 @@ Parses output files from fusion-finding algorithms
 """
 
 import re
+import sys
 
 
-class _Parser(object):
+class _Parser:
+    """Base parser."""
+
     def __init__(self, logger):
         self.fusions = []
         self.iterator = 0
@@ -17,26 +20,28 @@ class _Parser(object):
     def __next__(self):
         if self.iterator >= len(self.fusions):
             raise StopIteration
-        else:
-            self.iterator += 1
-            return self.fusions[self.iterator - 1]
+
+        self.iterator += 1
+        return self.fusions[self.iterator - 1]
 
     def _check_data(self):
         if len(self.fusions) == 0:
             self.logger.error("Read 0 fusions from the file! Exiting...")
         else:
-            self.logger.info("Read {} fusions from the file.".format(len(self.fusions)))
+            self.logger.info(f"Read {len(self.fusions)} fusions from the file.")
 
     next = __next__
 
 
 class STARFusion(_Parser):
+    """STARFusion parser."""
+
     def __init__(self, infile, logger):
-        super(STARFusion, self).__init__(logger)
+        super().__init__(logger)
 
         fin = open(infile, "r")
         for line in fin.readlines():
-            if re.findall("^#", line):
+            if re.findall(r"^#", line):
                 line = line.rstrip().split("\t")
                 if line[0] != "#FusionName" and line[0] != "#fusion_name":
                     raise AssertionError(
@@ -45,13 +50,9 @@ class STARFusion(_Parser):
                     )
 
                 assert line[4] == "LeftGene", "Unrecognized STAR-Fusion input"
-                assert line[5] == "LeftBreakpoint", (
-                    "Unrecognized " + "STAR-Fusion input"
-                )
+                assert line[5] == "LeftBreakpoint", "Unrecognized " + "STAR-Fusion input"
                 assert line[6] == "RightGene", "Unrecognized STAR-Fusion input"
-                assert line[7] == "RightBreakpoint", (
-                    "Unrecognized " + "STAR-Fusion input"
-                )
+                assert line[7] == "RightBreakpoint", "Unrecognized " + "STAR-Fusion input"
                 continue
 
             line = line.strip().split("\t")
@@ -78,18 +79,20 @@ class STARFusion(_Parser):
 
 
 class EricScript(_Parser):
-    def __init__(self, allinfile, logger):
-        super(EricScript, self).__init__(logger)
+    """EricScript parser."""
+
+    def __init__(self, infile, logger):
+        super().__init__(logger)
 
         fin = open(infile, "r")
         for line in fin.readlines():
-            if re.findall("^GeneName1", line):
+            if re.findall(r"^GeneName1", line):
                 line = line.strip().split("\t")
                 for i, j in zip(
                     [3, 6, 8, 9],
                     ["Breakpoint1", "Breakpoint2", "EnsemblGene1", "EnsemblGene2"],
                 ):
-                    assert line[i] == j, ("Unrecognized EricScript input: {}").format(j)
+                    assert line[i] == j, f"Unrecognized EricScript input: {j}"
             else:
                 line = line.strip().split("\t")
 
@@ -113,12 +116,14 @@ class EricScript(_Parser):
 
 
 class FusionCatcher(_Parser):
+    """FusionCatcher parser."""
+
     def __init__(self, infile, logger):
-        super(FusionCatcher, self).__init__(logger)
+        super().__init__(logger)
 
         fin = open(infile, "r")
         for line in fin.readlines():
-            if re.findall("^Gene_1_symbol", line):
+            if re.findall(r"^Gene_1_symbol", line):
                 line = line.rstrip().split("\t")
                 assert (
                     line[8] == "Fusion_point_for_gene_1(5end_fusion_partner)"
@@ -151,8 +156,10 @@ class FusionCatcher(_Parser):
 
 
 class FusionHunter(_Parser):
+    """FusionHunter parser."""
+
     def __init__(self, infile, logger):
-        super(FusionHunter, self).__init__(logger)
+        super().__init__(logger)
 
         gene1 = gene2 = None
         gene1_junction = gene2_junction = None
@@ -160,7 +167,7 @@ class FusionHunter(_Parser):
         fin = open(infile, "r")
         for line in fin.readlines():
 
-            if re.findall("^# Fusion:", line):
+            if re.findall(r"^# Fusion:", line):
 
                 if gene1 is not None and gene2 is not None:
                     self.fusions.append(
@@ -174,14 +181,14 @@ class FusionHunter(_Parser):
                         }
                     )
 
-                strands = re.findall("(?<=\[)(.*)(?=\])", line)
+                strands = re.findall(r"(?<=\[)(.*)(?=\])", line)
                 assert (
                     len(strands) == 1
                 ), "Unrecognized FusionHunter input. Incorrect strand information."
                 gene1_strand = strands[0][0]
                 gene2_strand = strands[0][1]
 
-            elif re.findall("^--", line):
+            elif re.findall(r"^--", line):
                 # new breakpoint
                 if gene1 is not None and gene2 is not None:
                     self.fusions.append(
@@ -195,19 +202,16 @@ class FusionHunter(_Parser):
                         }
                     )
 
-            elif re.findall("^->", line):
-                junctions = re.findall("(chr[0-9]*):([0-9]*)-([0-9]*)", line)
+            elif re.findall(r"^->", line):
+                junctions = re.findall(r"(chr[0-9]*):([0-9]*)-([0-9]*)", line)
                 assert len(junctions) == 2, (
-                    "Unrecognized FusionHunter "
-                    + "input. Incorrect junction information."
+                    "Unrecognized FusionHunter " + "input. Incorrect junction information."
                 )
 
                 gene1 = gene2 = None
                 gene1_junction = gene2_junction = None
 
-                gene1, gene2 = re.findall("[A-Z0-9]*\sx\s[A-Z0-9a-z]*(?=\t)", line)[
-                    0
-                ].split(" x ")
+                gene1, gene2 = re.findall(r"[A-Z0-9]*\sx\s[A-Z0-9a-z]*(?=\t)", line)[0].split(" x ")
                 assert (
                     gene1 is not None and gene2 is not None
                 ), "Unrecognized FusionHunter input. Incorrect gnee information."
@@ -239,21 +243,22 @@ class FusionHunter(_Parser):
 
 
 class FusionMap(_Parser):
+    """FusionMap parser."""
+
     def __init__(self, infile, logger):
-        super(FusionMap, self).__init__(logger)
+        super().__init__(logger)
 
         fin = open(infile, "r")
         for line in fin.readlines():
-            if re.findall("^FusionID", line):
+            if re.findall(r"^FusionID", line):
                 line = line.strip().split("\t")
                 for i, j in zip(
                     [6, 8, 9, 13],
                     ["Position1", "Position2", "KnownGene1", "KnownGene2"],
                 ):
-                    assert line[i] == j, (
-                        "Unrecognized FusionMap input {} "
-                        + "header not in expected position.".format(j)
-                    )
+                    assert (
+                        line[i] == j
+                    ), f"Unrecognized FusionMap input {j} not in expected position."
             else:
                 line = line.strip().split("\t")
 
@@ -277,12 +282,14 @@ class FusionMap(_Parser):
 
 
 class MapSplice(_Parser):
+    """MapSplice parser."""
+
     def __init__(self, infile, logger):
-        super(MapSplice, self).__init__(logger)
+        super().__init__(logger)
 
         fin = open(infile, "r")
         for line in fin.readlines():
-            if re.findall("^chrom", line):
+            if re.findall(r"^chrom", line):
                 line = line.strip().split("\t")
                 for i, j in zip(
                     [1, 2, 60, 61],
@@ -295,9 +302,7 @@ class MapSplice(_Parser):
                 ):
                     assert (
                         line[i] == j
-                    ), "Unrecognized MapSplice input. {} header not in expected position.".format(
-                        j
-                    )
+                    ), f"Unrecognized MapSplice input. {j} header not in expected position."
             else:
                 line = line.strip().split("\t")
 
@@ -321,8 +326,10 @@ class MapSplice(_Parser):
 
 
 class TopHatFusion(_Parser):
+    """TopHatFusion parser."""
+
     def __init__(self, infile, logger):
-        super(TopHatFusion, self).__init__(logger)
+        super().__init__(logger)
 
         fin = open(infile, "r")
         for line in fin.readlines():
@@ -350,8 +357,10 @@ class TopHatFusion(_Parser):
 
 
 class DeFuse(_Parser):
+    """DeFuse parser."""
+
     def __init__(self, infile, logger):
-        super(DeFuse, self).__init__(logger)
+        super().__init__(logger)
 
         data_indices = {
             "gene5prime": None,
@@ -362,31 +371,26 @@ class DeFuse(_Parser):
 
         fin = open(infile, "r")
         for line in fin.readlines():
-            if re.findall("^cluster_id", line):
+            if re.findall(r"^cluster_id", line):
                 line = line.strip().split("\t")
-                for column in data_indices.keys():
+                for column in data_indices:
                     try:
                         data_indices[column] = line.index(column)
                     except ValueError:
                         logger.error(
-                            "Unrecognized {} input! Cannot find {} column.".format(
-                                self.__class__.__name__, column
-                            )
+                            f"Unrecognized {self.__class__.__name__} input! "
+                            f"Cannot find {column} column."
                         )
-                        exit()
+                        sys.exit(1)
                 continue
-            if not any([i is None for i in data_indices.keys()]):
+            if not any(i is None for i in data_indices):
                 line = line.strip().split("\t")
                 self.fusions.append(
                     {
                         "gene5prime": line[data_indices["gene5prime"]],
                         "gene3prime": line[data_indices["gene3prime"]],
-                        "gene5prime_junction": int(
-                            line[data_indices["gene5prime_junction"]]
-                        ),
-                        "gene3prime_junction": int(
-                            line[data_indices["gene3prime_junction"]]
-                        ),
+                        "gene5prime_junction": int(line[data_indices["gene5prime_junction"]]),
+                        "gene3prime_junction": int(line[data_indices["gene3prime_junction"]]),
                     }
                 )
         fin.close()
@@ -395,8 +399,10 @@ class DeFuse(_Parser):
 
 
 class Chimerascan(_Parser):
+    """Chimerascan parser."""
+
     def __init__(self, infile, logger):
-        super(Chimerascan, self).__init__(logger)
+        super().__init__(logger)
 
         data_indices = {
             "genes5p": 12,
@@ -411,18 +417,17 @@ class Chimerascan(_Parser):
 
         fin = open(infile, "r")
         for line in fin.readlines():
-            if re.findall("#chrom5p", line):
+            if re.findall(r"#chrom5p", line):
                 line = line.strip().split("\t")
-                for column in data_indices.keys():
+                for column in data_indices:
                     try:
                         data_indices[column] = line.index(column)
                     except ValueError:
                         logger.error(
-                            "Unrecognized {} input! Cannot find {} column.".format(
-                                self.__class__.__name__, column
-                            )
+                            f"Unrecognized {self.__class__.__name__} input! "
+                            f"Cannot find {column} column."
                         )
-                        exit()
+                        sys.exit(1)
                 continue
 
             line = line.strip().split("\t")
@@ -451,8 +456,10 @@ class Chimerascan(_Parser):
 
 
 class ChimeRScope(_Parser):
+    """ChimeRScope parser."""
+
     def __init__(self, infile, logger):
-        super(ChimeRScope, self).__init__(logger)
+        super().__init__(logger)
 
         data_indices = {
             "Gene1": 2,
@@ -463,18 +470,17 @@ class ChimeRScope(_Parser):
 
         fin = open(infile, "r")
         for line in fin.readlines():
-            if re.findall("^ConfidentScore", line):
+            if re.findall(r"^ConfidentScore", line):
                 line = line.strip().split("\t")
-                for column in data_indices.keys():
+                for column in data_indices:
                     try:
                         data_indices[column] = line.index(column)
                     except ValueError:
                         logger.error(
-                            "Unrecognized {} input! Cannot find {} column.".format(
-                                self.__class__.__name__, column
-                            )
+                            f"Unrecognized {self.__class__.__name__} input! "
+                            f"Cannot find {column} column."
                         )
-                        exit()
+                        sys.exit(1)
                 continue
 
             line = line.strip().split("\t")
@@ -492,25 +498,26 @@ class ChimeRScope(_Parser):
 
 
 class JAFFA(_Parser):
+    """JAFFA parser."""
+
     def __init__(self, infile, logger):
-        super(JAFFA, self).__init__(logger)
+        super().__init__(logger)
 
         data_indices = {"base1": 7, "base2": 9, "fusion genes": 1}
 
         fin = open(infile, "r")
         for line in fin.readlines():
-            if re.findall("sample", line):
+            if re.findall(r"sample", line):
                 line = line.strip().replace('"', "").split(",")
-                for column in data_indices.keys():
+                for column in data_indices:
                     try:
                         data_indices[column] = line.index(column)
                     except ValueError:
                         logger.error(
-                            "Unrecognized {} input! Cannot find {} column.".format(
-                                self.__class__.__name__, column
-                            )
+                            f"Unrecognized {self.__class__.__name__} input! "
+                            f"Cannot find {column} column."
                         )
-                        exit()
+                        sys.exit(1)
                 continue
 
             line = line.strip().replace('"', "").split(",")
@@ -528,8 +535,10 @@ class JAFFA(_Parser):
 
 
 class Bellerophontes(_Parser):
+    """Bellerophontes parser."""
+
     def __init__(self, infile, logger):
-        super(Bellerophontes, self).__init__(logger)
+        super().__init__(logger)
 
         fin = open(infile, "r")
         for line in fin.readlines():
@@ -552,44 +561,42 @@ class Bellerophontes(_Parser):
 
 
 class BreakFusion(_Parser):
+    """BreakFusion parser."""
+
     def __init__(self, infile, logger):
-        super(BreakFusion, self).__init__(logger)
+        super().__init__(logger)
 
         data_indices = {"POS1": 1, "POS2": 4, "RefseqGene": 11}
 
         fin = open(infile, "r")
         for line in fin.readlines():
-            if re.findall("CHR1", line):
+            if re.findall(r"CHR1", line):
                 line = line.strip().split("\t")
-                for column in data_indices.keys():
+                for column in data_indices:
                     try:
                         data_indices[column] = line.index(column)
                     except ValueError:
                         logger.error(
-                            "Unrecognized {} input! Cannot find {} column.".format(
-                                self.__class__.__name__, column
-                            )
+                            f"Unrecognized {self.__class__.__name__} input! "
+                            f"Cannot find {column} column."
                         )
-                        exit()
+                        sys.exit(1)
                 continue
 
-            if re.findall("Fusion", line):
+            if re.findall(r"Fusion", line):
                 line = line.strip().split("\t")
                 genes = line[data_indices["RefseqGene"]]
-                genes = re.findall("(?<=Gene:)(.*?)(?=,)", genes)
+                genes = re.findall(r"(?<=Gene:)(.*?)(?=,)", genes)
                 if len(genes) != 1:
+                    line_out = "\t".join(line)
                     self.logger.error(
-                        (
-                            "Could not parse genes from " + "BreakFusion input line: {}"
-                        ).format("\t".join(line))
+                        f"Could not parse genes from BreakFusion input line: {line_out}"
                     )
                 genes = genes[0].split("|")
                 if len(genes) != 2:
+                    line_out = "\t".join(line)
                     self.logger.error(
-                        (
-                            "Could not find two genes for "
-                            + "BreakFusion input line: {}"
-                        ).format("\t".join(line))
+                        f"Could not find two genes for BreakFusion input line: {line_out}"
                     )
 
                 self.fusions.append(
@@ -606,8 +613,10 @@ class BreakFusion(_Parser):
 
 
 class InFusion(_Parser):
+    """InFusion parser."""
+
     def __init__(self, infile, logger):
-        super(InFusion, self).__init__(logger)
+        super().__init__(logger)
 
         data_indices = {"break_pos1": 2, "break_pos2": 5, "genes_1": 9, "genes_2": 10}
 
@@ -615,30 +624,26 @@ class InFusion(_Parser):
         n = 0
         for line in fin.readlines():
             n += 1
-            if re.findall("#id", line):
+            if re.findall(r"#id", line):
                 line = line.strip().split("\t")
-                for column in data_indices.keys():
+                for column in data_indices:
                     try:
                         data_indices[column] = line.index(column)
                     except ValueError:
                         logger.error(
-                            "Unrecognized {} input! Cannot find {} column.".format(
-                                self.__class__.__name__, column
-                            )
+                            f"Unrecognized {self.__class__.__name__} input! "
+                            f"Cannot find {column} column."
                         )
-                        exit()
+                        sys.exit(1)
                 continue
 
             line = line.strip().split("\t")
 
-            if (
-                line[data_indices["genes_1"]] == "none"
-                or line[data_indices["genes_2"]] == "none"
-            ):
+            if line[data_indices["genes_1"]] == "none" or line[data_indices["genes_2"]] == "none":
                 self.logger.warn(
-                    "Skipping fusion on line {} because one or more "
+                    f"Skipping fusion on line {n} because one or more "
                     + "of the provided gene names under 'gene_1' and"
-                    + " 'gene_2' is listed as 'none'.".format(n)
+                    + " 'gene_2' is listed as 'none'."
                 )
                 continue
 
@@ -656,12 +661,14 @@ class InFusion(_Parser):
 
 
 class FusionInspector(_Parser):
+    """FusionInspector parser."""
+
     def __init__(self, infile, logger):
-        super(FusionInspector, self).__init__(logger)
+        super().__init__(logger)
 
         fin = open(infile, "r")
         for line in fin.readlines():
-            if re.findall("^#", line):
+            if re.findall(r"^#", line):
                 line = line.rstrip().split("\t")
                 if line[0] != "#FusionName" and line[0] != "#fusion_name":
                     raise AssertionError(
@@ -670,13 +677,9 @@ class FusionInspector(_Parser):
                     )
 
                 assert line[3] == "LeftGene", "Unrecognized " + "FusionInspector input"
-                assert line[5] == "LeftBreakpoint", (
-                    "Unrecognized " + "FusionInspector input"
-                )
+                assert line[5] == "LeftBreakpoint", "Unrecognized " + "FusionInspector input"
                 assert line[6] == "RightGene", "Unrecognized " + "FusionInspector input"
-                assert line[8] == "RightBreakpoint", (
-                    "Unrecognized " + "FusionInspector input"
-                )
+                assert line[8] == "RightBreakpoint", "Unrecognized " + "FusionInspector input"
                 continue
 
             line = line.strip().split("\t")
@@ -698,27 +701,6 @@ class FusionInspector(_Parser):
                 }
             )
         fin.close()
-
-        self._check_data()
-
-
-class NFuse(_Parser):
-    def __init__(self, infile, logger):
-        super(NFuse, self).__init__(logger)
-
-        self._check_data()
-
-
-class SOAPfuse(_Parser):
-    def __init__(self, infile, logger):
-        super(SOAPfuse, self).__init__(logger)
-
-        self._check_data()
-
-
-class FusionEntry:
-    def __init__(self, infile, logger):
-        super(FusionEntry, self).__init__(logger)
 
         self._check_data()
 

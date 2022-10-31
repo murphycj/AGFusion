@@ -1,16 +1,15 @@
+"""
+Holds classes for containing information for Gene and Fusion exon and protein information.
+"""
 import itertools
 import os
 import re
 import sys
 
-from agfusion import utils, exceptions, plot
-import pandas
 from Bio import Seq, SeqIO, SeqRecord, SeqUtils
 from Bio.Alphabet import generic_dna, generic_protein
 
-# matplotlib.rcParams['interactive'] = False
-
-from agfusion.utils import STANDARD_CHROMOSOMES, MIN_DOMAIN_LENGTH
+from agfusion import exceptions, plot, utils
 
 
 class _Gene:
@@ -47,18 +46,14 @@ class _Gene:
         noncanonical : bool
         """
 
-        if type(genes) == str:
+        if isinstance(genes) == str:
             genes = [genes]
-        elif type(genes) != list:
-            db.logger.error(
-                "parameter 'gene' to _Gene is not string or list: {}".format(genes)
-            )
-            exit()
-        if type(junction) != int:
-            db.logger.error(
-                "parameter 'junction' to _Gene is not int: {}".format(junction)
-            )
-            exit()
+        elif isinstance(genes) != list:
+            db.logger.error(f"parameter 'gene' to _Gene is not string or list: {genes}")
+            sys.exit(1)
+        if isinstance(junction) != int:
+            db.logger.error(f"parameter 'junction' to _Gene is not int: {junction}")
+            sys.exit(1)
 
         self.gene_found = False
         self.provided_transcript = False  # indicates user if user provided transcript
@@ -69,7 +64,7 @@ class _Gene:
         self.pyensembl_data = pyensembl_data
         self.genome = genome
         self.gene5prime = gene5prime
-        self.db = db
+        self.db_pointer = db
         self.noncanonical = noncanonical
 
         # find the appropriate Ensembl gene ID
@@ -118,14 +113,14 @@ class _Gene:
 
         sqlite3_command = (
             "SELECT * FROM "
-            + self.db.build
+            + self.db_pointer.build
             + ' WHERE stable_id=="'
             + self.gene.gene_id
             + '"'
         )
-        self.db.logger.debug("SQLite - " + sqlite3_command)
-        self.db.sqlite3_cursor.execute(sqlite3_command)
-        tmp = self.db.sqlite3_cursor.fetchall()
+        self.db_pointer.logger.debug("SQLite - " + sqlite3_command)
+        self.db_pointer.sqlite3_cursor.execute(sqlite3_command)
+        tmp = self.db_pointer.sqlite3_cursor.fetchall()
 
         self.gene_id = tmp[0][0]
         self.entrez_id = tmp[0][2]
@@ -139,35 +134,36 @@ class _Gene:
 
             sqlite3_command = (
                 "SELECT * FROM "
-                + self.db.build
+                + self.db_pointer.build
                 + '_transcript WHERE transcript_id=="'
                 + self.canonical_transcript_id
                 + '"'
             )
-            self.db.logger.debug("SQLite - " + sqlite3_command)
-            self.db.sqlite3_cursor.execute(sqlite3_command)
+            self.db_pointer.logger.debug("SQLite - " + sqlite3_command)
+            self.db_pointer.sqlite3_cursor.execute(sqlite3_command)
             tmp = db.sqlite3_cursor.fetchall()
             self.transcripts[tmp[0][2]] = tmp[0][0]
         elif not noncanonical and self.provided_transcript:
             pass
         else:
             if self.provided_transcript and noncanonical:
-                self.db.logger.warn(
-                    "You provided a transcript ID as well as specified --noncanonical flag. Will process all the gene's transcripts."
+                self.db_pointer.logger.warn(
+                    "You provided a transcript ID as well as specified "
+                    "--noncanonical flag. Will process all the gene's transcripts."
                 )
 
             # fetch transcript ids
 
             sqlite3_command = (
                 "SELECT * FROM "
-                + self.db.build
+                + self.db_pointer.build
                 + '_transcript WHERE gene_id=="'
                 + self.gene_id
                 + '"'
             )
-            self.db.logger.debug("SQLite - " + sqlite3_command)
-            self.db.sqlite3_cursor.execute(sqlite3_command)
-            tmp = self.db.sqlite3_cursor.fetchall()
+            self.db_pointer.logger.debug("SQLite - " + sqlite3_command)
+            self.db_pointer.sqlite3_cursor.execute(sqlite3_command)
+            tmp = self.db_pointer.sqlite3_cursor.fetchall()
 
             for transcript in tmp:
                 self.transcripts[transcript[2]] = transcript[0]
@@ -179,24 +175,24 @@ class _Gene:
             transcript = self.pyensembl_data.transcript_by_id(gene.upper())
             self.gene = transcript.gene
 
-            self.db.logger.debug(
-                "Found Ensembl transcript entry for %s: %s" % (gene, self.gene.id)
+            self.db_pointer.logger.debug(
+                f"Found Ensembl transcript entry for {gene}: {self.gene.id}"
             )
             self.gene_found = True
             self.provided_transcript = True
         else:
-            self.db.logger.debug("Found no Ensembl transcript entry for %s" % gene)
+            self.db_pointer.logger.debug(f"Found no Ensembl transcript entry for {gene}")
 
         sqlite3_command = (
             "SELECT * FROM "
-            + self.db.build
+            + self.db_pointer.build
             + '_transcript WHERE transcript_stable_id=="'
             + gene
             + '"'
         )
-        self.db.logger.debug("SQLite - " + sqlite3_command)
-        self.db.sqlite3_cursor.execute(sqlite3_command)
-        tmp = self.db.sqlite3_cursor.fetchall()
+        self.db_pointer.logger.debug("SQLite - " + sqlite3_command)
+        self.db_pointer.sqlite3_cursor.execute(sqlite3_command)
+        tmp = self.db_pointer.sqlite3_cursor.fetchall()
         self.transcripts[tmp[0][2]] = tmp[0][0]
 
     def _search_as_ensembl_id(self, gene):
@@ -204,52 +200,48 @@ class _Gene:
 
         if gene in self.pyensembl_data.gene_ids():
             self.gene = self.pyensembl_data.gene_by_id(gene.upper())
-            self.db.logger.debug(
-                "Found Enrez gene ID entry for %s: %s" % (gene, self.gene.id)
-            )
+            self.db_pointer.logger.debug(f"Found Enrez gene ID entry for {gene}: {self.gene.id}")
             self.gene_found = True
         else:
-            self.db.logger.debug("Cannot find Ensembl gene id %s in database!" % gene)
+            self.db_pointer.logger.debug(f"Cannot find Ensembl gene id {gene} in database!")
 
     def _search_as_entrez(self, gene):
         # if it is an entrez gene ID
 
         sqlite3_command = (
-            "SELECT * FROM " + self.db.build + ' WHERE entrez_id=="' + gene + '"'
+            "SELECT * FROM " + self.db_pointer.build + ' WHERE entrez_id=="' + gene + '"'
         )
-        self.db.logger.debug("SQLite - " + sqlite3_command)
-        self.db.sqlite3_cursor.execute(sqlite3_command)
-        tmp = self.db.sqlite3_cursor.fetchall()
+        self.db_pointer.logger.debug("SQLite - " + sqlite3_command)
+        self.db_pointer.sqlite3_cursor.execute(sqlite3_command)
+        tmp = self.db_pointer.sqlite3_cursor.fetchall()
 
         if len(tmp) == 1:
             self.gene = self.pyensembl_data.gene_by_id(tmp[0][1])
-            self.db.logger.debug(
-                "Found Entrez gene ID entry for %s: %s" % (gene, self.gene.id)
-            )
+            self.db_pointer.logger.debug(f"Found Entrez gene ID entry for {gene}: {self.gene.id}")
             self.gene_found = True
         elif len(tmp) > 1:
 
-            self.db.logger.error("Found too many Entrez gene ID entries for %s!" % gene)
+            self.db_pointer.logger.error(f"Found too many Entrez gene ID entries for {gene}!")
             for i in tmp:
-                self.db.logger.error(i)
-            sys.exit()
+                self.db_pointer.logger.error(i)
+            sys.exit(1)
         else:
-            self.db.logger.debug("Found no Entrez gene ID entry for %s" % gene)
+            self.db_pointer.logger.debug(f"Found no Entrez gene ID entry for {gene}.")
 
     def _search_by_refseq(self, gene):
 
         # if it is RefSeq ID
 
         sqlite3_command = (
-            "SELECT * FROM " + self.db.build + '_refseq WHERE refseq_id=="' + gene + '"'
+            "SELECT * FROM " + self.db_pointer.build + '_refseq WHERE refseq_id=="' + gene + '"'
         )
-        self.db.logger.debug("SQLite - " + sqlite3_command)
-        self.db.sqlite3_cursor.execute(sqlite3_command)
-        tmp = self.db.sqlite3_cursor.fetchall()
+        self.db_pointer.logger.debug("SQLite - " + sqlite3_command)
+        self.db_pointer.sqlite3_cursor.execute(sqlite3_command)
+        tmp = self.db_pointer.sqlite3_cursor.fetchall()
 
         if len(tmp) == 1:
             self.transcripts[tmp[0][1]] = tmp[0][0]
-            self.db.logger.debug("Found RefSeq entry for %s" % gene)
+            self.db_pointer.logger.debug(f"Found RefSeq entry for {gene}")
             self.gene_found = True
             self.provided_transcript = True
 
@@ -259,12 +251,12 @@ class _Gene:
             self.gene = transcript.gene
 
         elif len(tmp) > 1:
-            self.db.logger.error("Found too many RefSeq entries for %s!" % gene)
+            self.db_pointer.logger.error(f"Found too many RefSeq entries for {gene}!")
             for i in tmp:
-                self.db.logger.error(i)
-            sys.exit()
+                self.db_pointer.logger.error(i)
+            sys.exit(1)
         else:
-            self.db.logger.debug("Found no RefSeq entry for %s" % gene)
+            self.db_pointer.logger.debug(f"Found no RefSeq entry for {gene}")
 
     def _search_by_symbol(self, gene):
         if gene in self.pyensembl_data.gene_names():
@@ -276,20 +268,16 @@ class _Gene:
                 # use the one located on chromosomes
 
                 for tmp_gene in temp:
-                    if tmp_gene.contig in STANDARD_CHROMOSOMES:
+                    if tmp_gene.contig in utils.STANDARD_CHROMOSOMES:
                         self.gene = tmp_gene
                         self.gene_found = True
 
                 if self.gene is None:
-                    raise exceptions.TooManyGenesException(
-                        gene, [x.id for x in temp], self.genome
-                    )
+                    raise exceptions.TooManyGenesException(gene, [x.id for x in temp], self.genome)
             else:
                 self.gene = temp[0]
                 self.gene_found = True
-                self.db.logger.debug(
-                    "Found gene symbol entry for %s: %s" % (gene, self.gene.id)
-                )
+                self.db_pointer.logger.debug(f"Found gene symbol entry for {gene}: {self.gene.id}")
 
 
 class Fusion:
@@ -332,7 +320,7 @@ class Fusion:
         transcripts_3prime : str
         """
 
-        self.db = db
+        self.db_pointer = db
         self.pyensembl_data = pyensembl_data
 
         # get the reference genom
@@ -358,11 +346,6 @@ class Fusion:
         self.name = self.gene5prime.gene.name + "_" + self.gene3prime.gene.name
         self.name = self.name.replace("/", "-")
 
-        # fetch which are canonical transcripts
-
-        gene5prime_canonical = ""
-        gene3prime_canonical = ""
-
         # construct all the fusion transcript combinations
 
         self.transcripts = {}
@@ -376,17 +359,11 @@ class Fusion:
             transcript1 = pyensembl_data.transcript_by_id(combo[0])
             transcript2 = pyensembl_data.transcript_by_id(combo[1])
 
-            if (
-                transcripts_5prime is not None
-                and transcript1.id not in transcripts_5prime
-            ):
+            if transcripts_5prime is not None and transcript1.id not in transcripts_5prime:
 
                 continue
 
-            if (
-                transcripts_3prime is not None
-                and transcript2.id not in transcripts_3prime
-            ):
+            if transcripts_3prime is not None and transcript2.id not in transcripts_3prime:
 
                 continue
 
@@ -440,13 +417,13 @@ class Fusion:
         file_type="png",
         fontsize=12,
         dpi=100,
-        colors={},
-        rename={},
+        colors=None,
+        rename=None,
         width=8,
         height=2,
         scale=0,
         no_domain_labels=True,
-        plot_WT=False,
+        plot_wt=False,
         exclude=None,
     ):
         """
@@ -459,18 +436,14 @@ class Fusion:
         if not os.path.exists(out_dir):
             os.mkdir(out_dir)
 
-        if plot_WT:
-            gene5prime_WT = os.path.join(
-                out_dir, self.gene5prime.gene.gene_name.replace("/", "-")
-            )
-            gene3prime_WT = os.path.join(
-                out_dir, self.gene3prime.gene.gene_name.replace("/", "-")
-            )
-            if not os.path.exists(gene5prime_WT):
-                os.mkdir(gene5prime_WT)
+        if plot_wt:
+            gene5prime_wt = os.path.join(out_dir, self.gene5prime.gene.gene_name.replace("/", "-"))
+            gene3prime_wt = os.path.join(out_dir, self.gene3prime.gene.gene_name.replace("/", "-"))
+            if not os.path.exists(gene5prime_wt):
+                os.mkdir(gene5prime_wt)
 
-            if not os.path.exists(gene3prime_WT):
-                os.mkdir(gene3prime_WT)
+            if not os.path.exists(gene3prime_wt):
+                os.mkdir(gene3prime_wt)
 
         for name, transcript in list(self.transcripts.items()):
 
@@ -509,12 +482,12 @@ class Fusion:
             pplot.draw()
             pplot.save()
 
-            if plot_WT:
+            if plot_wt:
 
                 # plot exons
 
                 filename = os.path.join(
-                    gene5prime_WT, transcript.transcript1.id + ".exon." + file_type
+                    gene5prime_wt, transcript.transcript1.id + ".exon." + file_type
                 )
 
                 pplot = plot.PlotWTExons(
@@ -530,7 +503,7 @@ class Fusion:
                 pplot.save()
 
                 filename = os.path.join(
-                    gene3prime_WT, transcript.transcript2.id + ".exon." + file_type
+                    gene3prime_wt, transcript.transcript2.id + ".exon." + file_type
                 )
 
                 pplot = plot.PlotWTExons(
@@ -547,9 +520,7 @@ class Fusion:
 
                 # plot proteins
 
-                filename = os.path.join(
-                    gene5prime_WT, transcript.transcript1.id + "." + file_type
-                )
+                filename = os.path.join(gene5prime_wt, transcript.transcript1.id + "." + file_type)
 
                 pplot = plot.PlotWTProtein(
                     ensembl_transcript=transcript.transcript1,
@@ -568,9 +539,7 @@ class Fusion:
                 pplot.draw()
                 pplot.save()
 
-                filename = os.path.join(
-                    gene3prime_WT, transcript.transcript2.id + "." + file_type
-                )
+                filename = os.path.join(gene3prime_wt, transcript.transcript2.id + "." + file_type)
 
                 pplot = plot.PlotWTProtein(
                     ensembl_transcript=transcript.transcript2,
@@ -599,7 +568,7 @@ class Fusion:
 
         fout = open(os.path.join(out_dir, self.name + "_cdna.fa"), "w")
 
-        for name, transcript in list(self.transcripts.items()):
+        for _, transcript in list(self.transcripts.items()):
 
             if transcript.cdna is not None:
 
@@ -635,21 +604,21 @@ class Fusion:
         # check if any transcripts have coding potential
 
         n = 0
-        for name, transcript in list(self.transcripts.items()):
+        for _, transcript in list(self.transcripts.items()):
 
             if transcript.cds is not None:
                 n += 1
 
         if n == 0:
-            self.db.logger.debug(
-                "The %s fusion does not produce any protein coding transcripts. No cds.fa file will be written"
-                % self.name
+            self.db_pointer.logger.debug(
+                f"The {self.name} fusion does not produce any "
+                "protein coding transcripts. No cds.fa file will be written"
             )
             return
 
         fout = open(os.path.join(out_dir, self.name + "_cds.fa"), "w")
 
-        for name, transcript in list(self.transcripts.items()):
+        for _, transcript in list(self.transcripts.items()):
 
             if transcript.cds is not None:
 
@@ -677,21 +646,21 @@ class Fusion:
         # check if any transcripts have coding potential
 
         n = 0
-        for name, transcript in list(self.transcripts.items()):
+        for _, transcript in list(self.transcripts.items()):
 
             if transcript.cds is not None:
                 n += 1
 
         if n == 0:
-            self.db.logger.debug(
-                "The %s fusion does not produce any protein coding transcripts. No proteins.fa file will be written"
-                % self.name
+            self.db_pointer.logger.debug(
+                f"The {self.name} fusion does not produce any "
+                "protein coding transcripts. No proteins.fa file will be written"
             )
             return
 
         fout = open(os.path.join(out_dir, self.name + "_protein.fa"), "w")
 
-        for name, transcript in list(self.transcripts.items()):
+        for _, transcript in list(self.transcripts.items()):
 
             if transcript.cds is not None:
 
@@ -708,9 +677,13 @@ class Fusion:
 
         fout.close()
 
-    def save_tables(self, out_dir=".", annotation="pfam"):
+    def save_tables(self, out_dir="."):
+        """
+        write table of fusion isoforms
 
-        # write table of fusion isoforms
+        Args:
+            out_dir (str, optional): Directory to save results. Defaults to ".".
+        """
 
         fout = open(os.path.join(out_dir, self.name + ".fusion_transcripts.csv"), "w")
         fout.write(
@@ -730,7 +703,7 @@ class Fusion:
             + "\n"
         )
 
-        for name, transcript in list(self.transcripts.items()):
+        for _, transcript in list(self.transcripts.items()):
 
             if transcript.protein_length is None:
                 protein_length = "NA"
@@ -780,7 +753,7 @@ class Fusion:
             + "\n"
         )
 
-        for name, transcript in list(self.transcripts.items()):
+        for _, transcript in list(self.transcripts.items()):
             for domain in transcript.domains["fusion"]:
                 fout.write(
                     ",".join(["{}"] * 11).format(
@@ -820,7 +793,7 @@ class Fusion:
             + "\n"
         )
 
-        for name, transcript in list(self.transcripts.items()):
+        for _, transcript in list(self.transcripts.items()):
             for exon in transcript.gene5prime_exon_intervals:
                 fout.write(
                     ",".join(["{}"] * 11).format(
@@ -860,7 +833,7 @@ class Fusion:
         fout.close()
 
 
-class FusionTranscript(object):
+class FusionTranscript:
     """
     Generates the information needed for the gene fusion transctips
     """
@@ -881,7 +854,7 @@ class FusionTranscript(object):
         self.gene5prime = gene5prime
         self.gene3prime = gene3prime
         self.protein_databases = protein_databases
-        self.db = db
+        self.db_pointer = db
 
         self.name = self.transcript1.id + "_" + self.transcript2.id
         self.gene_names = self.gene5prime.gene.name + "_" + self.gene3prime.gene.name
@@ -905,6 +878,7 @@ class FusionTranscript(object):
 
         self.protein = None
         self.protein_length = None
+        self.protein_names = None
         self.molecular_weight = None
         self.domains = {transcript1.id: [], transcript2.id: [], "fusion": []}
 
@@ -935,25 +909,25 @@ class FusionTranscript(object):
 
         sqlite3_command = (
             "SELECT * FROM "
-            + self.db.build
+            + self.db_pointer.build
             + '_transcript WHERE transcript_stable_id=="'
             + self.transcript1.id
             + '"'
         )
-        self.db.logger.debug("SQLite - " + sqlite3_command)
-        self.db.sqlite3_cursor.execute(sqlite3_command)
-        gene5prime_translation_id = self.db.sqlite3_cursor.fetchall()[0][3]
+        self.db_pointer.logger.debug("SQLite - " + sqlite3_command)
+        self.db_pointer.sqlite3_cursor.execute(sqlite3_command)
+        gene5prime_translation_id = self.db_pointer.sqlite3_cursor.fetchall()[0][3]
 
         sqlite3_command = (
             "SELECT * FROM "
-            + self.db.build
+            + self.db_pointer.build
             + '_transcript WHERE transcript_stable_id=="'
             + self.transcript2.id
             + '"'
         )
-        self.db.logger.debug("SQLite - " + sqlite3_command)
-        self.db.sqlite3_cursor.execute(sqlite3_command)
-        gene3prime_translation_id = self.db.sqlite3_cursor.fetchall()[0][3]
+        self.db_pointer.logger.debug("SQLite - " + sqlite3_command)
+        self.db_pointer.sqlite3_cursor.execute(sqlite3_command)
+        gene3prime_translation_id = self.db_pointer.sqlite3_cursor.fetchall()[0][3]
 
         for protein_database in self.protein_databases:
 
@@ -961,20 +935,20 @@ class FusionTranscript(object):
 
             sqlite3_command = (
                 "SELECT * FROM "
-                + self.db.build
+                + self.db_pointer.build
                 + "_"
                 + protein_database
                 + ' WHERE translation_id=="'
                 + gene5prime_translation_id
                 + '"'
             )
-            self.db.logger.debug("SQLite - " + sqlite3_command)
-            self.db.sqlite3_cursor.execute(sqlite3_command)
-            tmp_domains += [list(x) for x in self.db.sqlite3_cursor.fetchall()]
+            self.db_pointer.logger.debug("SQLite - " + sqlite3_command)
+            self.db_pointer.sqlite3_cursor.execute(sqlite3_command)
+            tmp_domains += [list(x) for x in self.db_pointer.sqlite3_cursor.fetchall()]
 
         for d in tmp_domains:
 
-            pfeature_ID = d[2]
+            pfeature_id = d[2]
             pfeature_name = d[6]
             pfeature_description = d[5]
             pfeature_start = int(d[3])
@@ -982,7 +956,7 @@ class FusionTranscript(object):
 
             gene5prime_domains.append(
                 [
-                    pfeature_ID,
+                    pfeature_id,
                     pfeature_name,
                     pfeature_description,
                     pfeature_start,
@@ -990,40 +964,35 @@ class FusionTranscript(object):
                 ]
             )
 
-            try:
-                if self.transcript_protein_junction_5prime < pfeature_start:
-                    continue
-                elif self.transcript_protein_junction_5prime >= pfeature_end:
+            if self.transcript_protein_junction_5prime < pfeature_start:
+                continue
+            if self.transcript_protein_junction_5prime >= pfeature_end:
 
-                    fusion_domains.append(
-                        [
-                            pfeature_ID,
-                            pfeature_name,
-                            pfeature_description,
-                            pfeature_start,
-                            pfeature_end,
-                        ]
-                    )
+                fusion_domains.append(
+                    [
+                        pfeature_id,
+                        pfeature_name,
+                        pfeature_description,
+                        pfeature_start,
+                        pfeature_end,
+                    ]
+                )
 
-                elif (
-                    self.transcript_protein_junction_5prime - pfeature_start
-                ) >= MIN_DOMAIN_LENGTH:
+            elif (
+                self.transcript_protein_junction_5prime - pfeature_start
+            ) >= utils.MIN_DOMAIN_LENGTH:
 
-                    pfeature_end = self.transcript_protein_junction_5prime
+                pfeature_end = self.transcript_protein_junction_5prime
 
-                    fusion_domains.append(
-                        [
-                            pfeature_ID,
-                            pfeature_name,
-                            pfeature_description,
-                            pfeature_start,
-                            pfeature_end,
-                        ]
-                    )
-            except:
-                import pdb
-
-                pdb.set_trace()
+                fusion_domains.append(
+                    [
+                        pfeature_id,
+                        pfeature_name,
+                        pfeature_description,
+                        pfeature_start,
+                        pfeature_end,
+                    ]
+                )
 
         # only find the 3' gene partner's domains if the fusion is in-frame
 
@@ -1035,16 +1004,16 @@ class FusionTranscript(object):
 
                 sqlite3_command = (
                     "SELECT * FROM "
-                    + self.db.build
+                    + self.db_pointer.build
                     + "_"
                     + database
                     + ' WHERE translation_id=="'
                     + gene3prime_translation_id
                     + '"'
                 )
-                self.db.logger.debug("SQLite - " + sqlite3_command)
-                self.db.sqlite3_cursor.execute(sqlite3_command)
-                tmp_domains += [list(x) for x in self.db.sqlite3_cursor.fetchall()]
+                self.db_pointer.logger.debug("SQLite - " + sqlite3_command)
+                self.db_pointer.sqlite3_cursor.execute(sqlite3_command)
+                tmp_domains += [list(x) for x in self.db_pointer.sqlite3_cursor.fetchall()]
 
             for d in tmp_domains:
 
@@ -1066,7 +1035,7 @@ class FusionTranscript(object):
 
                 if self.transcript_protein_junction_3prime > pfeature_end:
                     continue
-                elif self.transcript_protein_junction_3prime <= pfeature_start:
+                if self.transcript_protein_junction_3prime <= pfeature_start:
 
                     pfeature_start = (
                         pfeature_start - self.transcript_protein_junction_3prime
@@ -1102,11 +1071,6 @@ class FusionTranscript(object):
                         ]
                     )
 
-                if pfeature_end < pfeature_start:
-                    import pdb
-
-                    pdb.set_trace()
-
         self.domains["fusion"] = fusion_domains
         self.domains[self.transcript1.id] = gene5prime_domains
         self.domains[self.transcript2.id] = gene3prime_domains
@@ -1119,38 +1083,23 @@ class FusionTranscript(object):
         self.transcript_protein_junction_5prime = 0
         self.transcript_protein_junction_3prime = 0
 
-        self.protein_names = (
-            self.transcript1.protein_id + "-" + self.transcript2.protein_id
-        )
+        self.protein_names = self.transcript1.protein_id + "-" + self.transcript2.protein_id
 
-        self.transcript_protein_junction_5prime = int(
-            self.transcript_cds_junction_5prime / 3.0
-        )
+        self.transcript_protein_junction_5prime = int(self.transcript_cds_junction_5prime / 3.0)
 
-        if (len(self.cds_5prime) / 3.0).is_integer() and (
-            len(self.cds_3prime) / 3.0
-        ).is_integer():
+        if (len(self.cds_5prime) / 3.0).is_integer() and (len(self.cds_3prime) / 3.0).is_integer():
             self.effect = "in-frame"
-            self.transcript_protein_junction_3prime = int(
-                self.transcript_cds_junction_3prime / 3.0
-            )
-        elif (
-            round(
-                (len(self.cds_5prime) / 3.0 % 1) + (len(self.cds_3prime) / 3.0 % 1), 2
-            )
-            == 1.0
-        ):
+            self.transcript_protein_junction_3prime = int(self.transcript_cds_junction_3prime / 3.0)
+        elif round((len(self.cds_5prime) / 3.0 % 1) + (len(self.cds_3prime) / 3.0 % 1), 2) == 1.0:
             self.effect = "in-frame (with mutation)"
-            self.transcript_protein_junction_3prime = int(
-                self.transcript_cds_junction_3prime / 3.0
-            )
+            self.transcript_protein_junction_3prime = int(self.transcript_cds_junction_3prime / 3.0)
         else:
             self.effect = "out-of-frame"
 
         # check if CDS's length is multiple of 3, if not then print warning
 
         if (len(self.cds.seq) % 3) != 0:
-            self.db.logger.warn("Length of fusion isoform CDS is not a multiple of 3!")
+            self.db_pointer.logger.warn("Length of fusion isoform CDS is not a multiple of 3!")
 
         # translate CDS into protein and remove everything after the stop codon
 
@@ -1178,18 +1127,11 @@ class FusionTranscript(object):
             protein_seq,
             id=self.protein_names,
             name=self.protein_names,
-            description=(
-                "length: {}, kD: {}, transcripts: {}, strands: {}/{}, "
-                "genes: {}, effect: {}"
-            ).format(
-                self.protein_length,
-                self.molecular_weight,
-                self.name,
-                self.transcript1.strand,
-                self.transcript2.strand,
-                self.gene_names,
-                self.effect,
-            ),
+            description=f"length: {self.protein_length}, "
+            f"kD: {self.molecular_weight}, "
+            f"transcripts: {self.name}, "
+            f"strands: {self.transcript1.strand}/{self.transcript2.strand}, "
+            f"genes: {self.gene_names}, effect: {self.effect}",
         )
 
     def _fetch_transcript_cds(self):
@@ -1209,9 +1151,7 @@ class FusionTranscript(object):
                 elif self.gene5prime.junction <= cds[0]:
                     break
                 else:
-                    self.transcript_cds_junction_5prime += (
-                        self.gene5prime.junction - cds[0] + 1
-                    )
+                    self.transcript_cds_junction_5prime += self.gene5prime.junction - cds[0] + 1
                     break
         else:
             for cds in self.transcript1.coding_sequence_position_ranges:
@@ -1220,13 +1160,9 @@ class FusionTranscript(object):
                 elif self.gene5prime.junction >= cds[1]:
                     break
                 else:
-                    self.transcript_cds_junction_5prime += (
-                        cds[1] - self.gene5prime.junction + 1
-                    )
+                    self.transcript_cds_junction_5prime += cds[1] - self.gene5prime.junction + 1
 
-        self.cds_5prime = self.transcript1.coding_sequence[
-            0 : self.transcript_cds_junction_5prime
-        ]
+        self.cds_5prime = self.transcript1.coding_sequence[0 : self.transcript_cds_junction_5prime]
 
         if self.transcript2.strand == "+":
             for cds in self.transcript2.coding_sequence_position_ranges:
@@ -1235,9 +1171,7 @@ class FusionTranscript(object):
                 elif self.gene3prime.junction <= cds[0]:
                     break
                 else:
-                    self.transcript_cds_junction_3prime += (
-                        self.gene3prime.junction - cds[0]
-                    )
+                    self.transcript_cds_junction_3prime += self.gene3prime.junction - cds[0]
         else:
             for cds in self.transcript2.coding_sequence_position_ranges:
                 if self.gene3prime.junction <= cds[0]:
@@ -1245,30 +1179,24 @@ class FusionTranscript(object):
                 elif self.gene3prime.junction >= cds[1]:
                     break
                 else:
-                    self.transcript_cds_junction_3prime += (
-                        cds[1] - self.gene3prime.junction
-                    )
+                    self.transcript_cds_junction_3prime += cds[1] - self.gene3prime.junction
 
-        self.cds_3prime = self.transcript2.coding_sequence[
-            self.transcript_cds_junction_3prime : :
-        ]
+        self.cds_3prime = self.transcript2.coding_sequence[self.transcript_cds_junction_3prime : :]
 
         # create a sequence record
 
         if self.cds_5prime is not None and self.cds_3prime is not None:
             seq = self.cds_5prime + self.cds_3prime
 
+        seq_length = len(self.cds_5prime + self.cds_3prime)
+
         self.cds = SeqRecord.SeqRecord(
             Seq.Seq(seq, generic_dna),
             id=self.name,
             name=self.name,
-            description="length: {}, genes: {}/{}, strands: {}/{}".format(
-                len(self.cds_5prime + self.cds_3prime),
-                self.transcript1.gene.name,
-                self.transcript2.gene.name,
-                self.transcript1.gene.strand,
-                self.transcript2.gene.strand,
-            ),
+            description=f"length: {seq_length}, "
+            f"genes: {self.transcript1.gene.name}/{self.transcript2.gene.name}, "
+            f"strands: {self.transcript1.gene.strand}/{self.transcript2.gene.strand}",
         )
 
     def _fetch_transcript_cdna(self):
@@ -1314,15 +1242,11 @@ class FusionTranscript(object):
 
                 if self.gene5prime.junction >= exon[1]:
                     self.transcript_cdna_junction_5prime += exon[1] - exon[0] + 1
-                    self.gene5prime_exon_intervals.append(
-                        [exon[0], exon[1], exon_count]
-                    )
+                    self.gene5prime_exon_intervals.append([exon[0], exon[1], exon_count])
                 elif self.gene5prime.junction <= exon[0]:
                     break
                 else:
-                    self.transcript_cdna_junction_5prime += (
-                        self.gene5prime.junction - exon[0] + 1
-                    )
+                    self.transcript_cdna_junction_5prime += self.gene5prime.junction - exon[0] + 1
                     self.gene5prime_exon_intervals.append(
                         [exon[0], self.gene5prime.junction, exon_count]
                     )
@@ -1354,30 +1278,23 @@ class FusionTranscript(object):
 
                 if self.gene5prime.junction <= exon[0]:
                     self.transcript_cdna_junction_5prime += exon[1] - exon[0] + 1
-                    self.gene5prime_exon_intervals.append(
-                        [exon[0], exon[1], exon_count]
-                    )
+                    self.gene5prime_exon_intervals.append([exon[0], exon[1], exon_count])
                 elif self.gene5prime.junction >= exon[1]:
                     break
                 else:
-                    self.transcript_cdna_junction_5prime += (
-                        exon[1] - self.gene5prime.junction + 1
-                    )
+                    self.transcript_cdna_junction_5prime += exon[1] - self.gene5prime.junction + 1
                     self.gene5prime_exon_intervals.append(
                         [self.gene5prime.junction, exon[1], exon_count]
                     )
 
         try:
-            self.cdna_5prime = self.transcript1.sequence[
-                0 : self.transcript_cdna_junction_5prime
-            ]
+            self.cdna_5prime = self.transcript1.sequence[0 : self.transcript_cdna_junction_5prime]
         except TypeError:
-            self.db.logger.warn(
-                "No cDNA sequence available for %s! "
-                "Will not print cDNA sequence for the %s fusion. "
+            self.db_pointer.logger.warn(
+                f"No cDNA sequence available for {self.gene5prime.gene.name}! "
+                f"Will not print cDNA sequence for the {self.gene_names} fusion. "
                 "You might be working with an outdated pyensembl. "
                 "Update the package and rerun 'pyensembl install'"
-                % (str(self.gene5prime.gene.name), self.gene_names)
             )
 
         # get the 3prime transcript sequence and determine if junction is
@@ -1397,10 +1314,8 @@ class FusionTranscript(object):
                 exon_count += 1
                 if self.gene3prime.junction >= exon[1]:
                     continue
-                elif self.gene3prime.junction <= exon[0]:
-                    self.gene3prime_exon_intervals.append(
-                        [exon[0], exon[1], exon_count]
-                    )
+                if self.gene3prime.junction <= exon[0]:
+                    self.gene3prime_exon_intervals.append([exon[0], exon[1], exon_count])
                 else:
                     self.gene3prime_exon_intervals.append(
                         [self.gene3prime.junction, exon[1], exon_count]
@@ -1430,9 +1345,7 @@ class FusionTranscript(object):
                 elif self.gene3prime.junction <= exon[0]:
                     break
                 else:
-                    self.transcript_cdna_junction_3prime += (
-                        self.gene3prime.junction - exon[0]
-                    )
+                    self.transcript_cdna_junction_3prime += self.gene3prime.junction - exon[0]
         else:
 
             exon_count = 0
@@ -1443,10 +1356,8 @@ class FusionTranscript(object):
                 exon_count += 1
                 if self.gene3prime.junction <= exon[0]:
                     continue
-                elif self.gene3prime.junction >= exon[1]:
-                    self.gene3prime_exon_intervals.append(
-                        [exon[0], exon[1], exon_count]
-                    )
+                if self.gene3prime.junction >= exon[1]:
+                    self.gene3prime_exon_intervals.append([exon[0], exon[1], exon_count])
                 else:
                     self.gene3prime_exon_intervals.append(
                         [exon[0], self.gene3prime.junction, exon_count]
@@ -1476,9 +1387,7 @@ class FusionTranscript(object):
                 elif self.gene3prime.junction >= exon[1]:
                     break
                 else:
-                    self.transcript_cdna_junction_3prime += (
-                        exon[1] - self.gene3prime.junction
-                    )
+                    self.transcript_cdna_junction_3prime += exon[1] - self.gene3prime.junction
 
         if self.cdna_5prime is not None:
             try:
@@ -1486,12 +1395,11 @@ class FusionTranscript(object):
                     self.transcript_cdna_junction_3prime : :
                 ]
             except TypeError:
-                self.db.logger.warn(
-                    "No cDNA sequence available for %s! "
-                    "Will not print cDNA sequence for the %s fusion. "
+                self.db_pointer.logger.warn(
+                    f"No cDNA sequence available for {self.gene3prime.gene.name}! "
+                    f"Will not print cDNA sequence for the {self.gene_names} fusion. "
                     "You might be working with an outdated pyensembl. "
                     "Update the package and rerun 'pyensembl install'"
-                    % (str(self.gene3prime.gene.name), self.gene_names)
                 )
 
         if self.cdna_5prime is not None and self.cdna_3prime is not None:
@@ -1515,16 +1423,12 @@ class FusionTranscript(object):
 
         if self.effect_5prime.find("intron") == -1:
 
-            if (
-                self.transcript1.complete
-                and self.transcript_cdna_junction_5prime
-                < len(self.transcript1.five_prime_utr_sequence)
+            if self.transcript1.complete and self.transcript_cdna_junction_5prime < len(
+                self.transcript1.five_prime_utr_sequence
             ):
                 self.effect_5prime = "5UTR"
-            elif (
-                self.transcript1.complete
-                and self.transcript_cdna_junction_5prime
-                == len(self.transcript1.five_prime_utr_sequence)
+            elif self.transcript1.complete and self.transcript_cdna_junction_5prime == len(
+                self.transcript1.five_prime_utr_sequence
             ):
                 self.effect_5prime = "5UTR (end)"
 
@@ -1541,16 +1445,12 @@ class FusionTranscript(object):
 
         if self.effect_3prime.find("intron") == -1:
 
-            if (
-                self.transcript2.complete
-                and self.transcript_cdna_junction_3prime
-                < len(self.transcript2.five_prime_utr_sequence)
+            if self.transcript2.complete and self.transcript_cdna_junction_3prime < len(
+                self.transcript2.five_prime_utr_sequence
             ):
                 self.effect_3prime = "5UTR"
-            elif (
-                self.transcript2.complete
-                and self.transcript_cdna_junction_3prime
-                == len(self.transcript2.five_prime_utr_sequence)
+            elif self.transcript2.complete and self.transcript_cdna_junction_3prime == len(
+                self.transcript2.five_prime_utr_sequence
             ):
                 self.effect_3prime = "5UTR (end)"
 
@@ -1595,14 +1495,14 @@ class FusionTranscript(object):
                         if n == 0 and self.gene5prime.junction < cds[0]:
                             self.effect_5prime = "intron (before cds)"
                             break
-                        elif n == n_max and self.gene5prime.junction > cds[1]:
+                        if n == n_max and self.gene5prime.junction > cds[1]:
                             self.effect_5prime = "intron (after cds)"
                             break
                     else:
                         if n == 0 and self.gene5prime.junction > cds[1]:
                             self.effect_5prime = "intron (before cds)"
                             break
-                        elif n == n_max and self.gene5prime.junction < cds[0]:
+                        if n == n_max and self.gene5prime.junction < cds[0]:
                             self.effect_5prime = "intron (after cds)"
                             break
 
@@ -1623,10 +1523,7 @@ class FusionTranscript(object):
             else:
                 for cds in self.transcript1.coding_sequence_position_ranges:
 
-                    if (
-                        self.gene5prime.junction >= cds[0]
-                        and self.gene5prime.junction <= cds[1]
-                    ):
+                    if self.gene5prime.junction >= cds[0] and self.gene5prime.junction <= cds[1]:
                         self.effect_5prime = "CDS"
                         break
 
@@ -1668,14 +1565,14 @@ class FusionTranscript(object):
                         if n == 0 and self.gene3prime.junction < cds[0]:
                             self.effect_3prime = "intron (before cds)"
                             break
-                        elif n == n_max and self.gene3prime.junction > cds[1]:
+                        if n == n_max and self.gene3prime.junction > cds[1]:
                             self.effect_3prime = "intron (after cds)"
                             break
                     else:
                         if n == 0 and self.gene3prime.junction > cds[1]:
                             self.effect_3prime = "intron (before cds)"
                             break
-                        elif n == n_max and self.gene3prime.junction < cds[0]:
+                        if n == n_max and self.gene3prime.junction < cds[0]:
                             self.effect_3prime = "intron (after cds)"
                             break
 
@@ -1696,10 +1593,7 @@ class FusionTranscript(object):
 
             else:
                 for cds in self.transcript2.coding_sequence_position_ranges:
-                    if (
-                        self.gene3prime.junction >= cds[0]
-                        and self.gene3prime.junction <= cds[1]
-                    ):
+                    if self.gene3prime.junction >= cds[0] and self.gene3prime.junction <= cds[1]:
                         self.effect_3prime = "CDS"
                         break
 
@@ -1752,18 +1646,13 @@ class FusionTranscript(object):
 
         # append information to cdna fasta headers
 
-        self.cdna.description += "; locations: {}/{};".format(
-            self.effect_5prime, self.effect_3prime
-        )
-        self.cdna.description += " strands: {}/{};".format(
-            self.transcript1.strand, self.transcript2.strand
-        )
-        self.cdna.description += " Has protein coding potential: {};".format(
-            self.has_coding_potential
-        )
+        self.cdna.description += f"; locations: {self.effect_5prime}/{self.effect_3prime};"
+        self.cdna.description += f" strands: {self.transcript1.strand}/{self.transcript2.strand};"
+        self.cdna.description += f" Has protein coding potential: {self.has_coding_potential};"
 
         if not self.has_coding_potential:
-            self.cdna.description += " Reason: {}".format(", ".join(reasons))
+            reasons = ", ".join(reasons)
+            self.cdna.description += f" Reason: {reasons}"
 
         # if the fusion transcript has coding potential then
         # fetch its CDS and protein sequences and annotate it
