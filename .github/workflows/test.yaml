@@ -1,4 +1,4 @@
-name: Test
+name: Unit tests
 on:
   push:
     branches: "*"
@@ -17,8 +17,8 @@ jobs:
           pip install flake8 pytest
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           cd test
-          agfusion download -g hg19
-          agfusion download -s mus_musculus -r 84
+          ../bin/agfusion download -g hg19
+          ../bin/agfusion download -s mus_musculus -r 84
           pyensembl install --release 84 --species mus_musculus
           pyensembl install --release 75 --species homo_sapiens
       - name: Test with pytest
