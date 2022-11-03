@@ -136,7 +136,7 @@ def annotate(
         width=args.width,
         dpi=args.dpi,
         no_domain_labels=args.no_domain_labels,
-        plot_WT=args.WT,
+        plot_wt=args.WT,
         exclude=args.exclude_domain,
     )
     fusion.save_tables(out_dir=outdir)

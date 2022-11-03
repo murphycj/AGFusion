@@ -429,6 +429,7 @@ disable=raw-checker-failed,
         import-outside-toplevel,
         too-many-lines,
         too-many-statements,
+        keyword-arg-before-vararg,
         R1732
 
 # Enable the message, report, category or checker with the given id(s). You can

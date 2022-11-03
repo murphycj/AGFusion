@@ -1,6 +1,9 @@
 # Unreleased
 - Cleanup CI/CD workflows.
 - Updates to the README.
+- Fix class parameters for plotting classes.
+- Added tests for plotting.
+- Added batch input test to github actions.
 
 # Version 1.3.0
 - Add Github actions for CI/CD and deploying to PyPi (#43).
