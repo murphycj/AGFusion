@@ -36,3 +36,7 @@ jobs:
             -db ../../agfusion.homo_sapiens.75.db \
             -o test \
             -a starfusion
+      - name: Test build bundle for pip
+        run: |
+          pip install setuptools wheel build
+          python setup.py sdist bdist_wheel
