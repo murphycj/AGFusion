@@ -58,8 +58,8 @@ class _Plot:
 class _PlotExons(_Plot):
     """Base class for plotting exon structure."""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.vertical_offset = 0.15
         self.left_marker_line = None
         self.left_marker_text = None
@@ -147,8 +147,8 @@ class _PlotExons(_Plot):
 class PlotWTExons(_PlotExons):
     """Class for plotting wild-type exon structure."""
 
-    def __init__(self, ensembl_transcript):
-        super().__init__()
+    def __init__(self, ensembl_transcript, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.ensembl_transcript = ensembl_transcript
 
     def _draw_main_body(self, name_symbols, name_isoform):
@@ -219,8 +219,8 @@ class PlotWTExons(_PlotExons):
 class PlotFusionExons(_PlotExons):
     """Class for plotting fusion exon structure."""
 
-    def __init__(self, transcript):
-        super().__init__()
+    def __init__(self, transcript, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.transcript = transcript
 
     def _draw_fusion_junction(self, junction_location):
@@ -418,13 +418,15 @@ class _PlotProtein(_Plot):
 
     def __init__(
         self,
-        transcript=None,
+        transcript,
         colors=None,
         rename=None,
         no_domain_labels=False,
         exclude=None,
+        *args,
+        **kwargs,
     ):
-        super().__init__()
+        super().__init__(*args, **kwargs)
         self.transcript = transcript
         self.colors = {} if colors is None else colors
         self.rename = {} if rename is None else rename
@@ -471,9 +473,7 @@ class _PlotProtein(_Plot):
 
         domains.sort(key=lambda x: x[3])
 
-        domain_count = 0
-
-        for domain in domains:
+        for domain_count, domain in enumerate(domains):
 
             domain_name = self._get_domain_name(domain)
 
@@ -576,7 +576,6 @@ class _PlotProtein(_Plot):
 
                     if min_overlap[1] > lowest_level_plotted:
                         lowest_level_plotted = min_overlap[1]
-            domain_count += 1
 
         # now we know how many levels of domains labels are needed, so
         # remove all levels, make the correction to self.vertical_offset
@@ -589,9 +588,11 @@ class _PlotProtein(_Plot):
         self.levels_plotted = HORIZONTAL_LEVELS.index(lowest_level_plotted)
         self.vertical_offset += 0.05 * self.levels_plotted
 
-        domain_count = 0
+        # import pdb
 
-        for domain in domains:
+        # pdb.set_trace()
+
+        for domain_count, domain in enumerate(domains):
             domain_name = self._get_domain_name(domain)
 
             if self.exclude and domain_name in self.exclude:
@@ -621,7 +622,7 @@ class _PlotProtein(_Plot):
             # fetch the level the domain label was determined it was to be
             # plotted on
 
-            level = domain_labels_levels[domain_count]
+            level = domain_labels_levels.get(domain_count, 1)
 
             level_pos = self.vertical_offset - 0.15 - (level - 1.0) * 0.1
 
@@ -633,8 +634,6 @@ class _PlotProtein(_Plot):
                 verticalalignment="center",
                 fontsize=self.fontsize,
             )
-
-            domain_count += 1
 
     def _draw_protein_length_markers(self, protein_length):
         """plot protein length markers
@@ -762,9 +761,6 @@ class _PlotProtein(_Plot):
 
 class PlotFusionProtein(_PlotProtein):
     """Class for plotting fusion protein structure."""
-
-    def __init__(self):
-        super().__init__()
 
     def _draw_junction(self):
         """Get coordinates and draw the junction."""
@@ -928,8 +924,8 @@ class PlotFusionProtein(_PlotProtein):
 class PlotWTProtein(_PlotProtein):
     """Class for plotting wildtype protein structure."""
 
-    def __init__(self, ensembl_transcript):
-        super().__init__()
+    def __init__(self, ensembl_transcript, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.ensembl_transcript = ensembl_transcript
 
     def draw(self):
