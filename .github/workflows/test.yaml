@@ -26,3 +26,13 @@ jobs:
         run: |
           cd test
           pytest
+      - name: Test batch mode
+        run: |
+          cd test
+          ../bin/agfusio batch \
+            -f data/FusionsFindingAlgorithms/STARFusion/star-fusion.fusion_candidates.final.abridged \
+            --middlestar \
+            --noncanonical \
+            -db ../../agfusion.homo_sapiens.75.db \
+            -o test \
+            -a starfusion
