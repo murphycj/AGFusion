@@ -33,7 +33,7 @@ jobs:
             -f data/FusionsFindingAlgorithms/STARFusion/star-fusion.fusion_candidates.final.abridged \
             --middlestar \
             --noncanonical \
-            -db ../../agfusion.homo_sapiens.75.db \
+            -db agfusion.homo_sapiens.75.db \
             -o test \
             -a starfusion
       - name: Test build bundle for pip
