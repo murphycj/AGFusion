@@ -3,6 +3,7 @@ Parses output files from fusion-finding algorithms
 """
 
 import re
+import csv
 import sys
 
 
@@ -39,58 +40,37 @@ class STARFusion(_Parser):
     def __init__(self, infile, logger):
         super().__init__(logger)
 
-        idx_gene5 = 4
-        idx_gene5_break = 5
-        idx_gene3 = 6
-        idx_gene3_break = 7
+        with open(infile, 'r') as fin:
+            reader = csv.DictReader(fin, delimiter="\t")
+            if not ('#FusionName' in reader.fieldnames or '#fusion_name' in reader.fieldnames):
+                raise AssertionError(
+                    'Unrecognized STAR-Fusion input for first column ' +
+                    'in header. Should be #FusionName or #fusion_name.')
 
-        fin = open(infile, "r")
-        for line in fin.readlines():
-            if re.findall(r"^#", line):
-                line = line.rstrip().split("\t")
-                if line[0] != "#FusionName" and line[0] != "#fusion_name":
-                    raise AssertionError(
-                        "Unrecognized STAR-Fusion input for first column "
-                        + "in header. Should be #FusionName or #fusion_name."
-                    )
+            assert 'LeftGene' in reader.fieldnames, 'Unrecognized STAR-Fusion input'
+            assert 'LeftBreakpoint' in reader.fieldnames, 'Unrecognized ' + \
+                'STAR-Fusion input'
+            assert 'RightGene' in reader.fieldnames, 'Unrecognized STAR-Fusion input'
+            assert 'RightBreakpoint' in reader.fieldnames, 'Unrecognized ' + \
+                'STAR-Fusion input'
 
-                if any(i == "est_J" for i in line):
-                    # modify column indexes for *coding_effect.tsv input.
-
-                    idx_gene5 = 6
-                    idx_gene5_break = 7
-                    idx_gene3 = 8
-                    idx_gene3_break = 9
-
-                assert line[idx_gene5] == "LeftGene", "Unrecognized STAR-Fusion input"
-                assert line[idx_gene5_break] == "LeftBreakpoint", (
-                    "Unrecognized " + "STAR-Fusion input"
+            for line in reader:
+                gene_5prime = line['LeftGene'].split('^')[1].split('.')[0]
+                gene_5prime_name = line['LeftGene'].split('^')[0]
+                gene_5prime_junction = int(line['LeftBreakpoint'].split(':')[1])
+                gene_3prime = line['RightGene'].split('^')[1].split('.')[0]
+                gene_3prime_name = line['RightGene'].split('^')[0]
+                gene_3prime_junction = int(line['RightBreakpoint'].split(':')[1])
+                self.fusions.append(
+                    {
+                        'gene5prime': gene_5prime,
+                        'gene3prime': gene_3prime,
+                        'alternative_name_5prime': gene_5prime_name,
+                        'alternative_name_3prime': gene_3prime_name,
+                        'gene5prime_junction': gene_5prime_junction,
+                        'gene3prime_junction': gene_3prime_junction
+                    }
                 )
-                assert line[idx_gene3] == "RightGene", "Unrecognized STAR-Fusion input"
-                assert line[idx_gene3_break] == "RightBreakpoint", (
-                    "Unrecognized " + "STAR-Fusion input"
-                )
-                continue
-
-            line = line.strip().split("\t")
-
-            gene_5prime = line[idx_gene5].split("^")[1].split(".")[0]
-            gene_5prime_name = line[idx_gene5].split("^")[0]
-            gene_5prime_junction = int(line[idx_gene5_break].split(":")[1])
-            gene_3prime = line[idx_gene3].split("^")[1].split(".")[0]
-            gene_3prime_name = line[idx_gene3].split("^")[0]
-            gene_3prime_junction = int(line[idx_gene3_break].split(":")[1])
-            self.fusions.append(
-                {
-                    "gene5prime": gene_5prime,
-                    "gene3prime": gene_3prime,
-                    "alternative_name_5prime": gene_5prime_name,
-                    "alternative_name_3prime": gene_3prime_name,
-                    "gene5prime_junction": gene_5prime_junction,
-                    "gene3prime_junction": gene_3prime_junction,
-                }
-            )
-        fin.close()
 
         self._check_data()
 
