@@ -47,6 +47,16 @@ jobs:
             -db agfusion.homo_sapiens.95.db \
             -o test2 \
             -a starfusion
+      - name: Test batch mode - arriba
+        run: |
+          cd test
+          ../bin/agfusion batch \
+            -f data/FusionsFindingAlgorithms/Arriba/fusions.tsv \
+            --middlestar \
+            --noncanonical \
+            -db agfusion.homo_sapiens.75.db \
+            -o test \
+            -a arriba
       - name: Test build bundle for pip
         run: |
           pip install setuptools wheel build

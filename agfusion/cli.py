@@ -8,6 +8,7 @@ import shutil
 import sys
 from os import mkdir, remove
 from os.path import exists, join, split
+from pathlib import Path
 
 from future.standard_library import install_aliases
 
@@ -152,6 +153,10 @@ def batch_mode(args, agfusion_db, pyensembl_data, rename, colors):
         mkdir(args.out)
     else:
         agfusion_db.logger.warn(f"Output directory {args.out} already exists! Overwriting...")
+
+    if not Path(args.file).exists():
+        FileNotFoundError(f"File not found {args.file}")
+        sys.exit(1)
 
     if args.algorithm in parsers.parsers:
         for fusion in parsers.parsers[args.algorithm](args.file, agfusion_db.logger):
