@@ -213,12 +213,8 @@ You can view all supported species and ensembl releases with ```agfusion downloa
 
 # Dependencies
 
-- python 2.7, 3.5
-- matplotlib>=1.5.0
-- pandas>=0.18.1
-- biopython>=1.67
-- future>=0.16.0
-- pyensembl>=1.1.0
+* Python 3.7 or higher
+* Python package dependencies are listed in [requirements.txt](https://github.com/murphycj/AGFusion/blob/master/requirements.txt).
 
 # Troubleshooting
 
