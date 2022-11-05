@@ -19,14 +19,16 @@ jobs:
           pip install .
           cd test
           ../bin/agfusion download -g hg19
+          ../bin/agfusion download -g hg38
           ../bin/agfusion download -s mus_musculus -r 84
           pyensembl install --release 84 --species mus_musculus
           pyensembl install --release 75 --species homo_sapiens
+          pyensembl install --release 95 --species homo_sapiens
       - name: Test with pytest
         run: |
           cd test
           pytest
-      - name: Test batch mode
+      - name: Test batch mode - STARFusion
         run: |
           cd test
           ../bin/agfusion batch \
@@ -35,6 +37,14 @@ jobs:
             --noncanonical \
             -db agfusion.homo_sapiens.75.db \
             -o test \
+            -a starfusion
+      - name: Test batch mode - STARFusion with --examine_coding_effect
+        run: |
+          cd test
+          ../bin/agfusion batch \
+            -f data/FusionsFindingAlgorithms/STARFusion/star-fusion.fusion_predictions.abridged.coding_effect.tsv \
+            -db agfusion.homo_sapiens.95.db \
+            -o test2 \
             -a starfusion
       - name: Test build bundle for pip
         run: |
