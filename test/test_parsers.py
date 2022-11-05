@@ -133,7 +133,7 @@ class TestLongGf(unittest.TestCase):
 
         all_fusions = ["Mocos_Rprd1a", "Ubc_Ubb", "Ubc_Gm11808", "Gm21887_Gm47283"]
         for fusion in parsers.parsers["longgf"](
-            "./data/FusionsFindingAlgorithms/LongGf/fusions_mouse.log",
+            "./data/FusionsFindingAlgorithms/LongGF/fusions_mouse.log",
             db_mouse.logger,
         ):
             fusion = model.Fusion(
@@ -153,7 +153,7 @@ class TestLongGf(unittest.TestCase):
 
         all_fusions = ["BCAS4_BCAS3", "HNRNPC_ACIN1"]
         for fusion in parsers.parsers["longgf"](
-            "./data/FusionsFindingAlgorithms/LongGf/fusions_hg38.log",
+            "./data/FusionsFindingAlgorithms/LongGF/fusions_hg38.log",
             db_human95.logger,
         ):
             fusion = model.Fusion(
