@@ -181,7 +181,7 @@ First you need to install pyensembl (and the other dependencies listed at the bo
 
 ```
 For GRCh38/hg38:
-pyensembl install --species homo_sapiens --release 87
+pyensembl install --species homo_sapiens --release 95
 
 For GRCh37/hg19:
 pyensembl install --species homo_sapiens --release 75
