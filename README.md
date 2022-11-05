@@ -105,13 +105,14 @@ You can provide as input output files from fusion-finding algorithms. Currently 
 * BreakFusion
 * ChimeraScan
 * ChimeRScope
-* deFuse
+* [deFuse](https://github.com/amcpherson/defuse)
 * EricScript
 * [FusionCatcher](https://github.com/ndaniel/fusioncatcher)
 * FusionHunter
 * FusionMap
 * InFusion
 * [JAFFA](https://github.com/Oshlack/JAFFA)
+* [LongGF](https://github.com/WGLab/LongGF)
 * MapSplice (only if --gene-gtf specified)
 * [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion)
 * TopHat-Fusion

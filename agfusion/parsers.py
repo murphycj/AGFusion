@@ -740,7 +740,50 @@ class FusionInspector(_Parser):
         self._check_data()
 
 
+class LongGf(_Parser):
+    """LongGf parser."""
+
+    def __init__(self, infile, logger):
+        super().__init__(logger)
+
+        fin = open(infile, "r")
+        for line in fin.readlines():
+            if re.findall(r"^GF", line):
+                line = line.rstrip().replace("\t", " ").split(" ")
+
+                gene_5prime, gene_3prime = line[1].split(":")
+
+                assert gene_5prime and gene_3prime, "Could not parse LongGf genes: " + line[1]
+
+                gene_5prime_chrom, gene_5prime_junction = line[8].split(":")
+
+                assert gene_5prime_chrom and gene_5prime_junction, (
+                    "Could not parse LongGf junction: " + line[8]
+                )
+
+                gene_3prime_chrom, gene_3prime_junction = line[10].split(":")
+
+                assert gene_3prime_chrom and gene_3prime_junction, (
+                    "Could not parse LongGf junction: " + line[10]
+                )
+
+                self.fusions.append(
+                    {
+                        "gene5prime": gene_5prime,
+                        "gene3prime": gene_3prime,
+                        "alternative_name_5prime": gene_5prime,
+                        "alternative_name_3prime": gene_3prime,
+                        "gene5prime_junction": int(gene_5prime_junction),
+                        "gene3prime_junction": int(gene_3prime_junction),
+                    }
+                )
+        fin.close()
+
+        self._check_data()
+
+
 parsers = {
+    "arriba": Arriba,
     "bellerophontes": Bellerophontes,
     "breakfusion": BreakFusion,
     "chimerascan": Chimerascan,
@@ -753,10 +796,10 @@ parsers = {
     "fusioninspector": FusionInspector,
     "infusion": InFusion,
     "jaffa": JAFFA,
+    "longgf": LongGf,
     "starfusion": STARFusion,
     "tophatfusion": TopHatFusion,
     "mapsplice": MapSplice,
-    "arriba": Arriba,
     # 'fusionseq':FusionSeq,
     # 'prada':Prada,
     # 'gfusion':GFusion,
