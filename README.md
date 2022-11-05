@@ -100,19 +100,20 @@ agfusion annotate \
 
 You can provide as input output files from fusion-finding algorithms. Currently supported algorithms are:
 
+* [Arriba](https://github.com/suhrig/arriba)
 * Bellerophontes
 * BreakFusion
 * ChimeraScan
 * ChimeRScope
 * deFuse
 * EricScript
-* FusionCatcher
+* [FusionCatcher](https://github.com/ndaniel/fusioncatcher)
 * FusionHunter
 * FusionMap
 * InFusion
-* JAFFA
+* [JAFFA](https://github.com/Oshlack/JAFFA)
 * MapSplice (only if --gene-gtf specified)
-* STAR-Fusion
+* [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion)
 * TopHat-Fusion
 
 

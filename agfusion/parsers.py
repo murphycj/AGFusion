@@ -2,9 +2,11 @@
 Parses output files from fusion-finding algorithms
 """
 
-import re
 import csv
+import re
 import sys
+
+import pandas as pd
 
 
 class _Parser:
@@ -40,37 +42,73 @@ class STARFusion(_Parser):
     def __init__(self, infile, logger):
         super().__init__(logger)
 
-        with open(infile, 'r') as fin:
+        with open(infile, "r") as fin:
             reader = csv.DictReader(fin, delimiter="\t")
-            if not ('#FusionName' in reader.fieldnames or '#fusion_name' in reader.fieldnames):
+            if not ("#FusionName" in reader.fieldnames or "#fusion_name" in reader.fieldnames):
                 raise AssertionError(
-                    'Unrecognized STAR-Fusion input for first column ' +
-                    'in header. Should be #FusionName or #fusion_name.')
+                    "Unrecognized STAR-Fusion input for first column "
+                    + "in header. Should be #FusionName or #fusion_name."
+                )
 
-            assert 'LeftGene' in reader.fieldnames, 'Unrecognized STAR-Fusion input'
-            assert 'LeftBreakpoint' in reader.fieldnames, 'Unrecognized ' + \
-                'STAR-Fusion input'
-            assert 'RightGene' in reader.fieldnames, 'Unrecognized STAR-Fusion input'
-            assert 'RightBreakpoint' in reader.fieldnames, 'Unrecognized ' + \
-                'STAR-Fusion input'
+            assert "LeftGene" in reader.fieldnames, "Unrecognized STAR-Fusion input"
+            assert "LeftBreakpoint" in reader.fieldnames, "Unrecognized " + "STAR-Fusion input"
+            assert "RightGene" in reader.fieldnames, "Unrecognized STAR-Fusion input"
+            assert "RightBreakpoint" in reader.fieldnames, "Unrecognized " + "STAR-Fusion input"
 
             for line in reader:
-                gene_5prime = line['LeftGene'].split('^')[1].split('.')[0]
-                gene_5prime_name = line['LeftGene'].split('^')[0]
-                gene_5prime_junction = int(line['LeftBreakpoint'].split(':')[1])
-                gene_3prime = line['RightGene'].split('^')[1].split('.')[0]
-                gene_3prime_name = line['RightGene'].split('^')[0]
-                gene_3prime_junction = int(line['RightBreakpoint'].split(':')[1])
+                gene_5prime = line["LeftGene"].split("^")[1].split(".")[0]
+                gene_5prime_name = line["LeftGene"].split("^")[0]
+                gene_5prime_junction = int(line["LeftBreakpoint"].split(":")[1])
+                gene_3prime = line["RightGene"].split("^")[1].split(".")[0]
+                gene_3prime_name = line["RightGene"].split("^")[0]
+                gene_3prime_junction = int(line["RightBreakpoint"].split(":")[1])
                 self.fusions.append(
                     {
-                        'gene5prime': gene_5prime,
-                        'gene3prime': gene_3prime,
-                        'alternative_name_5prime': gene_5prime_name,
-                        'alternative_name_3prime': gene_3prime_name,
-                        'gene5prime_junction': gene_5prime_junction,
-                        'gene3prime_junction': gene_3prime_junction
+                        "gene5prime": gene_5prime,
+                        "gene3prime": gene_3prime,
+                        "alternative_name_5prime": gene_5prime_name,
+                        "alternative_name_3prime": gene_3prime_name,
+                        "gene5prime_junction": gene_5prime_junction,
+                        "gene3prime_junction": gene_3prime_junction,
                     }
                 )
+
+        self._check_data()
+
+
+class Arriba(_Parser):
+    """Arriba parser."""
+
+    def __init__(self, infile, logger):
+        super().__init__(logger)
+
+        data = pd.read_csv(infile, delimiter="\t")
+        data.columns = [i.replace("#", "") for i in data.columns]
+
+        cols = ["gene1", "gene_id1", "gene2", "gene_id2", "breakpoint1", "breakpoint2"]
+
+        assert all(i in data.columns for i in cols), "Unrecognized Arriba input"
+
+        for i in data.index:
+            if not data.at[i, "gene1"]:
+                continue
+
+            gene_5prime = data.at[i, "gene_id1"].split(".")[0]
+            gene_5prime_name = data.at[i, "gene1"]
+            gene_5prime_junction = int(data.at[i, "breakpoint1"].split(":")[1])
+            gene_3prime = data.at[i, "gene_id2"].split(".")[0]
+            gene_3prime_name = data.at[i, "gene2"]
+            gene_3prime_junction = int(data.at[i, "breakpoint2"].split(":")[1])
+            self.fusions.append(
+                {
+                    "gene5prime": gene_5prime,
+                    "gene3prime": gene_3prime,
+                    "alternative_name_5prime": gene_5prime_name,
+                    "alternative_name_3prime": gene_3prime_name,
+                    "gene5prime_junction": gene_5prime_junction,
+                    "gene3prime_junction": gene_3prime_junction,
+                }
+            )
 
         self._check_data()
 
@@ -718,6 +756,7 @@ parsers = {
     "starfusion": STARFusion,
     "tophatfusion": TopHatFusion,
     "mapsplice": MapSplice,
+    "arriba": Arriba,
     # 'fusionseq':FusionSeq,
     # 'prada':Prada,
     # 'gfusion':GFusion,
