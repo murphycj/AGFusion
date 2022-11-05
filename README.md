@@ -27,18 +27,58 @@ Some other things to know:
 
 ## Table of Contents
 
+- [Installation](#installation)
+- [Dependencies](#dependencies)
 - [Examples](#examples)
   * [Basic Usage](#basic-usage)
   * [Plotting wild-type protein and exon structure](#plotting-wild-type-protein-and-exon-structure)
   * [Canonical gene isoforms](#canonical-gene-isoforms)
   * [Input from fusion-finding algorithms](#input-from-fusion-finding-algorithms)
   * [Graphical parameters](#graphical-parameters)
-- [Installation](#installation)
-- [Dependencies](#dependencies)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
 - [Citing AGFusion](#citing-agfusion)
 
+# Installation
+
+**Step 1:** Install AGFusion.
+
+```
+pip install agfusion
+```
+
+**Step 2:** Download your desired pyensembl reference genome database. For example:
+
+```
+For GRCh38/hg38:
+pyensembl install --species homo_sapiens --release 95
+
+For GRCh37/hg19:
+pyensembl install --species homo_sapiens --release 75
+
+For GRCm38/mm10:
+pyensembl install --species mus_musculus --release 87
+```
+
+**Step 3:** Finally, download your desired AGFusion database.
+
+```
+For GRCh38/hg38:
+agfusion download -g hg38
+
+For GRCh37/hg19:
+agfusion download -g hg19
+
+For GRCm38/mm10:
+agfusion download -g mm10
+```
+
+You can view all supported species and ensembl releases with ```agfusion download -a```.
+
+# Dependencies
+
+* Python 3.7 or higher
+* Python package dependencies are listed in [requirements.txt](https://github.com/murphycj/AGFusion/blob/master/requirements.txt).
 
 ## Examples
 
@@ -174,47 +214,6 @@ agfusion annotate \
 
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000064477-ENSMUST00000002487-rescale.png)
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000122054-ENSMUST00000070330-rescale.png)
-
-# Installation
-
-First you need to install pyensembl (and the other dependencies listed at the bottom) and download the reference genome you will use by running one of the following.
-
-```
-For GRCh38/hg38:
-pyensembl install --species homo_sapiens --release 95
-
-For GRCh37/hg19:
-pyensembl install --species homo_sapiens --release 75
-
-For GRCm38/mm10:
-pyensembl install --species mus_musculus --release 87
-```
-
-Then you can install AGFusion:
-
-```
-pip install agfusion
-```
-
-Finally, download the AGFusion database for your reference genome (downloaded from [here](https://github.com/murphycj/AGFusionDB)).
-
-```
-For GRCh38/hg38:
-agfusion download -g hg38
-
-For GRCh37/hg19:
-agfusion download -g hg19
-
-For GRCm38/mm10:
-agfusion download -g mm10
-```
-
-You can view all supported species and ensembl releases with ```agfusion download -a```. Due to limitations in pyensembl, the maximum supported Ensembl release is 87.
-
-# Dependencies
-
-* Python 3.7 or higher
-* Python package dependencies are listed in [requirements.txt](https://github.com/murphycj/AGFusion/blob/master/requirements.txt).
 
 # Troubleshooting
 
