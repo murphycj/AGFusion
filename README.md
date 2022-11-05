@@ -105,7 +105,7 @@ You can provide as input output files from fusion-finding algorithms. Currently 
 * BreakFusion
 * ChimeraScan
 * ChimeRScope
-* deFuse
+* [deFuse](https://github.com/amcpherson/defuse)
 * EricScript
 * [FusionCatcher](https://github.com/ndaniel/fusioncatcher)
 * FusionHunter
