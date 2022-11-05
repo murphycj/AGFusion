@@ -1,7 +1,16 @@
+[![test](https://img.shields.io/github/v/release/murphycj/agfusion)](https://img.shields.io/github/v/release/murphycj/agfusion)
+[![test](https://img.shields.io/github/last-commit/murphycj/agfusion)](https://img.shields.io/github/last-commit/murphycj/agfusion)
+[![Downloads](https://pepy.tech/badge/agfusion)](https://pepy.tech/project/agfusion)
+[![Unit tests](https://github.com/murphycj/AGFusion/actions/workflows/test.yaml/badge.svg)](https://github.com/murphycj/AGFusion/actions/workflows/test.yaml)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
+[![DOI](https://img.shields.io/badge/DOI-10.1101%2F080903-lightgrey.svg?style=flat-square)](http://dx.doi.org/10.1101/080903)
+[![Citations: 20](https://img.shields.io/badge/citations-20-brightgreen)](https://scholar.google.com/scholar?cites=10329835253652722473&as_sdt=5,33&sciodt=0,33&hl=en)
+
+
 # Annotate Gene Fusion (AGFusion)
 **Checkout the webapp:** [https://www.agfusion.app](https://www.agfusion.app)
 
-AGFusion is a python package for annotating gene fusions from the human or mouse genomes. AGFusion simply needs the reference genome, the two gene partners, and the fusion junction coordinates as input, and outputs the following:
+AGFusion (pronounced 'A G Fusion') is a python package for annotating gene fusions from the human or mouse genomes. AGFusion simply needs the reference genome, the two gene partners, and the fusion junction coordinates as input, and outputs the following:
 
 * FASTA files of cDNA, CDS, and protein sequences.
 * Visualizes the protein domain and exon architectures of the fusion transcripts.
@@ -211,7 +220,7 @@ You can view all supported species and ensembl releases with ```agfusion downloa
 
 # Troubleshooting
 
-**Problem:** I get a warning message like the following:
+**(1) Problem:** I get a warning message like the following:
 
 
 > 2017-08-28 15:02:51,377 - AGFusion - WARNING - No cDNA sequence available for AC073283.4! Will not print cDNA sequence for the AC073283.4-MSH2 fusion. You might be working with an outdated pyensembl. Update the package and rerun 'pyensembl install'
@@ -224,6 +233,20 @@ cd pyensembl
 sudo pip install .
 pyensembl install --release (your-release) --species (your-species)
 ```
+
+**(2) Problem:** Cannot run `agfusion download` due to `URLError`.
+When downloading the database you may run into this error:
+```
+urllib.error.URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1108)>
+```
+
+**Solution:**
+A potential solution for Mac users is from [here](https://stackoverflow.com/questions/27835619/urllib-and-ssl-certificate-verify-failed-error). You can run the following command:
+
+```
+/Applications/Python\ 3.8/Install\ Certificates.command
+```
+
 
 # License
 
