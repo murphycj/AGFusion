@@ -111,6 +111,7 @@ You can provide as input output files from fusion-finding algorithms. Currently 
 * FusionMap
 * InFusion
 * JAFFA
+* LongGF
 * MapSplice (only if --gene-gtf specified)
 * STAR-Fusion
 * TopHat-Fusion
