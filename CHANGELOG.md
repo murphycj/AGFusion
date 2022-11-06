@@ -1,4 +1,6 @@
 # Unreleased
+
+# 1.4.0
 - Cleanup CI/CD workflows.
 - Updates to the README.
 - Fix class parameters for plotting classes.
