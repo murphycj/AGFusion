@@ -4,7 +4,7 @@
 [![Unit tests](https://github.com/murphycj/AGFusion/actions/workflows/test.yaml/badge.svg)](https://github.com/murphycj/AGFusion/actions/workflows/test.yaml)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
 [![DOI](https://img.shields.io/badge/DOI-10.1101%2F080903-lightgrey.svg?style=flat-square)](http://dx.doi.org/10.1101/080903)
-[![Citations: 20](https://img.shields.io/badge/citations-20-brightgreen)](https://scholar.google.com/scholar?cites=10329835253652722473&as_sdt=5,33&sciodt=0,33&hl=en)
+[![Citations: 21](https://img.shields.io/badge/citations-21-brightgreen)](https://scholar.google.com/scholar?cites=10329835253652722473&as_sdt=5,33&sciodt=0,33&hl=en)
 
 
 # Annotate Gene Fusion (AGFusion)
