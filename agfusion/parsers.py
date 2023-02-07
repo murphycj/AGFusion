@@ -701,30 +701,22 @@ class FusionInspector(_Parser):
     def __init__(self, infile, logger):
         super().__init__(logger)
 
-        fin = open(infile, "r")
-        for line in fin.readlines():
-            if re.findall(r"^#", line):
-                line = line.rstrip().split("\t")
-                if line[0] != "#FusionName" and line[0] != "#fusion_name":
-                    raise AssertionError(
-                        "Unrecognized FusionInspector input for first column"
-                        + " in header. Should be #FusionName or #fusion_name."
-                    )
+        data = pd.read_csv(infile, delimiter="\t")
+        data.columns = [i.replace("#", "") for i in data.columns]
 
-                assert line[3] == "LeftGene", "Unrecognized " + "FusionInspector input"
-                assert line[5] == "LeftBreakpoint", "Unrecognized " + "FusionInspector input"
-                assert line[6] == "RightGene", "Unrecognized " + "FusionInspector input"
-                assert line[8] == "RightBreakpoint", "Unrecognized " + "FusionInspector input"
-                continue
+        cols = ["LeftGene", "LeftBreakpoint", "RightGene", "RightBreakpoint"]
+        assert all(
+            i in data.columns for i in cols
+        ), "Unrecognized FusionInspector input. Could not find all columns: " + ",".join(cols)
 
-            line = line.strip().split("\t")
+        for i in data.index:
 
-            gene_5prime = line[3].split("^")[1].split(".")[0]
-            gene_5prime_name = line[3].split("^")[0]
-            gene_5prime_junction = int(line[5].split(":")[1])
-            gene_3prime = line[6].split("^")[1].split(".")[0]
-            gene_3prime_name = line[6].split("^")[0]
-            gene_3prime_junction = int(line[8].split(":")[1])
+            gene_5prime = data.at[i, "LeftGene"].split("^")[1].split(".")[0]
+            gene_5prime_name = data.at[i, "LeftGene"].split("^")[0]
+            gene_5prime_junction = int(data.at[i, "LeftBreakpoint"].split(":")[1])
+            gene_3prime = data.at[i, "RightGene"].split("^")[1].split(".")[0]
+            gene_3prime_name = data.at[i, "RightGene"].split("^")[0]
+            gene_3prime_junction = int(data.at[i, "RightBreakpoint"].split(":")[1])
             self.fusions.append(
                 {
                     "gene5prime": gene_5prime,
@@ -735,7 +727,6 @@ class FusionInspector(_Parser):
                     "gene3prime_junction": gene_3prime_junction,
                 }
             )
-        fin.close()
 
         self._check_data()
 
