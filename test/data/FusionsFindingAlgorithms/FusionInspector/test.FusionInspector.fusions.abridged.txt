@@ -1,0 +1,3 @@
+#FusionName	JunctionReadCount	SpanningFragCount	est_J	est_S	LeftGene	LeftLocalBreakpoint	LeftBreakpoint	RightGene	RightLocalBreakpoint	RightBreakpoint	SpliceType	LargeAnchorSupport	NumCounterFusionLeft	NumCounterFusionRight	FAR_left	FAR_right	LeftBreakDinuc	LeftBreakEntropy	RightBreakDinuc	RightBreakEntropy	FFPM	microh_brkpt_dist	num_microh_near_brkpt
+AL627171.2--TPM3	1551	3	1538.54	3.00	AL627171.2^ENSG00000282885.2	2641	chr14:49862686:-	TPM3^ENSG00000143549.21	23194	chr1:154166382:-	INCL_NON_REF_SPLICE	NO	152	89	10.16	17.28	GT	1.5058	AG	1.8892	26.6109	1	30
+STAT3--AL627171.2	955	1	934.46	1.00	STAT3^ENSG00000168610.16	21538	chr17:42321234:-	AL627171.2^ENSG00000282885.2	32742	chr14:49862799:-	INCL_NON_REF_SPLICE	YES	0	152	957.00	6.25	GT	1.8295	AG	1.7968	16.1485	1	25
