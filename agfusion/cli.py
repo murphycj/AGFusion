@@ -503,6 +503,10 @@ def build_cli():
     parser.add_argument("-v", "--version", action="version", version=__version__)
     args = parser.parse_args()
 
+    if args.subparser_name is None:
+        parser.print_help()
+        sys.exit(1)
+
     return args
 
 
