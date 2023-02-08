@@ -75,10 +75,17 @@ agfusion download -g mm10
 
 You can view all supported species and ensembl releases with ```agfusion download -a```.
 
+## Docker
+Alternatively, you can use AGFusion via Docker:
+```
+docker pull ghcr.io/murphycj/agfusion:latest
+docker run -i ghcr.io/murphycj/agfusion:latest agfusion -h
+```
 # Dependencies
 
 * Python 3.7 or higher
 * Python package dependencies are listed in [requirements.txt](https://github.com/murphycj/AGFusion/blob/master/requirements.txt).
+
 
 ## Examples
 

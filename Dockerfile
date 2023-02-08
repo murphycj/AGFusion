@@ -10,7 +10,10 @@ WORKDIR /app
 COPY . .
 
 # Install COMPASS
-RUN pip install --quiet --upgrade pip && pip install .
+RUN \
+    pip install --quiet --upgrade pip && \
+    pip install . && \
+    pyensembl install --species homo_sapiens --release 75
 
 WORKDIR /data/
 
