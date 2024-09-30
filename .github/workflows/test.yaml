@@ -20,7 +20,7 @@ jobs:
           pip install .
           cd test
           ../bin/agfusion download -g hg19
-          ../bin/agfusion download -g hg38
+          ../bin/agfusion download -s homo_sapiens -r 95
           ../bin/agfusion download -s mus_musculus -r 84
           pyensembl install --release 84 --species mus_musculus
           pyensembl install --release 75 --species homo_sapiens
