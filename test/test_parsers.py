@@ -1,5 +1,6 @@
 """Unit tests.
 """
+
 import unittest
 from os.path import abspath, curdir, join
 
@@ -15,9 +16,9 @@ data_human = pyensembl.EnsemblRelease(75, "human")
 db_human = database.AGFusionDB(abspath(join(curdir, "agfusion.homo_sapiens.75.db")))
 db_human.build = "homo_sapiens_75"
 
-data_human95 = pyensembl.EnsemblRelease(95, "human")
-db_human95 = database.AGFusionDB(abspath(join(curdir, "agfusion.homo_sapiens.95.db")))
-db_human95.build = "homo_sapiens_95"
+data_human95 = pyensembl.EnsemblRelease(111, "human")
+db_human95 = database.AGFusionDB(abspath(join(curdir, "agfusion.homo_sapiens.111.db")))
+db_human95.build = "homo_sapiens_111"
 
 
 BASEDIR = "./data/FusionsFindingAlgorithms"
