@@ -1,5 +1,5 @@
 matplotlib>=3.6.1
-pandas>=1.5.1
+pandas
 biopython>=1.79
 future>=0.16.0
 pyensembl>=2.3.13
