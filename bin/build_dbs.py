@@ -19,7 +19,7 @@ for i in range(92, 112):
     # Check if the file exists on S3
     s3_check_command = f"aws s3 ls s3://agfusion/agfusion.{species}.{i}.db.gz"
     result = subprocess.run(
-        s3_check_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True
+        s3_check_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False
     )
 
     if result.returncode == 0:
