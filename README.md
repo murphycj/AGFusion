@@ -35,6 +35,7 @@ Some other things to know:
   * [Canonical gene isoforms](#canonical-gene-isoforms)
   * [Input from fusion-finding algorithms](#input-from-fusion-finding-algorithms)
   * [Graphical parameters](#graphical-parameters)
+- [Building your own database](building-your-own-database)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
 - [Citing AGFusion](#citing-agfusion)

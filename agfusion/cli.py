@@ -35,7 +35,7 @@ def list_available_databases():
                 if species in data and release in data:
                     shortcut.append(genome)
             shortcut = ",".join(shortcut)
-            print("{species:<10}\t\t{release:<5}\t\t{shortcut:<20}")
+            print(f"{species:<10}\t\t{release:<5}\t\t{shortcut:<20}")
     sys.exit(0)
 
 
