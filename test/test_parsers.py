@@ -16,9 +16,9 @@ data_human = pyensembl.EnsemblRelease(75, "human")
 db_human = database.AGFusionDB(abspath(join(curdir, "agfusion.homo_sapiens.75.db")))
 db_human.build = "homo_sapiens_75"
 
-data_human95 = pyensembl.EnsemblRelease(111, "human")
-db_human95 = database.AGFusionDB(abspath(join(curdir, "agfusion.homo_sapiens.111.db")))
-db_human95.build = "homo_sapiens_111"
+data_human_hg38 = pyensembl.EnsemblRelease(111, "human")
+db_human_hg38 = database.AGFusionDB(abspath(join(curdir, "agfusion.homo_sapiens.111.db")))
+db_human_hg38.build = "homo_sapiens_111"
 
 
 BASEDIR = "./data/FusionsFindingAlgorithms"
@@ -112,15 +112,15 @@ class TestSTARFusion(unittest.TestCase):
         all_fusions = ["ARID3B_MYCNUT", "ARID3B_MYCN", "TVP23C_CDRT4"]
         for fusion in parsers.parsers["starfusion"](
             f"{BASEDIR}/STARFusion/" + "star-fusion.fusion_predictions.abridged.coding_effect.tsv",
-            db_human95.logger,
+            db_human_hg38.logger,
         ):
             fusion = model.Fusion(
                 gene5prime=fusion["gene5prime"],
                 gene5primejunction=fusion["gene5prime_junction"],
                 gene3prime=fusion["gene3prime"],
                 gene3primejunction=fusion["gene3prime_junction"],
-                db=db_human95,
-                pyensembl_data=data_human95,
+                db=db_human_hg38,
+                pyensembl_data=data_human_hg38,
                 protein_databases=["pfam"],
                 noncanonical=False,
             )
@@ -156,15 +156,15 @@ class TestLongGf(unittest.TestCase):
         all_fusions = ["BCAS4_BCAS3", "HNRNPC_ACIN1"]
         for fusion in parsers.parsers["longgf"](
             f"{BASEDIR}/LongGF/fusions_hg38.log",
-            db_human95.logger,
+            db_human_hg38.logger,
         ):
             fusion = model.Fusion(
                 gene5prime=fusion["gene5prime"],
                 gene5primejunction=fusion["gene5prime_junction"],
                 gene3prime=fusion["gene3prime"],
                 gene3primejunction=fusion["gene3prime_junction"],
-                db=db_human95,
-                pyensembl_data=data_human95,
+                db=db_human_hg38,
+                pyensembl_data=data_human_hg38,
                 protein_databases=["pfam"],
                 noncanonical=False,
             )
@@ -177,19 +177,19 @@ class TestFusionInspector(unittest.TestCase):
     def test_parse_human(self):
         """Test basic parsing."""
 
-        all_fusions = ["AL627171.2_TPM3", "STAT3_AL627171.2"]
+        all_fusions = ["ENSG00000282885_TPM3", "STAT3_ENSG00000282885"]
 
         for fusion in parsers.parsers["fusioninspector"](
             f"{BASEDIR}/FusionInspector/test.FusionInspector.fusions.abridged.txt",
-            db_human95.logger,
+            db_human_hg38.logger,
         ):
             fusion = model.Fusion(
                 gene5prime=fusion["gene5prime"],
                 gene5primejunction=fusion["gene5prime_junction"],
                 gene3prime=fusion["gene3prime"],
                 gene3primejunction=fusion["gene3prime_junction"],
-                db=db_human95,
-                pyensembl_data=data_human95,
+                db=db_human_hg38,
+                pyensembl_data=data_human_hg38,
                 protein_databases=["pfam"],
                 noncanonical=False,
             )
@@ -197,15 +197,15 @@ class TestFusionInspector(unittest.TestCase):
 
         for fusion in parsers.parsers["fusioninspector"](
             f"{BASEDIR}/FusionInspector/test.FusionInspector.fusions.txt",
-            db_human95.logger,
+            db_human_hg38.logger,
         ):
             fusion = model.Fusion(
                 gene5prime=fusion["gene5prime"],
                 gene5primejunction=fusion["gene5prime_junction"],
                 gene3prime=fusion["gene3prime"],
                 gene3primejunction=fusion["gene3prime_junction"],
-                db=db_human95,
-                pyensembl_data=data_human95,
+                db=db_human_hg38,
+                pyensembl_data=data_human_hg38,
                 protein_databases=["pfam"],
                 noncanonical=False,
             )
