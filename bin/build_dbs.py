@@ -11,10 +11,11 @@ def run_command(command):
     subprocess.run(command, shell=True, check=True)
 
 
-species = "homo_sapiens"
+# species = "homo_sapiens"
+species = "mus_musculus"
 
 # Loop over releases from 96 to 110
-for i in range(96, 112):
+for i in range(92, 112):
     # Check if the file exists on S3
     s3_check_command = f"aws s3 ls s3://agfusion/agfusion.{species}.{i}.db.gz"
     result = subprocess.run(

@@ -216,7 +216,7 @@ agfusion annotate \
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000122054-ENSMUST00000070330-rescale.png)
 
 # Building your own database
-AGFusion uses a pre-built SQLite database to annotation gene fusions; in addition to data from pyensembl. The SQLite databases are stored on AWS S3: .
+AGFusion uses a pre-built SQLite database to annotation gene fusions; in addition to data from pyensembl. The SQLite databases are stored on AWS S3.
 
 Follow the steps below if you want to build your own SQLite database:
 
