@@ -19,7 +19,7 @@ README = open("README.md", encoding="utf8").read()
 
 setup(
     # version=version,
-    version="1.4.2",
+    version="1.4.3",
     name="agfusion",
     packages=find_packages(),
     description="Python package to annotate and visualize gene fusions.",
