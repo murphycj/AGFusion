@@ -1,5 +1,6 @@
 """Classes for AGFusion database objects
 """
+
 import logging
 import sqlite3
 import sys
@@ -115,9 +116,14 @@ class AGFusionDBBManager:
         for line in open(pfam, "r"):
             line = line.rstrip().split("\t")
 
+            # old format
+            # pfam_id = line[0]
+            # pfam_name = line[1]
+            # pfam_desc = line[3]
+
             pfam_id = line[0]
-            pfam_name = line[1]
-            pfam_desc = line[3]
+            pfam_name = line[3]
+            pfam_desc = line[4]
 
             self.pfam_mapping[pfam_id] = {"name": pfam_name, "desc": pfam_desc}
 
@@ -257,15 +263,12 @@ class AGFusionDBBManager:
             sys.exit(1)
 
         mysql_command = (
-            """SELECT gene.gene_id, xref.display_label FROM " \
-            "gene, object_xref, xref,external_db WHERE " \
-            "gene.gene_id = object_xref.ensembl_id AND " \
-            "object_xref.ensembl_object_type = 'Gene' AND " \
-            "object_xref.xref_id = xref.xref_id AND " \
-            "xref.external_db_id = external_db.external_db_id AND " \
-            "external_db.db_name = '"""
-            + gene_name_db
-            + """';"""
+            "SELECT gene.gene_id, xref.display_label FROM gene, object_xref, xref, external_db "
+            "WHERE gene.gene_id = object_xref.ensembl_id "
+            "AND object_xref.ensembl_object_type = 'Gene' "
+            "AND object_xref.xref_id = xref.xref_id "
+            "AND xref.external_db_id = external_db.external_db_id "
+            f"AND external_db.db_name = '{gene_name_db}';"
         )
 
         self.logger.info("MySQL - %s", mysql_command)

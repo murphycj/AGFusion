@@ -13,7 +13,7 @@ AGFUSION_DB_URL = "https://s3.amazonaws.com/agfusion/agfusion."
 # this is mostly contigent on the maximum ensembl release supported
 # by pyensembl
 
-MAX_ENSEMBL_RELEASE = 95
+MAX_ENSEMBL_RELEASE = 111
 
 GENOME_SHORTCUTS = {
     "GRCm38": ["mus_musculus", MAX_ENSEMBL_RELEASE],

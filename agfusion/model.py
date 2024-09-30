@@ -1,6 +1,7 @@
 """
 Holds classes for containing information for Gene and Fusion exon and protein information.
 """
+
 import itertools
 import os
 import re
@@ -342,7 +343,15 @@ class Fusion:
             noncanonical=noncanonical,
         )
 
-        self.name = self.gene5prime.gene.name + "_" + self.gene3prime.gene.name
+        gene1_name = self.gene5prime.gene.name
+        if gene1_name == "":
+            gene1_name = self.gene5prime.gene.id
+
+        gene2_name = self.gene3prime.gene.name
+        if gene2_name == "":
+            gene2_name = self.gene3prime.gene.id
+
+        self.name = gene1_name + "_" + gene2_name
         self.name = self.name.replace("/", "-")
 
         # construct all the fusion transcript combinations

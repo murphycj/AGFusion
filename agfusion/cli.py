@@ -111,15 +111,17 @@ def annotate(
 
     if batch_out_dir is not None:
 
+        gene1_name = fusion.gene5prime.gene.name
+        if gene1_name == "":
+            gene1_name = fusion.gene5prime.gene.id
+
+        gene2_name = fusion.gene3prime.gene.name
+        if gene2_name == "":
+            gene2_name = fusion.gene3prime.gene.id
+
         outdir = join(
             batch_out_dir,
-            fusion.gene5prime.gene.name
-            + "-"
-            + str(junction5prime)
-            + "_"
-            + fusion.gene3prime.gene.name
-            + "-"
-            + str(junction3prime),
+            gene1_name + "-" + str(junction5prime) + "_" + gene2_name + "-" + str(junction3prime),
         )
 
     fusion.save_transcript_cdna(out_dir=outdir, middlestar=args.middlestar)
@@ -155,8 +157,7 @@ def batch_mode(args, agfusion_db, pyensembl_data, rename, colors):
         agfusion_db.logger.warn(f"Output directory {args.out} already exists! Overwriting...")
 
     if not Path(args.file).exists():
-        FileNotFoundError(f"File not found {args.file}")
-        sys.exit(1)
+        raise FileNotFoundError(f"File not found {args.file}")
 
     if args.algorithm in parsers.parsers:
         for fusion in parsers.parsers[args.algorithm](args.file, agfusion_db.logger):

@@ -12,3 +12,6 @@ dist/
 *pyc
 build/
 *.db
+*.ipynb
+*clans.tsv
+*.db.gz
