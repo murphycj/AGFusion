@@ -47,17 +47,23 @@ ENSEMBL_MYSQL_TABLES = {"homo_sapiens": {}, "mus_musculus": {}}
 # ENSEMBL_MYSQL_TABLES['homo_sapiens'][61] = 'homo_sapiens_core_61_37f'
 # ENSEMBL_MYSQL_TABLES['homo_sapiens'][62] = 'homo_sapiens_core_62_37g'
 
+prefix = "homo_sapiens_core_"
 for i in range(63, MAX_ENSEMBL_RELEASE + 1):
     if i < 76:
-        ENSEMBL_MYSQL_TABLES["homo_sapiens"][i] = "homo_sapiens_core_" + str(i) + "_37"
+        suffix = "37"
     else:
-        ENSEMBL_MYSQL_TABLES["homo_sapiens"][i] = "homo_sapiens_core_" + str(i) + "_38"
+        suffix = "38"
+    ENSEMBL_MYSQL_TABLES["homo_sapiens"][i] = f"{prefix}{i}_{suffix}"
 
+prefix = "mus_musculus_core_"
 for i in range(67, MAX_ENSEMBL_RELEASE + 1):
     if i < 68:
-        ENSEMBL_MYSQL_TABLES["mus_musculus"][i] = "mus_musculus_core_" + str(i) + "_37"
+        suffix = "37"
+    elif i < 103:
+        suffix = "38"
     else:
-        ENSEMBL_MYSQL_TABLES["mus_musculus"][i] = "mus_musculus_core_" + str(i) + "_38"
+        suffix = "39"
+    ENSEMBL_MYSQL_TABLES["mus_musculus"][i] = f"{prefix}{i}_{suffix}"
 
 # min amino acid length of domain to plot it
 

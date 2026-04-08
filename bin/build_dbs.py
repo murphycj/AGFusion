@@ -29,11 +29,11 @@ if not os.path.exists(PFAM_FILE):
     logger.info("Downloading s3://%s/%s", S3_BUCKET, PFAM_FILE)
     s3_client.download_file(S3_BUCKET, PFAM_FILE, PFAM_FILE)
 
-species = "homo_sapiens"
-# species = "mus_musculus"
+# species = "homo_sapiens"
+species = "mus_musculus"
 
 # Loop over releases from 96 to 115
-for i in range(92, 115):
+for i in range(92, 116):
     db_key = f"agfusion.{species}.{i}.db.gz"
 
     # Check if the file exists on S3
