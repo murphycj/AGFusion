@@ -6,35 +6,34 @@
 [![DOI](https://img.shields.io/badge/DOI-10.1101%2F080903-lightgrey.svg?style=flat-square)](http://dx.doi.org/10.1101/080903)
 [![Citations: 35](https://img.shields.io/badge/citations-21-brightgreen)](https://scholar.google.com/scholar?cites=10329835253652722473&as_sdt=5,33&sciodt=0,33&hl=en)
 
-
 # Annotate Gene Fusion (AGFusion)
+
 **Checkout the webapp:** [https://www.agfusion.app](https://www.agfusion.app)
 
 AGFusion (pronounced 'A G Fusion') is a python package for annotating gene fusions from the human or mouse genomes. AGFusion simply needs the reference genome, the two gene partners, and the fusion junction coordinates as input, and outputs the following:
 
-* FASTA files of cDNA, CDS, and protein sequences.
-* Visualizes the protein domain and exon architectures of the fusion transcripts.
-* Saves tables listing the coordinates of protein features and exons included in the fusion.
-* Optional exon structure and protein domain visualization of the wild-type  version of the fusion gene partners.
+- FASTA files of cDNA, CDS, and protein sequences.
+- Visualizes the protein domain and exon architectures of the fusion transcripts.
+- Saves tables listing the coordinates of protein features and exons included in the fusion.
+- Optional exon structure and protein domain visualization of the wild-type version of the fusion gene partners.
 
 Some other things to know:
 
-* AGFusion automatically predicts the functional effect of the gene fusion (e.g. in-frame, out-of-frame, etc.).
-* Annotation is by default done only for canonical gene isoforms, but there is the option to annotate all gene non-canonical isoform combinations.
-* All gene and protein annotation is from Ensembl
-* Supports up to Ensembl release 95
-
+- AGFusion automatically predicts the functional effect of the gene fusion (e.g. in-frame, out-of-frame, etc.).
+- Annotation is by default done only for canonical gene isoforms, but there is the option to annotate all gene non-canonical isoform combinations.
+- All gene and protein annotation is from Ensembl
+- Supports up to Ensembl release 115
 
 ## Table of Contents
 
 - [Installation](#installation)
 - [Dependencies](#dependencies)
 - [Examples](#examples)
-  * [Basic Usage](#basic-usage)
-  * [Plotting wild-type protein and exon structure](#plotting-wild-type-protein-and-exon-structure)
-  * [Canonical gene isoforms](#canonical-gene-isoforms)
-  * [Input from fusion-finding algorithms](#input-from-fusion-finding-algorithms)
-  * [Graphical parameters](#graphical-parameters)
+  - [Basic Usage](#basic-usage)
+  - [Plotting wild-type protein and exon structure](#plotting-wild-type-protein-and-exon-structure)
+  - [Canonical gene isoforms](#canonical-gene-isoforms)
+  - [Input from fusion-finding algorithms](#input-from-fusion-finding-algorithms)
+  - [Graphical parameters](#graphical-parameters)
 - [Building your own database](#building-your-own-database)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
@@ -52,7 +51,7 @@ pip install agfusion
 
 ```
 For GRCh38/hg38:
-pyensembl install --species homo_sapiens --release 95
+pyensembl install --species homo_sapiens --release 115
 
 For GRCh37/hg19:
 pyensembl install --species homo_sapiens --release 75
@@ -74,12 +73,12 @@ For GRCm38/mm10:
 agfusion download -g mm10
 ```
 
-You can view all supported species and ensembl releases with ```agfusion download -a```.
+You can view all supported species and ensembl releases with `agfusion download -a`.
 
 # Dependencies
 
-* Python 3.7 or higher
-* Python package dependencies are listed in [requirements.txt](https://github.com/murphycj/AGFusion/blob/master/requirements.txt).
+- Python 3.7 or higher
+- Python package dependencies are listed in [requirements.txt](https://github.com/murphycj/AGFusion/blob/master/requirements.txt).
 
 ## Examples
 
@@ -141,24 +140,22 @@ agfusion annotate \
 
 You can provide as input output files from fusion-finding algorithms. Currently supported algorithms are:
 
-* [Arriba](https://github.com/suhrig/arriba)
-* Bellerophontes
-* BreakFusion
-* ChimeraScan
-* ChimeRScope
-* [deFuse](https://github.com/amcpherson/defuse)
-* EricScript
-* [FusionCatcher](https://github.com/ndaniel/fusioncatcher)
-* FusionHunter
-* FusionMap
-* InFusion
-* [JAFFA](https://github.com/Oshlack/JAFFA)
-* [LongGF](https://github.com/WGLab/LongGF)
-* MapSplice (only if --gene-gtf specified)
-* [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion)
-* TopHat-Fusion
-
-
+- [Arriba](https://github.com/suhrig/arriba)
+- Bellerophontes
+- BreakFusion
+- ChimeraScan
+- ChimeRScope
+- [deFuse](https://github.com/amcpherson/defuse)
+- EricScript
+- [FusionCatcher](https://github.com/ndaniel/fusioncatcher)
+- FusionHunter
+- FusionMap
+- InFusion
+- [JAFFA](https://github.com/Oshlack/JAFFA)
+- [LongGF](https://github.com/WGLab/LongGF)
+- MapSplice (only if --gene-gtf specified)
+- [STAR-Fusion](https://github.com/STAR-Fusion/STAR-Fusion)
+- TopHat-Fusion
 
 Below is an example for FusionCatcher.
 
@@ -217,6 +214,7 @@ agfusion annotate \
 ![alt tag](https://github.com/murphycj/AGFusion/blob/master/doc/ENSMUST00000122054-ENSMUST00000070330-rescale.png)
 
 # Building your own database
+
 AGFusion uses a pre-built SQLite database to annotation gene fusions; in addition to data from pyensembl. The SQLite databases are stored on AWS S3.
 
 Follow the steps below if you want to build your own SQLite database:
@@ -233,7 +231,6 @@ Follow the steps below if you want to build your own SQLite database:
 
 **(1) Problem:** I get a warning message like the following:
 
-
 > 2017-08-28 15:02:51,377 - AGFusion - WARNING - No cDNA sequence available for AC073283.4! Will not print cDNA sequence for the AC073283.4-MSH2 fusion. You might be working with an outdated pyensembl. Update the package and rerun 'pyensembl install'
 
 **Solution:** Run the following to update pyensembl package and database:
@@ -247,6 +244,7 @@ pyensembl install --release (your-release) --species (your-species)
 
 **(2) Problem:** Cannot run `agfusion download` due to `URLError`.
 When downloading the database you may run into this error:
+
 ```
 urllib.error.URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1108)>
 ```
@@ -257,7 +255,6 @@ A potential solution for Mac users is from [here](https://stackoverflow.com/ques
 ```
 /Applications/Python\ 3.8/Install\ Certificates.command
 ```
-
 
 # License
 
