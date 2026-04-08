@@ -4,7 +4,7 @@ AGFusion is a Python bioinformatics package for annotating gene fusions from hum
 
 ## Stack
 
-- **Language**: Python 3.7+
+- **Language**: Python 3.9 - 3.13
 - **Formatter**: black (line-length = 100)
 - **Key dependencies**: pyensembl, biopython, matplotlib, pandas, numpy<2
 - **CLI**: Click-based (`agfusion annotate`, `agfusion batch`, `agfusion download`)

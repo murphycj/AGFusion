@@ -8,7 +8,7 @@ applyTo: "**/*.py"
 ## Code Style
 
 - Format all Python code with **black** (`line-length = 100`)
-- Target Python 3.7+
+- Target Python 3.9 - 3.13
 - Run `black .` before committing
 
 ## Module Responsibilities

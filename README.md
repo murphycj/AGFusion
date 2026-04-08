@@ -253,7 +253,7 @@ urllib.error.URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certifica
 A potential solution for Mac users is from [here](https://stackoverflow.com/questions/27835619/urllib-and-ssl-certificate-verify-failed-error). You can run the following command:
 
 ```
-/Applications/Python\ 3.8/Install\ Certificates.command
+/Applications/Python\ 3.9/Install\ Certificates.command
 ```
 
 # License
