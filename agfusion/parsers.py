@@ -675,7 +675,7 @@ class InFusion(_Parser):
             line = line.strip().split("\t")
 
             if line[data_indices["genes_1"]] == "none" or line[data_indices["genes_2"]] == "none":
-                self.logger.warn(
+                self.logger.warning(
                     f"Skipping fusion on line {n} because one or more "
                     + "of the provided gene names under 'gene_1' and"
                     + " 'gene_2' is listed as 'none'."
