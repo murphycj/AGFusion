@@ -10,9 +10,6 @@ from os import mkdir, remove
 from os.path import exists, join, split
 from pathlib import Path
 
-from future.standard_library import install_aliases
-
-install_aliases()
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
@@ -154,7 +151,7 @@ def batch_mode(args, agfusion_db, pyensembl_data, rename, colors):
     if not exists(args.out):
         mkdir(args.out)
     else:
-        agfusion_db.logger.warn(f"Output directory {args.out} already exists! Overwriting...")
+        agfusion_db.logger.warning(f"Output directory {args.out} already exists! Overwriting...")
 
     if not Path(args.file).exists():
         raise FileNotFoundError(f"File not found {args.file}")
@@ -528,7 +525,7 @@ def parse_names_and_colors(args, agfusion_db):
             assert len(pair) == 2, " did not properly specify --rename"
 
             if pair[0] in rename:
-                agfusion_db.logger.warn(f"WARNING - you rename {pair[0]} twice.")
+                agfusion_db.logger.warning(f"WARNING - you rename {pair[0]} twice.")
 
             rename[pair[0]] = pair[1]
 
@@ -539,7 +536,7 @@ def parse_names_and_colors(args, agfusion_db):
             assert len(pair) == 2, " did not properly specify --colors"
 
             if pair[0] in colors:
-                agfusion_db.logger.warn(f"You specified colors for {pair[0]} twice.")
+                agfusion_db.logger.warning(f"You specified colors for {pair[0]} twice.")
 
             if pair[0] in rename:
                 colors[rename[pair[0]]] = pair[1]
