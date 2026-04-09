@@ -11,9 +11,9 @@ from agfusion import utils
 logger = logging.getLogger("AGFusion")
 
 try:
-    import MySQLdb
+    import mysql.connector
 except ImportError:
-    logger.debug("Could not import MySQLdb.")
+    logger.debug("Could not import mysql.connector.")
 
 
 class AGFusionDB:
@@ -100,7 +100,11 @@ class AGFusionDBBManager:
 
         self.logger.info("Connected to the database %s", abspath(self.database))
 
-        self.ensembl_db = MySQLdb.connect(server, "anonymous")
+        try:
+            self.ensembl_db = mysql.connector.connect(host=server, user="anonymous", password="")
+        except mysql.connector.Error as err:
+            self.logger.error("Could not connect to Ensembl MySQL server at %s: %s", server, err)
+            sys.exit(1)
         self.ensembl_cursor = self.ensembl_db.cursor()
         self.ensembl_cursor.execute("use " + self.table + ";")
 

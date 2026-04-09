@@ -5,3 +5,5 @@ black==22.10.0
 click==8.0.4
 pre-commit
 isort
+boto3
+mysql-connector-python

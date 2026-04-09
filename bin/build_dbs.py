@@ -2,45 +2,62 @@
 Download and build the agfusion database for a range of releases.
 """
 
+import logging
+import os
 import subprocess
+
+import boto3
+from botocore.exceptions import ClientError
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
+
+S3_BUCKET = "agfusion"
+PFAM_FILE = "Pfam-A.clans.tsv"
+
+s3_client = boto3.client("s3")
 
 
 def run_command(command):
-    """Run a command and print it."""
-    print(f"Running: {command}")
+    """Run a command and log it."""
+    logger.info("Running: %s", command)
     subprocess.run(command, shell=True, check=True)
 
+
+# Ensure the Pfam clans file is available locally
+if not os.path.exists(PFAM_FILE):
+    logger.info("Downloading s3://%s/%s", S3_BUCKET, PFAM_FILE)
+    s3_client.download_file(S3_BUCKET, PFAM_FILE, PFAM_FILE)
 
 # species = "homo_sapiens"
 species = "mus_musculus"
 
-# Loop over releases from 96 to 110
-for i in range(92, 112):
+# Loop over releases from 96 to 115
+for i in range(92, 116):
+    db_key = f"agfusion.{species}.{i}.db.gz"
+
     # Check if the file exists on S3
-    s3_check_command = f"aws s3 ls s3://agfusion/agfusion.{species}.{i}.db.gz"
-    result = subprocess.run(
-        s3_check_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False
-    )
-
-    if result.returncode == 0:
-        print(f"File for release {i} already exists in S3. Skipping...")
+    try:
+        s3_client.head_object(Bucket=S3_BUCKET, Key=db_key)
+        logger.info("File for release %d already exists in S3. Skipping...", i)
         continue
+    except ClientError:
+        pass
 
-    # continue
-
-    print(f"Building release {i}")
+    logger.info("Building release %d", i)
 
     # Install the release using pyensembl
     run_command(f"pyensembl install --release {i} --species {species}")
 
     # Build the agfusion database
-    run_command(f"agfusion build -d . -s {species} -r {i} --pfam Pfam-A.clans.tsv")
+    run_command(f"agfusion build -d . -s {species} -r {i} --pfam {PFAM_FILE}")
 
     # Compress the database
     run_command(f"gzip agfusion.{species}.{i}.db")
 
     # Upload the compressed file to S3
-    run_command(f"aws s3 cp agfusion.{species}.{i}.db.gz s3://agfusion")
+    logger.info("Uploading %s to s3://%s/%s", db_key, S3_BUCKET, db_key)
+    s3_client.upload_file(db_key, S3_BUCKET, db_key)
 
     # Delete all files for the release from pyensembl
     run_command(f"pyensembl delete-all-files --release {i} --species {species}")
