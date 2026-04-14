@@ -19,7 +19,7 @@ README = open("README.md", encoding="utf8").read()
 
 setup(
     # version=version,
-    version="1.5.0",
+    version="1.6.0",
     name="agfusion",
     packages=find_packages(),
     description="Python package to annotate and visualize gene fusions.",
@@ -32,7 +32,7 @@ setup(
     include_package_data=True,
     scripts=["bin/agfusion"],
     install_requires=[
-        "matplotlib>=1.5.0",
+        "matplotlib>=1.6.0",
         "pandas>=0.18.1",
         "biopython>=1.67",
         "pyensembl>=1.1.0",
