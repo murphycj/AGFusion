@@ -35,6 +35,7 @@ Some other things to know:
   - [Graphical parameters](#graphical-parameters)
 - [Building your own database](#building-your-own-database)
 - [Troubleshooting](#troubleshooting)
+- [Releasing a New Version](#releasing-a-new-version)
 - [License](#license)
 - [Citing AGFusion](#citing-agfusion)
 
@@ -253,6 +254,35 @@ A potential solution for Mac users is from [here](https://stackoverflow.com/ques
 
 ```
 /Applications/Python\ 3.9/Install\ Certificates.command
+```
+
+# Releasing a New Version
+
+AGFusion uses [bump2version](https://github.com/c4urself/bump2version) to manage versioning. It automatically updates the version in `setup.py`, commits the change, and creates a git tag.
+
+**Install bump2version:**
+
+```
+pip install bump2version
+```
+
+**Bump the version:**
+
+```
+# Patch release (e.g. 1.4.3 -> 1.4.4)
+bump2version patch
+
+# Minor release (e.g. 1.4.3 -> 1.5.0)
+bump2version minor
+
+# Major release (e.g. 1.4.3 -> 2.0.0)
+bump2version major
+```
+
+After bumping, push the commit and tag to GitHub:
+
+```
+git push && git push --tags
 ```
 
 # License
